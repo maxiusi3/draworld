@@ -95,27 +95,22 @@ jobs:
     - name: Create service account file
       run: |
         echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > service-account.json
-
-    - name: Authenticate with Firebase
-      run: |
-        export GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/service-account.json
-        firebase --version
-      env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-      continue-on-error: true
+        cat service-account.json | jq . > /dev/null || (echo "Invalid JSON in service account" && exit 1)
 
     - name: Deploy to Firebase Hosting Only
       id: deploy
       run: |
-        export GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/service-account.json
+        export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/service-account.json"
 
         echo "🚀 开始部署Firebase Hosting..."
-        # 只部署hosting，避免权限问题
+        echo "Using service account: $GOOGLE_APPLICATION_CREDENTIALS"
+
+        # 使用service account key直接部署
         firebase deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
 
         echo "✅ Firebase Hosting部署完成！"
       env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service-account.json
 
     - name: Clean up service account file
       if: always()
