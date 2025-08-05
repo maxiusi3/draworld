@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 用户上传的原始图片 - 只能读写自己的文件
+    match /users/{userId}/images/{imageId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 生成的视频文件 - 公开可读
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if false; // 只有Cloud Functions可以写入
+    }
+    
+    // 系统合规文件 - 公开可读
+    match /system/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
