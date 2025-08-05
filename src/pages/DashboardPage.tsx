@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { videoService, VideoTask } from '../services/videoService';
@@ -20,26 +20,9 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadTasks();
-      
-      // 订阅实时更新
-      const unsubscribe = videoService.subscribeToUserTasks(
-        currentUser.uid,
-        (updatedTasks) => {
-          setTasks(updatedTasks);
-          setLoading(false);
-        }
-      );
-      
-      return unsubscribe;
-    }
-  }, [currentUser]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!currentUser) return;
-    
+
     try {
       setRefreshing(true);
       const userTasks = await videoService.getUserVideoTasks(currentUser.uid);
@@ -50,7 +33,24 @@ const DashboardPage: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadTasks();
+
+      // 订阅实时更新
+      const unsubscribe = videoService.subscribeToUserTasks(
+        currentUser.uid,
+        (updatedTasks) => {
+          setTasks(updatedTasks);
+          setLoading(false);
+        }
+      );
+
+      return unsubscribe;
+    }
+  }, [currentUser, loadTasks]);
 
   const handleShare = async (task: VideoTask) => {
     if (!task.videoUrl) return;

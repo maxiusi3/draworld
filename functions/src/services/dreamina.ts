@@ -93,7 +93,7 @@ export class DreaminaAPIService {
   private async makeRequest(action: string, body: any): Promise<any> {
     const url = `${this.endpoint}/?Action=${action}&Version=2022-08-31`;
     const method = 'POST';
-    const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+    const timestamp = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
     const bodyStr = JSON.stringify(body);
     
     // 计算内容哈希

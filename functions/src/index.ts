@@ -1,7 +1,8 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { DreaminaAPIService } from './services/dreamina';
-import { createHash, createHmac } from 'crypto';
+
+import fetch from 'node-fetch';
 
 admin.initializeApp();
 
@@ -63,7 +64,7 @@ export const createVideoTask = functions.https.onCall(async (data, context) => {
       functions.logger.error('即梦AI API调用失败:', error);
       await taskRef.update({
         status: 'failed',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -95,7 +96,7 @@ async function pollTaskStatus(taskId: string, dreaminaTaskId: string, attempt = 
   try {
     const result = await dreaminaService.getTaskResult(dreaminaTaskId);
     
-    if (result.status === 'done') {
+    if (result.status === 'done' && result.videoUrl) {
       // 将视频URL转存到Firebase Storage
       const savedVideoUrl = await saveVideoToStorage(result.videoUrl, taskId);
       
