@@ -129,16 +129,47 @@ jobs:
           exit 1
         fi
 
+        # 显示当前目录和文件
+        echo "📁 Current directory: $(pwd)"
+        echo "📋 Files in current directory:"
+        ls -la
+        echo "📋 Firebase config:"
+        cat firebase.json || echo "No firebase.json found"
+
         # 先部署Hosting和Firestore规则
         echo "🚀 Starting deployment (Hosting + Firestore rules)..."
-        firebase deploy --only hosting,firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+        if firebase deploy --only hosting,firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive; then
+          echo "✅ Hosting and Firestore rules deployed successfully"
+        else
+          echo "❌ Failed to deploy Hosting and Firestore rules"
+          exit 1
+        fi
 
-        # 安装Functions依赖并部署
+        # 安装Functions依赖并构建
         echo "📦 Installing Functions dependencies..."
-        cd functions && npm install && npm run build && cd ..
+        cd functions
+        if npm install; then
+          echo "✅ Functions dependencies installed"
+        else
+          echo "❌ Failed to install Functions dependencies"
+          exit 1
+        fi
+
+        if npm run build; then
+          echo "✅ Functions built successfully"
+        else
+          echo "❌ Failed to build Functions"
+          exit 1
+        fi
+        cd ..
 
         echo "🚀 Deploying Functions..."
-        firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+        if firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive; then
+          echo "✅ Functions deployed successfully"
+        else
+          echo "❌ Failed to deploy Functions"
+          exit 1
+        fi
 
         echo "✅ Firebase部署完成！"
       env:
