@@ -119,12 +119,14 @@ jobs:
     - name: Set Firebase Functions configuration
       run: |
         export GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/service-account.json
+        # 尝试设置Functions配置，如果失败则继续（可能权限不足或已存在）
         firebase functions:config:set \
           dreamina.access_key_id="${{ secrets.DREAMINA_ACCESS_KEY_ID }}" \
           dreamina.secret_access_key="${{ secrets.DREAMINA_SECRET_ACCESS_KEY }}" \
-          --project ${{ secrets.FIREBASE_PROJECT_ID }}
+          --project ${{ secrets.FIREBASE_PROJECT_ID }} || echo "⚠️ 无法设置Functions配置，可能已存在或权限不足，继续部署..."
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      continue-on-error: true
     
     - name: Deploy to Firebase
       id: deploy

@@ -21,11 +21,13 @@ export class DreaminaAPIService {
   private readonly service = 'cv';
 
   constructor() {
-    this.accessKeyId = functions.config().dreamina.access_key_id;
-    this.secretAccessKey = functions.config().dreamina.secret_access_key;
-    
+    // 使用functions.config()获取配置
+    const config = functions.config();
+    this.accessKeyId = config.dreamina?.access_key_id;
+    this.secretAccessKey = config.dreamina?.secret_access_key;
+
     if (!this.accessKeyId || !this.secretAccessKey) {
-      throw new Error('即梦AI API密钥未配置');
+      throw new Error('即梦AI API密钥未配置。请在Firebase Console中设置dreamina.access_key_id和dreamina.secret_access_key');
     }
   }
 
