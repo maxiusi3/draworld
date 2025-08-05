@@ -17,7 +17,7 @@ on:
         - staging
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # 构建和测试作业
@@ -129,13 +129,16 @@ jobs:
           exit 1
         fi
 
-        # 安装Functions依赖
+        # 先部署Hosting和Firestore规则
+        echo "🚀 Starting deployment (Hosting + Firestore rules)..."
+        firebase deploy --only hosting,firestore:rules --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+
+        # 安装Functions依赖并部署
         echo "📦 Installing Functions dependencies..."
         cd functions && npm install && npm run build && cd ..
 
-        # 部署到Firebase (包含Hosting, Functions, Firestore规则)
-        echo "🚀 Starting deployment..."
-        firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+        echo "🚀 Deploying Functions..."
+        firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
 
         echo "✅ Firebase部署完成！"
       env:
