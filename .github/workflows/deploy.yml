@@ -89,14 +89,6 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
-
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-
     - name: Install Firebase CLI
       run: npm install -g firebase-tools
 
@@ -105,10 +97,12 @@ jobs:
       run: |
         echo "🚀 开始部署Firebase Hosting..."
 
-        # 使用Google Cloud认证后的Firebase CLI部署
-        firebase deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+        # 使用Firebase token进行认证和部署
+        firebase deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --token ${{ secrets.FIREBASE_TOKEN }}
 
         echo "✅ Firebase Hosting部署完成！"
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
 
 
