@@ -128,13 +128,57 @@ jobs:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       continue-on-error: true
     
+    - name: Create deployment-safe firebase.json
+      run: |
+        # 备份原始firebase.json
+        cp firebase.json firebase.json.backup
+
+        # 创建一个不包含storage的临时配置（如果storage未启用）
+        cat > firebase.json << 'EOF'
+        {
+          "hosting": {
+            "public": "dist",
+            "ignore": [
+              "firebase.json",
+              "**/.*",
+              "**/node_modules/**"
+            ],
+            "rewrites": [
+              {
+                "source": "**",
+                "destination": "/index.html"
+              }
+            ]
+          },
+          "functions": {
+            "source": "functions",
+            "runtime": "nodejs18"
+          },
+          "firestore": {
+            "rules": "firestore.rules",
+            "indexes": "firestore.indexes.json"
+          }
+        }
+        EOF
+
     - name: Deploy to Firebase
       id: deploy
       run: |
         export GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/service-account.json
+
+        echo "� 开始部署Firebase服务..."
         firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+
+        echo "✅ Firebase部署完成！"
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+    - name: Restore original firebase.json
+      if: always()
+      run: |
+        if [ -f firebase.json.backup ]; then
+          mv firebase.json.backup firebase.json
+        fi
     
     - name: Clean up service account file
       if: always()
