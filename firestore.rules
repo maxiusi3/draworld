@@ -8,8 +8,8 @@ service cloud.firestore {
     
     // 视频任务规则 - 只能读写自己的任务
     match /videoTasks/{taskId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
     
     // 公共数据（如模板等）
