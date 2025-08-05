@@ -166,6 +166,16 @@ jobs:
         # 使用gcloud直接部署Functions，绕过Firebase CLI
         echo "🚀 Deploying Functions using gcloud..."
 
+        # 设置gcloud认证
+        echo "🔐 Setting up gcloud authentication..."
+        gcloud auth activate-service-account --key-file=${{ github.workspace }}/service-account.json
+        gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}
+
+        # 验证gcloud认证
+        echo "✅ gcloud authentication configured"
+        gcloud auth list
+        gcloud config list
+
         # 部署每个函数
         echo "📤 Deploying createVideoTask..."
         gcloud functions deploy createVideoTask \
