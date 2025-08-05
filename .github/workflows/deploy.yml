@@ -94,10 +94,15 @@ jobs:
 
     - name: Create service account file
       run: |
-        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}' > ${{ github.workspace }}/service-account.json
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > ${{ github.workspace }}/service-account.json
         # 验证JSON格式
         cat ${{ github.workspace }}/service-account.json | jq . > /dev/null || (echo "❌ Invalid JSON in service account key" && exit 1)
         echo "✅ Service account file created successfully"
+
+        # 显示service account信息（不显示敏感内容）
+        echo "📋 Service account info:"
+        cat ${{ github.workspace }}/service-account.json | jq -r '.client_email // "No client_email found"'
+        cat ${{ github.workspace }}/service-account.json | jq -r '.project_id // "No project_id found"'
 
     - name: Deploy to Firebase Hosting
       id: deploy
@@ -106,12 +111,26 @@ jobs:
 
         # 设置Google Application Credentials
         export GOOGLE_APPLICATION_CREDENTIALS="${{ github.workspace }}/service-account.json"
+        echo "📍 Using credentials file: $GOOGLE_APPLICATION_CREDENTIALS"
 
-        # 验证认证
-        firebase projects:list --json > /dev/null || (echo "❌ Firebase authentication failed" && exit 1)
-        echo "✅ Firebase authentication successful"
+        # 显示项目信息
+        echo "📋 Target project: ${{ secrets.FIREBASE_PROJECT_ID }}"
+
+        # 验证认证 - 显示详细错误信息
+        echo "🔐 Testing Firebase authentication..."
+        if firebase projects:list --json > /tmp/projects.json 2>/tmp/error.log; then
+          echo "✅ Firebase authentication successful"
+          echo "📋 Available projects:"
+          cat /tmp/projects.json | jq -r '.[] | .projectId' || echo "Could not parse projects"
+        else
+          echo "❌ Firebase authentication failed"
+          echo "Error details:"
+          cat /tmp/error.log || echo "No error log available"
+          exit 1
+        fi
 
         # 部署到Firebase Hosting
+        echo "🚀 Starting deployment..."
         firebase deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
 
         echo "✅ Firebase Hosting部署完成！"
