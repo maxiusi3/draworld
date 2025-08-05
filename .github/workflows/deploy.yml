@@ -129,11 +129,15 @@ jobs:
           exit 1
         fi
 
-        # 部署到Firebase Hosting
-        echo "🚀 Starting deployment..."
-        firebase deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+        # 安装Functions依赖
+        echo "📦 Installing Functions dependencies..."
+        cd functions && npm install && npm run build && cd ..
 
-        echo "✅ Firebase Hosting部署完成！"
+        # 部署到Firebase (包含Hosting, Functions, Firestore规则)
+        echo "🚀 Starting deployment..."
+        firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive
+
+        echo "✅ Firebase部署完成！"
       env:
         GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service-account.json
 
