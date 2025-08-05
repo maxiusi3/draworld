@@ -238,6 +238,15 @@ const HomePage: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Footer with deployment info */}
+      <footer className="bg-gray-50 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-sm text-gray-500">
+            <p>🚀 通过GitHub Actions自动部署 | 最后更新: {new Date().toLocaleString('zh-CN')}</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

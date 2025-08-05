@@ -1,6 +1,10 @@
 # 童画奇旅 (WhimsyBrush)
 
+[![Deploy Status](https://github.com/maxiusi3/draworld/workflows/Deploy%20WhimsyBrush%20to%20Firebase/badge.svg)](https://github.com/maxiusi3/draworld/actions)
+
 一个将儿童绘画作品转化为生动动画视频的AI应用。
+
+> 🚀 **最新更新**：已配置GitHub Actions自动部署，推送代码即可自动更新网站！
 
 ## 功能特性
 
