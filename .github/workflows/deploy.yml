@@ -186,6 +186,7 @@ jobs:
           --project=${{ secrets.FIREBASE_PROJECT_ID }} \
           --trigger-http \
           --allow-unauthenticated \
+          --set-env-vars="DREAMINA_ACCESS_KEY_ID=${{ secrets.DREAMINA_ACCESS_KEY_ID }},DREAMINA_SECRET_ACCESS_KEY=${{ secrets.DREAMINA_SECRET_ACCESS_KEY }}" \
           --quiet || echo "⚠️ createVideoTask deployment failed"
 
         echo "📤 Deploying getUserVideoTasks..."
