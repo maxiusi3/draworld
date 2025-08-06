@@ -21,19 +21,13 @@ export class DreaminaAPIService {
   private readonly service = 'cv';
 
   constructor() {
-    // 优先使用环境变量，然后回退到functions.config()
-    let accessKeyId = process.env.DREAMINA_ACCESS_KEY_ID;
-    let secretAccessKey = process.env.DREAMINA_SECRET_ACCESS_KEY;
-
-    // 如果环境变量不存在，尝试使用functions.config()
-    if (!accessKeyId || !secretAccessKey) {
-      const config = functions.config();
-      accessKeyId = accessKeyId || config.dreamina?.access_key_id;
-      secretAccessKey = secretAccessKey || config.dreamina?.secret_access_key;
-    }
+    // 优先使用functions.config()，然后回退到环境变量
+    const config = functions.config();
+    let accessKeyId = config.dreamina?.access_key_id || process.env.DREAMINA_ACCESS_KEY_ID;
+    let secretAccessKey = config.dreamina?.secret_access_key || process.env.DREAMINA_SECRET_ACCESS_KEY;
 
     if (!accessKeyId || !secretAccessKey) {
-      throw new Error('即梦AI API密钥未配置。请设置环境变量DREAMINA_ACCESS_KEY_ID和DREAMINA_SECRET_ACCESS_KEY，或在Firebase Console中设置dreamina.access_key_id和dreamina.secret_access_key');
+      throw new Error('即梦AI API密钥未配置。请使用Firebase CLI设置配置：firebase functions:config:set dreamina.access_key_id="YOUR_KEY" dreamina.secret_access_key="YOUR_SECRET"');
     }
 
     this.accessKeyId = accessKeyId;
@@ -41,7 +35,8 @@ export class DreaminaAPIService {
 
     functions.logger.info('即梦AI服务初始化成功', {
       accessKeyId: this.accessKeyId ? `${this.accessKeyId.slice(0, 8)}...` : 'undefined',
-      hasSecretKey: !!this.secretAccessKey
+      hasSecretKey: !!this.secretAccessKey,
+      configSource: config.dreamina?.access_key_id ? 'functions.config()' : 'environment'
     });
   }
 
