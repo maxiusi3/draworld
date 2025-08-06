@@ -176,51 +176,19 @@ jobs:
         gcloud auth list
         gcloud config list
 
-        # 部署每个函数
-        echo "📤 Deploying createVideoTask..."
-        gcloud functions deploy createVideoTask \
-          --source=functions \
-          --entry-point=createVideoTask \
-          --runtime=nodejs20 \
-          --region=us-central1 \
-          --project=${{ secrets.FIREBASE_PROJECT_ID }} \
-          --trigger-http \
-          --allow-unauthenticated \
-          --set-env-vars="DREAMINA_ACCESS_KEY_ID=${{ secrets.DREAMINA_ACCESS_KEY_ID }},DREAMINA_SECRET_ACCESS_KEY=${{ secrets.DREAMINA_SECRET_ACCESS_KEY }}" \
-          --quiet || echo "⚠️ createVideoTask deployment failed"
+        # 部署每个函数 - 使用Firebase CLI而不是gcloud，因为这些是Callable Functions
+        echo "📤 Deploying Functions using Firebase CLI..."
 
-        echo "📤 Deploying getUserVideoTasks..."
-        gcloud functions deploy getUserVideoTasks \
-          --source=functions \
-          --entry-point=getUserVideoTasks \
-          --runtime=nodejs20 \
-          --region=us-central1 \
-          --project=${{ secrets.FIREBASE_PROJECT_ID }} \
-          --trigger-http \
-          --allow-unauthenticated \
-          --quiet || echo "⚠️ getUserVideoTasks deployment failed"
+        # 设置环境变量到functions配置
+        echo "🔧 Setting up environment variables..."
+        firebase functions:config:set \
+          dreamina.access_key_id="${{ secrets.DREAMINA_ACCESS_KEY_ID }}" \
+          dreamina.secret_access_key="${{ secrets.DREAMINA_SECRET_ACCESS_KEY }}" \
+          --project=${{ secrets.FIREBASE_PROJECT_ID }} || echo "⚠️ Failed to set config"
 
-        echo "📤 Deploying createUserProfile..."
-        gcloud functions deploy createUserProfile \
-          --source=functions \
-          --entry-point=createUserProfile \
-          --runtime=nodejs20 \
-          --region=us-central1 \
-          --project=${{ secrets.FIREBASE_PROJECT_ID }} \
-          --trigger-http \
-          --allow-unauthenticated \
-          --quiet || echo "⚠️ createUserProfile deployment failed"
-
-        echo "📤 Deploying deleteUserData..."
-        gcloud functions deploy deleteUserData \
-          --source=functions \
-          --entry-point=deleteUserData \
-          --runtime=nodejs20 \
-          --region=us-central1 \
-          --project=${{ secrets.FIREBASE_PROJECT_ID }} \
-          --trigger-http \
-          --allow-unauthenticated \
-          --quiet || echo "⚠️ deleteUserData deployment failed"
+        # 部署所有Functions
+        echo "📤 Deploying all Functions..."
+        firebase deploy --only functions --project=${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive || echo "⚠️ Functions deployment failed"
 
         echo "✅ Functions deployment completed"
 
