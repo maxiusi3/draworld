@@ -133,6 +133,10 @@ jobs:
         echo "🗄️ Creating Tablestore tables..."
         node scripts/create_ots_tables.js
 
+        echo "🧹 Cleaning up existing resources..."
+        chmod +x ../cleanup-resources.sh
+        ../cleanup-resources.sh || echo "Cleanup completed with warnings"
+
         echo "🚀 Deploying with Terraform..."
 
         # 准备函数代码包

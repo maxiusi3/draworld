@@ -29,7 +29,7 @@ data "alicloud_account" "current" {}
 
 # FC 服务
 resource "alicloud_fc_service" "main" {
-  name            = var.service_name
+  name            = "${var.service_name}-${random_id.bucket_suffix.hex}"
   description     = "Tonghua World Video Generation Service"
   internet_access = true
   role            = alicloud_ram_role.fc_role.arn
@@ -42,14 +42,14 @@ resource "alicloud_fc_service" "main" {
 
 # 日志项目
 resource "alicloud_log_project" "main" {
-  name        = "${var.service_name}-logs"
+  name        = "${var.service_name}-logs-${random_id.bucket_suffix.hex}"
   description = "Logs for Tonghua World service"
 }
 
 # 日志存储
 resource "alicloud_log_store" "main" {
   project          = alicloud_log_project.main.name
-  name             = "fc-logs"
+  name             = "fc-logs-${random_id.bucket_suffix.hex}"
   retention_period = 7
 }
 
@@ -144,7 +144,7 @@ resource "alicloud_oss_bucket_policy" "static" {
 
 # RAM 角色 - FC 执行角色
 resource "alicloud_ram_role" "fc_role" {
-  name = "${var.service_name}-fc-role"
+  name = "${var.service_name}-fc-role-${random_id.bucket_suffix.hex}"
   
   document = jsonencode({
     Statement = [
