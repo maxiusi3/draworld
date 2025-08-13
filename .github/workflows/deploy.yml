@@ -139,44 +139,63 @@ jobs:
 
         # 创建 FC 服务
         echo "📦 Creating FC service..."
-        aliyun fc CreateService \
+        aliyun fc POST /services \
           --region cn-hangzhou \
-          --serviceName tonghua-world-svc \
-          --description "Tonghua World Video Generation Service" \
-          --internetAccess true || echo "Service may already exist"
+          --body '{
+            "serviceName": "tonghua-world-svc",
+            "description": "Tonghua World Video Generation Service",
+            "internetAccess": true
+          }' || echo "Service may already exist"
 
         # 创建 FC 函数
         echo "⚡ Creating FC function..."
         cd fc
         zip -r function.zip .
+        FUNCTION_CODE=$(base64 -w 0 function.zip)
         cd ..
 
-        aliyun fc CreateFunction \
+        aliyun fc POST /services/tonghua-world-svc/functions \
           --region cn-hangzhou \
-          --serviceName tonghua-world-svc \
-          --functionName api \
-          --runtime nodejs20 \
-          --handler index.handler \
-          --codeZipFile fc/function.zip \
-          --memorySize 1024 \
-          --timeout 120 \
-          --description "API function for video generation" \
-          --environmentVariables '{"TONGYI_API_KEY":"'$DASHSCOPE_API_KEY'","OSS_REGION":"cn-hangzhou","OSS_BUCKET_UPLOAD":"draworld2025","OSS_BUCKET_STATIC":"draworld2","TABESTORE_INSTANCE":"i01wvvv53p0q","OIDC_ISSUER":"https://draworld.authing.cn/oidc","OIDC_JWKS":"https://draworld.authing.cn/oidc/.well-known/jwks.json","OIDC_AUD":"689adde75ecb97cd396860eb","ASSUME_ROLE_ARN":"acs:ram::1950683455496289:role/upload"}' || \
-        aliyun fc UpdateFunctionCode \
+          --body '{
+            "functionName": "api",
+            "runtime": "nodejs20",
+            "handler": "index.handler",
+            "code": {
+              "zipFile": "'$FUNCTION_CODE'"
+            },
+            "memorySize": 1024,
+            "timeout": 120,
+            "description": "API function for video generation",
+            "environmentVariables": {
+              "TONGYI_API_KEY": "'$DASHSCOPE_API_KEY'",
+              "OSS_REGION": "cn-hangzhou",
+              "OSS_BUCKET_UPLOAD": "draworld2025",
+              "OSS_BUCKET_STATIC": "draworld2",
+              "TABESTORE_INSTANCE": "i01wvvv53p0q",
+              "OIDC_ISSUER": "https://draworld.authing.cn/oidc",
+              "OIDC_JWKS": "https://draworld.authing.cn/oidc/.well-known/jwks.json",
+              "OIDC_AUD": "689adde75ecb97cd396860eb",
+              "ASSUME_ROLE_ARN": "acs:ram::1950683455496289:role/upload"
+            }
+          }' || \
+        aliyun fc PUT /services/tonghua-world-svc/functions/api/code \
           --region cn-hangzhou \
-          --serviceName tonghua-world-svc \
-          --functionName api \
-          --codeZipFile fc/function.zip
+          --body '{
+            "zipFile": "'$FUNCTION_CODE'"
+          }'
 
         # 创建 HTTP 触发器
         echo "🌐 Creating HTTP trigger..."
-        aliyun fc CreateTrigger \
+        aliyun fc POST /services/tonghua-world-svc/functions/api/triggers \
           --region cn-hangzhou \
-          --serviceName tonghua-world-svc \
-          --functionName api \
-          --triggerName httpTrigger \
-          --triggerType http \
-          --triggerConfig '{"authType":"anonymous","methods":["GET","POST","OPTIONS"]}' || echo "Trigger may already exist"
+          --body '{
+            "triggerName": "httpTrigger",
+            "triggerType": "http",
+            "triggerConfig": {
+              "authType": "anonymous",
+              "methods": ["GET", "POST", "OPTIONS"]
+            }
+          }' || echo "Trigger may already exist"
 
         echo "✅ FC deployment completed!"
 
