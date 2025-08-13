@@ -2,7 +2,7 @@
 // 作用: 创建 Tablestore 表：videos 与 videos_by_user
 // 运行: 在 serverless 目录执行 `node scripts/create_ots_tables.js`
 
-import TableStore from 'tablestore';
+const TableStore = require('tablestore');
 
 const REGION = process.env.OTS_REGION || process.env.OSS_REGION || 'cn-hangzhou';
 const INSTANCE = process.env.TABESTORE_INSTANCE || process.env.OTS_INSTANCE || 'i01wvvv53p0q';

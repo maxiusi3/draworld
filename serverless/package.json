@@ -2,7 +2,6 @@
   "name": "tonghua-world-serverless",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
   "scripts": {
     "build:fc": "tsc -p tsconfig.fc.json && cp fc/index.js ./fc/index.js || true",
     "dev": "echo 'Use s local invoke for FC local testing'",
