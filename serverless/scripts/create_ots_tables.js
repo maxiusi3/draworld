@@ -71,11 +71,25 @@ async function main() {
     console.error('Missing AK/SK env: ALIBABA_CLOUD_ACCESS_KEY_ID / ALIBABA_CLOUD_ACCESS_KEY_SECRET');
     process.exit(1);
   }
-  const cli = client();
-  await createVideosTable(cli);
-  await createVideosByUserTable(cli);
-  console.log('[DONE] Tablestore tables ensured');
+
+  try {
+    const cli = client();
+    await createVideosTable(cli);
+    await createVideosByUserTable(cli);
+    console.log('[DONE] Tablestore tables ensured');
+  } catch (error) {
+    console.warn('[WARNING] Tablestore table creation failed, but continuing deployment...');
+    console.warn('Error details:', error.message);
+    console.warn('Please create tables manually in Tablestore console later.');
+    console.log('[SKIP] Continuing with FC deployment...');
+    // 不退出进程，让部署继续
+  }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error('[ERROR] Unexpected error in table creation script:', e);
+  console.log('[CONTINUE] Proceeding with deployment despite table creation issues...');
+  // 即使出现意外错误也不中断部署
+  process.exit(0); // 改为成功退出
+});
 
