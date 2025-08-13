@@ -227,15 +227,58 @@ jobs:
 
         echo "🪣 Static bucket name: $OSS_BUCKET_STATIC"
 
-        # 上传所有文件
-        ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force
+        # 先上传 HTML 文件并设置正确的 MIME 类型
+        echo "📄 Uploading HTML files with correct MIME type..."
+        find dist -name "*.html" -type f | while read file; do
+          relative_path=${file#dist/}
+          echo "Uploading $file as $relative_path"
+          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
+            --endpoint $OSS_ENDPOINT \
+            --access-key-id $OSS_ACCESS_KEY_ID \
+            --access-key-secret $OSS_ACCESS_KEY_SECRET \
+            --meta "Content-Type:text/html" \
+            --force
+        done
 
-        # 单独设置 HTML 文件的 Content-Type
-        echo "🔧 Setting Content-Type for index.html..."
-        ossutil set-meta oss://$OSS_BUCKET_STATIC/index.html "Content-Type:text/html" --update --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
+        # 上传 CSS 文件
+        echo "🎨 Uploading CSS files..."
+        find dist -name "*.css" -type f | while read file; do
+          relative_path=${file#dist/}
+          echo "Uploading $file as $relative_path"
+          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
+            --endpoint $OSS_ENDPOINT \
+            --access-key-id $OSS_ACCESS_KEY_ID \
+            --access-key-secret $OSS_ACCESS_KEY_SECRET \
+            --meta "Content-Type:text/css" \
+            --force
+        done
 
-        # 验证设置是否成功
-        echo "🔍 Verifying Content-Type setting..."
+        # 上传 JS 文件
+        echo "⚡ Uploading JavaScript files..."
+        find dist -name "*.js" -type f | while read file; do
+          relative_path=${file#dist/}
+          echo "Uploading $file as $relative_path"
+          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
+            --endpoint $OSS_ENDPOINT \
+            --access-key-id $OSS_ACCESS_KEY_ID \
+            --access-key-secret $OSS_ACCESS_KEY_SECRET \
+            --meta "Content-Type:application/javascript" \
+            --force
+        done
+
+        # 上传其他文件（图片、字体等）
+        echo "📁 Uploading other files..."
+        ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ \
+          --endpoint $OSS_ENDPOINT \
+          --access-key-id $OSS_ACCESS_KEY_ID \
+          --access-key-secret $OSS_ACCESS_KEY_SECRET \
+          --force \
+          --exclude "*.html" \
+          --exclude "*.css" \
+          --exclude "*.js"
+
+        # 验证 index.html 的 Content-Type
+        echo "🔍 Verifying index.html Content-Type..."
         ossutil stat oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
         echo "✅ Frontend deployment completed!"
 
