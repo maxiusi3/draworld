@@ -81,16 +81,25 @@ jobs:
     - name: Build project
       run: VITE_API_BASE_URL=${{ secrets.API_BASE_URL }} pnpm build
 
-    - name: Install Serverless Devs
-      run: npm i -g @serverless-devs/s
+    - name: Install Aliyun CLI
+      run: |
+        # 下载并安装阿里云 CLI
+        wget https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+        tar -xzf aliyun-cli-linux-latest-amd64.tgz
+        sudo mv aliyun /usr/local/bin/
+        aliyun version
 
-    - name: Configure Aliyun Credentials
+    - name: Configure Aliyun CLI
       env:
-        ACCOUNT_ID: ${{ secrets.ALIYUN_ACCOUNT_ID }}
         ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
-        s config add --AccessKeyID "$ACCESS_KEY_ID" --AccessKeySecret "$ACCESS_KEY_SECRET" --AccountID "$ACCOUNT_ID" -a default
+        aliyun configure set \
+          --profile default \
+          --mode AK \
+          --region cn-hangzhou \
+          --access-key-id "$ACCESS_KEY_ID" \
+          --access-key-secret "$ACCESS_KEY_SECRET"
 
     - name: Deploy Backend to FC & API Gateway
       env:
@@ -127,7 +136,49 @@ jobs:
         node scripts/create_ots_tables.js
 
         echo "🚀 Deploying to Aliyun FC..."
-        s deploy -y
+
+        # 创建 FC 服务
+        echo "📦 Creating FC service..."
+        aliyun fc CreateService \
+          --region cn-hangzhou \
+          --serviceName tonghua-world-svc \
+          --description "Tonghua World Video Generation Service" \
+          --internetAccess true || echo "Service may already exist"
+
+        # 创建 FC 函数
+        echo "⚡ Creating FC function..."
+        cd fc
+        zip -r function.zip .
+        cd ..
+
+        aliyun fc CreateFunction \
+          --region cn-hangzhou \
+          --serviceName tonghua-world-svc \
+          --functionName api \
+          --runtime nodejs20 \
+          --handler index.handler \
+          --codeZipFile fc/function.zip \
+          --memorySize 1024 \
+          --timeout 120 \
+          --description "API function for video generation" \
+          --environmentVariables '{"TONGYI_API_KEY":"'$DASHSCOPE_API_KEY'","OSS_REGION":"cn-hangzhou","OSS_BUCKET_UPLOAD":"draworld2025","OSS_BUCKET_STATIC":"draworld2","TABESTORE_INSTANCE":"i01wvvv53p0q","OIDC_ISSUER":"https://draworld.authing.cn/oidc","OIDC_JWKS":"https://draworld.authing.cn/oidc/.well-known/jwks.json","OIDC_AUD":"689adde75ecb97cd396860eb","ASSUME_ROLE_ARN":"acs:ram::1950683455496289:role/upload"}' || \
+        aliyun fc UpdateFunctionCode \
+          --region cn-hangzhou \
+          --serviceName tonghua-world-svc \
+          --functionName api \
+          --codeZipFile fc/function.zip
+
+        # 创建 HTTP 触发器
+        echo "🌐 Creating HTTP trigger..."
+        aliyun fc CreateTrigger \
+          --region cn-hangzhou \
+          --serviceName tonghua-world-svc \
+          --functionName api \
+          --triggerName httpTrigger \
+          --triggerType http \
+          --triggerConfig '{"authType":"anonymous","methods":["GET","POST","OPTIONS"]}' || echo "Trigger may already exist"
+
+        echo "✅ FC deployment completed!"
 
     - name: Deploy Frontend to OSS
       env:
