@@ -231,7 +231,12 @@ jobs:
         ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force
 
         # 单独设置 HTML 文件的 Content-Type
-        ossutil set-meta oss://$OSS_BUCKET_STATIC/index.html "Content-Type:text/html" --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
+        echo "🔧 Setting Content-Type for index.html..."
+        ossutil set-meta oss://$OSS_BUCKET_STATIC/index.html "Content-Type:text/html" --update --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
+
+        # 验证设置是否成功
+        echo "🔍 Verifying Content-Type setting..."
+        ossutil stat oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
         echo "✅ Frontend deployment completed!"
 
 
