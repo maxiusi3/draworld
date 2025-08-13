@@ -91,30 +91,30 @@ jobs:
     - name: Install Serverless Devs
       run: npm i -g @serverless-devs/s
 
-    - name: Build and Deploy FC + API GW
+    - name: Deploy Backend to FC & API Gateway
       env:
         DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
         ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIYUN_ACCOUNT_ID }}
         ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+      working-directory: ./serverless
       run: |
-        echo "🚀 Build and deploy FC and API Gateway..."
-        cd serverless
+        echo "🚀 Building and deploying backend..."
         npm ci || npm i
         npm run build:fc
         node scripts/create_ots_tables.js
         s deploy -y
 
-        cd ..
-        echo "📦 Frontend build already available in dist (from build job)."
-
-
+    - name: Deploy Frontend to OSS
+      env:
+        ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+      run: |
         echo "🚀 Uploading frontend to OSS..."
         npm i -g ossutil
-        ossutil config -e oss-cn-hangzhou.aliyuncs.com -i $ALIBABA_CLOUD_ACCESS_KEY_ID -k $ALIBABA_CLOUD_ACCESS_KEY_SECRET -L CH
-        ossutil cp -rf dist oss://draworld2/
-
-        echo "✅ Aliyun deployment completed!"
+        ossutil config -e oss-cn-hangzhou.aliyuncs.com -i $ALIBABA_CLOUD_ACCESS_KEY_ID -k $ALIBABA_CLOUD_ACCESS_KEY_SECRET -L CH --force
+        ossutil cp -rf dist/ oss://draworld2/ --force
+        echo "✅ Frontend deployment completed!"
 
 
     - name: Clean up service account file
