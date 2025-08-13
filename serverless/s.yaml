@@ -27,7 +27,7 @@ services:
         memorySize: 1024
         timeout: 120
         environmentVariables:
-          TONGYI_API_KEY: ${env.DASHSCOPE_API_KEY}
+          TONGYI_API_KEY: "placeholder-api-key"
           OSS_REGION: cn-hangzhou
           OSS_BUCKET_UPLOAD: draworld2025
           OSS_BUCKET_STATIC: draworld2
