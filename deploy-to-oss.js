@@ -9,6 +9,28 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// 简单的环境变量加载器
+function loadEnvFile() {
+  try {
+    const envContent = fs.readFileSync('.env', 'utf8');
+    const lines = envContent.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        if (key && valueParts.length > 0) {
+          process.env[key.trim()] = valueParts.join('=').trim();
+        }
+      }
+    }
+  } catch (error) {
+    // .env文件不存在或无法读取，使用系统环境变量
+  }
+}
+
+// 加载环境变量
+loadEnvFile();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
