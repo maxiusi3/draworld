@@ -81,25 +81,19 @@ jobs:
     - name: Build project
       run: VITE_API_BASE_URL=${{ secrets.API_BASE_URL }} pnpm build
 
-    - name: Install Aliyun CLI
-      run: |
-        # 下载并安装阿里云 CLI
-        wget https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
-        tar -xzf aliyun-cli-linux-latest-amd64.tgz
-        sudo mv aliyun /usr/local/bin/
-        aliyun version
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.0"
 
-    - name: Configure Aliyun CLI
+    - name: Configure Terraform Variables
       env:
-        ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-        ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        ALIYUN_ACCESS_KEY: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        ALIYUN_SECRET_KEY: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        ALIYUN_REGION: cn-hangzhou
+        TF_VAR_tongyi_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
       run: |
-        aliyun configure set \
-          --profile default \
-          --mode AK \
-          --region cn-hangzhou \
-          --access-key-id "$ACCESS_KEY_ID" \
-          --access-key-secret "$ACCESS_KEY_SECRET"
+        echo "Terraform environment configured"
 
     - name: Deploy Backend to FC & API Gateway
       env:
@@ -135,69 +129,38 @@ jobs:
         echo "🗄️ Creating Tablestore tables..."
         node scripts/create_ots_tables.js
 
-        echo "🚀 Deploying to Aliyun FC..."
+        echo "🚀 Deploying with Terraform..."
 
-        # 创建 FC 服务
-        echo "📦 Creating FC service..."
-        aliyun fc POST /services \
-          --region cn-hangzhou \
-          --body '{
-            "serviceName": "tonghua-world-svc",
-            "description": "Tonghua World Video Generation Service",
-            "internetAccess": true
-          }' || echo "Service may already exist"
-
-        # 创建 FC 函数
-        echo "⚡ Creating FC function..."
+        # 准备函数代码包
+        echo "📦 Preparing function code..."
         cd fc
         zip -r function.zip .
-        FUNCTION_CODE=$(base64 -w 0 function.zip)
         cd ..
 
-        aliyun fc POST /services/tonghua-world-svc/functions \
-          --region cn-hangzhou \
-          --body '{
-            "functionName": "api",
-            "runtime": "nodejs20",
-            "handler": "index.handler",
-            "code": {
-              "zipFile": "'$FUNCTION_CODE'"
-            },
-            "memorySize": 1024,
-            "timeout": 120,
-            "description": "API function for video generation",
-            "environmentVariables": {
-              "TONGYI_API_KEY": "'$DASHSCOPE_API_KEY'",
-              "OSS_REGION": "cn-hangzhou",
-              "OSS_BUCKET_UPLOAD": "draworld2025",
-              "OSS_BUCKET_STATIC": "draworld2",
-              "TABESTORE_INSTANCE": "i01wvvv53p0q",
-              "OIDC_ISSUER": "https://draworld.authing.cn/oidc",
-              "OIDC_JWKS": "https://draworld.authing.cn/oidc/.well-known/jwks.json",
-              "OIDC_AUD": "689adde75ecb97cd396860eb",
-              "ASSUME_ROLE_ARN": "acs:ram::1950683455496289:role/upload"
-            }
-          }' || \
-        aliyun fc PUT /services/tonghua-world-svc/functions/api/code \
-          --region cn-hangzhou \
-          --body '{
-            "zipFile": "'$FUNCTION_CODE'"
-          }'
+        # 切换到 Terraform 目录
+        cd ../terraform
 
-        # 创建 HTTP 触发器
-        echo "🌐 Creating HTTP trigger..."
-        aliyun fc POST /services/tonghua-world-svc/functions/api/triggers \
-          --region cn-hangzhou \
-          --body '{
-            "triggerName": "httpTrigger",
-            "triggerType": "http",
-            "triggerConfig": {
-              "authType": "anonymous",
-              "methods": ["GET", "POST", "OPTIONS"]
-            }
-          }' || echo "Trigger may already exist"
+        # 初始化 Terraform
+        echo "🔧 Initializing Terraform..."
+        terraform init
 
-        echo "✅ FC deployment completed!"
+        # 验证配置
+        echo "✅ Validating Terraform configuration..."
+        terraform validate
+
+        # 规划部署
+        echo "📋 Planning Terraform deployment..."
+        terraform plan
+
+        # 应用部署
+        echo "🚀 Applying Terraform deployment..."
+        terraform apply -auto-approve
+
+        # 输出部署结果
+        echo "📊 Deployment outputs:"
+        terraform output
+
+        echo "✅ Terraform deployment completed!"
 
     - name: Deploy Frontend to OSS
       env:
@@ -219,7 +182,9 @@ jobs:
         ls -la dist/
 
         echo "📦 Installing ossutil..."
-        npm i -g ossutil
+        wget https://gosspublic.alicdn.com/ossutil/1.7.14/ossutil64
+        chmod +x ossutil64
+        sudo mv ossutil64 /usr/local/bin/ossutil
 
         echo "⚙️ Configuring ossutil..."
         ossutil config -e oss-cn-hangzhou.aliyuncs.com -i $ALIBABA_CLOUD_ACCESS_KEY_ID -k $ALIBABA_CLOUD_ACCESS_KEY_SECRET -L CH --force
