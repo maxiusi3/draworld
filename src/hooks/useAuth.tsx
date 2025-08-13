@@ -1,16 +1,29 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import { sessionManager } from '../lib/auth';
 import { AuthSession } from '../lib/adapters/types';
 import { authAdapter } from '../lib/adapters/authAdapter';
 
+interface User {
+  uid: string;
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  metadata?: {
+    creationTime?: string;
+    lastSignInTime?: string;
+  };
+}
+
 interface AuthContextType {
-  currentUser: { uid: string } | null;
+  currentUser: User | null;
   session: AuthSession | null;
   setSession: (session: AuthSession) => void;
   loginByRedirect: () => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
+  resetPassword?: (email: string) => Promise<void>;
+  delete?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +41,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [currentUser, setCurrentUser] = useState<{ uid: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [session, setSessionState] = useState<AuthSession | null>(null);
 
@@ -37,7 +50,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (storedSession?.tokens?.id_token) {
       setSessionState(storedSession);
       // 简化：仅基于 id_token 存在视为已登录用户
-      setCurrentUser({ uid: 'oidc-user' });
+      setCurrentUser({
+        uid: 'oidc-user',
+        email: 'user@example.com',
+        displayName: '用户',
+        photoURL: '',
+        metadata: {
+          creationTime: new Date().toISOString(),
+          lastSignInTime: new Date().toISOString()
+        }
+      });
     }
     setLoading(false);
   }, []);
@@ -61,6 +83,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     toast.success('已登出');
   };
 
+  // 重置密码（占位实现）
+  const resetPassword = async (email: string) => {
+    toast.success('密码重置邮件已发送');
+  };
+
+  // 删除账户（占位实现）
+  const deleteAccount = async () => {
+    sessionManager.clearSession();
+    setSessionState(null);
+    setCurrentUser(null);
+    toast.success('账户已删除');
+  };
+
   const value: AuthContextType = {
     currentUser,
     session,
@@ -68,6 +103,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loginByRedirect,
     logout,
     loading,
+    resetPassword,
+    delete: deleteAccount,
   };
 
 
