@@ -1,24 +1,15 @@
-# 语言: YAML
-# 说明: Serverless Devs 配置骨架（杭州区域），限制体积，后续细化
-
 edition: 1.0.0
 name: tonghua-world
 access: default
-
-vars:
-  region: cn-hangzhou
-  serviceName: tonghua-world-svc
-  apiGroupName: tonghua
 
 services:
   api:
     component: fc
     props:
-      region: ${vars.region}
+      region: cn-hangzhou
       service:
-        name: ${vars.serviceName}
+        name: tonghua-world-svc
         internetAccess: true
-        role: AliyunServiceRoleForFC
       function:
         name: api
         runtime: nodejs20
@@ -42,25 +33,4 @@ services:
           config:
             authType: anonymous
             methods: [ 'GET', 'POST', 'OPTIONS' ]
-    actions:
-      pre-deploy:
-        - run: npm i --silent && npm run build:fc
-          path: .
-      post-deploy:
-        - component: apigw
-          props:
-            groupName: ${vars.apiGroupName}
-            stageName: RELEASE
-            serviceName: ${vars.serviceName}
-            serviceFunction:
-              name: api
-            routes:
-              - path: /api/video/start
-                method: POST
-              - path: /api/video/status
-                method: GET
-              - path: /api/video/list
-                method: GET
-              - path: /api/oss/sts
-                method: GET
 
