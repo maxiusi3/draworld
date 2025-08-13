@@ -227,11 +227,11 @@ jobs:
 
         echo "🪣 Static bucket name: $OSS_BUCKET_STATIC"
 
-        # 先上传 HTML 文件并设置正确的 Content-Type（使用 headers 而不是 meta）
-        ossutil cp dist/index.html oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --headers "Content-Type:text/html" --force
+        # 上传所有文件
+        ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force
 
-        # 上传其他文件
-        ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force --exclude "*.html"
+        # 单独设置 HTML 文件的 Content-Type
+        ossutil set-meta oss://$OSS_BUCKET_STATIC/index.html Content-Type text/html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
         echo "✅ Frontend deployment completed!"
 
 
