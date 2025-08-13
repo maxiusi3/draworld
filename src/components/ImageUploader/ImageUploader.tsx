@@ -5,7 +5,7 @@ import {
   PhotoIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { storageService } from '../../services/storageService';
+import { validateImageFile, compressImage } from '../../services/fileUtils';
 import toast from 'react-hot-toast';
 
 interface ImageUploaderProps {
@@ -20,7 +20,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, loading 
     const file = acceptedFiles[0];
     
     // 验证文件
-    const validation = storageService.validateImageFile(file);
+    const validation = validateImageFile(file);
     if (!validation.valid) {
       toast.error(validation.error!);
       return;
@@ -35,7 +35,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, loading 
       
       // 如果文件过大或尺寸过大，进行压缩
       if (file.size > 2 * 1024 * 1024) { // 2MB
-        processedFile = await storageService.compressImage(file, 1920, 1080, 0.8);
+        processedFile = await compressImage(file, 1920, 1080, 0.8);
         toast.success('图片已自动压缩优化');
       }
       

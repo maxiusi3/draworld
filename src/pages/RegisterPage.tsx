@@ -16,7 +16,7 @@ const RegisterPage: React.FC = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { register, loginWithGoogle } = useAuth();
+  const { loginByRedirect } = useAuth();
   const navigate = useNavigate();
 
   const validatePassword = (password: string) => {
@@ -67,8 +67,7 @@ const RegisterPage: React.FC = () => {
     
     setLoading(true);
     try {
-      await register(formData.email, formData.password, formData.displayName);
-      navigate('/dashboard');
+      await loginByRedirect();
     } catch (error) {
       // 错误已在useAuth中处理
     } finally {
@@ -84,8 +83,7 @@ const RegisterPage: React.FC = () => {
     
     setLoading(true);
     try {
-      await loginWithGoogle();
-      navigate('/dashboard');
+      await loginByRedirect();
     } catch (error) {
       // 错误已在useAuth中处理
     } finally {

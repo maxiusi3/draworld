@@ -36,8 +36,13 @@ output "oss_bucket_static" {
 }
 
 output "frontend_url" {
-  description = "前端访问 URL"
+  description = "前端访问 URL（对象存储）"
   value       = "https://${alicloud_oss_bucket.static.bucket}.oss-${var.region}.aliyuncs.com/index.html"
+}
+
+output "frontend_website_url" {
+  description = "前端访问 URL（静态网站）"
+  value       = "https://${alicloud_oss_bucket.static.bucket}.oss-website-${var.region}.aliyuncs.com/"
 }
 
 output "oss_upload_endpoint" {

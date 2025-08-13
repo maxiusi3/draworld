@@ -202,7 +202,7 @@ flowchart TD
 
 3.产品结构图
 mindmap
-  root((童画奇旅网站 MVP))
+  root((童画世界网站 MVP))
     ::icon(fa fa-globe)
     A[首页]
       ::icon(fa fa-home)
@@ -260,7 +260,7 @@ Logo: 位于左侧，点击返回首页。
 
 🦶 页脚 (Footer):
 
-版权信息 (© 2024 童画奇旅)。
+版权信息 (© 2025 童画世界)。
 
 链接: [服务条款] [隐私政策] [关于我们]。
 

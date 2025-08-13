@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试图片上传</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+    <h1>Firebase 图片上传测试</h1>
+    
+    <div id="auth-section">
+        <h2>用户认证</h2>
+        <button onclick="signInAnonymously()">匿名登录</button>
+        <div id="auth-status">未登录</div>
+    </div>
+    
+    <div id="upload-section" style="display:none;">
+        <h2>图片上传</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="uploadImage()">上传图片</button>
+        <div id="upload-status"></div>
+        <div id="upload-result"></div>
+    </div>
+
+    <script>
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuZNOmX8-0j2dry6f9Bf3fR5Qmyj_CsCA",
+            authDomain: "draworld-6898f.firebaseapp.com",
+            projectId: "draworld-6898f",
+            storageBucket: "draworld-6898f.appspot.com",
+            messagingSenderId: "814051215268",
+            appId: "1:814051215268:web:f251c9b76e9452ed1d6331"
+        };
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        // 监听认证状态
+        auth.onAuthStateChanged((user) => {
+            const authStatus = document.getElementById('auth-status');
+            const uploadSection = document.getElementById('upload-section');
+            
+            if (user) {
+                authStatus.textContent = `已登录: ${user.uid}`;
+                uploadSection.style.display = 'block';
+                console.log('用户已登录:', user.uid);
+            } else {
+                authStatus.textContent = '未登录';
+                uploadSection.style.display = 'none';
+                console.log('用户未登录');
+            }
+        });
+
+        // 匿名登录
+        function signInAnonymously() {
+            auth.signInAnonymously()
+                .then(() => {
+                    console.log('匿名登录成功');
+                })
+                .catch((error) => {
+                    console.error('匿名登录失败:', error);
+                    document.getElementById('auth-status').textContent = `登录失败: ${error.message}`;
+                });
+        }
+
+        // 上传图片
+        function uploadImage() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            const statusDiv = document.getElementById('upload-status');
+            const resultDiv = document.getElementById('upload-result');
+            
+            if (!file) {
+                statusDiv.textContent = '请选择一个图片文件';
+                return;
+            }
+            
+            const user = auth.currentUser;
+            if (!user) {
+                statusDiv.textContent = '请先登录';
+                return;
+            }
+            
+            statusDiv.textContent = '正在上传...';
+            resultDiv.textContent = '';
+            
+            // 生成文件路径
+            const timestamp = Date.now();
+            const fileName = `${timestamp}_${file.name}`;
+            const filePath = `users/${user.uid}/images/${fileName}`;
+            
+            console.log('上传路径:', filePath);
+            console.log('文件大小:', file.size, 'bytes');
+            console.log('文件类型:', file.type);
+            
+            // 创建存储引用
+            const storageRef = storage.ref(filePath);
+            
+            // 上传文件
+            const uploadTask = storageRef.put(file);
+            
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    // 上传进度
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    statusDiv.textContent = `上传进度: ${progress.toFixed(1)}%`;
+                    console.log('上传进度:', progress + '%');
+                },
+                (error) => {
+                    // 上传失败
+                    console.error('上传失败:', error);
+                    statusDiv.textContent = `上传失败: ${error.message}`;
+                    resultDiv.textContent = `错误代码: ${error.code}`;
+                },
+                () => {
+                    // 上传成功
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        console.log('上传成功，下载 URL:', downloadURL);
+                        statusDiv.textContent = '上传成功！';
+                        resultDiv.innerHTML = `
+                            <p><strong>下载 URL:</strong></p>
+                            <p style="word-break: break-all; font-size: 12px;">${downloadURL}</p>
+                            <img src="${downloadURL}" style="max-width: 200px; max-height: 200px;">
+                        `;
+                    });
+                }
+            );
+        }
+    </script>
+</body>
+</html>

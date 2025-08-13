@@ -1,7 +1,6 @@
-import { httpsCallable } from 'firebase/functions';
-import { functions, db } from '../config/firebase';
-import { doc, onSnapshot, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { functionsClient } from '../lib/adapters/client';
+
 
 export interface VideoTask {
   id: string;
@@ -26,62 +25,97 @@ export interface CreateVideoTaskParams {
 }
 
 class VideoService {
-  private createVideoTaskFunction = httpsCallable(functions, 'createVideoTask');
-  private getUserVideoTasksFunction = httpsCallable(functions, 'getUserVideoTasks');
-
   /**
-   * 创建视频生成任务
+   * 创建视频生成任务（改为调用后端 /api/video/start）
    */
   async createVideoTask(params: CreateVideoTaskParams): Promise<string> {
     try {
-      const result = await this.createVideoTaskFunction(params);
-      const data = result.data as { taskId: string };
-      return data.taskId;
+      const res = await functionsClient.createVideo({
+        inputImageUrl: params.imageUrl,
+        params: { prompt: params.prompt, aspectRatio: params.aspectRatio, musicStyle: params.musicStyle }
+      });
+      if (!res.taskId) throw new Error('Invalid API response');
+      return res.taskId;
     } catch (error: any) {
       console.error('创建视频任务失败:', error);
-      
       let message = '创建任务失败';
-      if (error.code === 'unauthenticated') {
-        message = '请先登录';
-      } else if (error.message) {
-        message = error.message;
+      let shouldRetry = false;
+
+      // 根据错误代码提供具体的错误信息
+      switch (error.code) {
+        case 'unauthenticated':
+          message = '请先登录后再试';
+          break;
+        case 'permission-denied':
+          message = '权限不足，请检查登录状态';
+          break;
+        case 'unavailable':
+          message = '服务暂时不可用，请稍后重试';
+          shouldRetry = true;
+          break;
+        case 'deadline-exceeded':
+          message = '请求超时，请稍后重试';
+          shouldRetry = true;
+          break;
+        case 'resource-exhausted':
+          message = 'API配额不足，请稍后重试';
+          shouldRetry = true;
+          break;
+        case 'invalid-argument':
+          message = error.message || '请求参数无效';
+          break;
+        case 'internal':
+          message = error.message || '系统内部错误，请稍后重试';
+          shouldRetry = true;
+          break;
+        default:
+          if (error.message) {
+            message = error.message;
+          }
+          shouldRetry = true;
       }
-      
-      toast.error(message);
+
+      // 显示错误信息
+      toast.error(message + (shouldRetry ? '\n\n点击重试按钮可以重新尝试' : ''));
+
       throw error;
     }
   }
+
+
 
   /**
    * 监听任务状态变化
    */
   subscribeToTask(taskId: string, callback: (task: VideoTask | null) => void): () => void {
-    const taskRef = doc(db, 'videoTasks', taskId);
-    
-    return onSnapshot(taskRef, (doc) => {
-      if (doc.exists()) {
-        const task = {
-          id: doc.id,
-          ...doc.data()
-        } as VideoTask;
-        callback(task);
-      } else {
-        callback(null);
+    // TODO: 迁移后改为基于自建 API 的长轮询或 SSE
+    let cancelled = false;
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const task = await functionsClient.getVideoStatus(taskId as string);
+          callback(task as any);
+        } catch (e) {
+          console.error('轮询任务状态失败', e);
+        }
+        await new Promise(r => setTimeout(r, 2000));
       }
-    }, (error) => {
-      console.error('监听任务状态失败:', error);
-      toast.error('获取任务状态失败');
-    });
+    };
+    poll();
+    return () => { cancelled = true; };
   }
 
   /**
    * 获取用户的视频任务列表
    */
-  async getUserVideoTasks(userId: string, limitCount = 20, offset = 0): Promise<VideoTask[]> {
+  async getUserVideoTasks(_userId: string, limitCount = 20, _offset = 0): Promise<VideoTask[]> {
     try {
-      const result = await this.getUserVideoTasksFunction({ limit: limitCount, offset });
-      const data = result.data as { tasks: VideoTask[] };
-      return data.tasks;
+      const resp = await fetch(((import.meta as any).env?.VITE_API_BASE_URL || window.location.origin) + `/api/video/list?limit=${limitCount}` , {
+        headers: { 'Authorization': 'Bearer ' + (await (await import('../lib/adapters/authAdapter')).authAdapter.getIdToken()) }
+      });
+      if (!resp.ok) throw new Error('获取列表失败');
+      const data = await resp.json();
+      return (data.tasks || []) as VideoTask[];
     } catch (error: any) {
       console.error('获取用户视频任务失败:', error);
       toast.error('获取任务列表失败');
@@ -89,27 +123,31 @@ class VideoService {
     }
   }
 
+
+
   /**
-   * 直接从 Firestore 获取用户的视频任务列表 (实时)
+   * 获取用户任务列表（暂以轮询或按钮刷新方式，从自建 API 获取）
    */
   subscribeToUserTasks(userId: string, callback: (tasks: VideoTask[]) => void, limitCount = 20): () => void {
-    const tasksQuery = query(
-      collection(db, 'videoTasks'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc'),
-      limit(limitCount)
-    );
-
-    return onSnapshot(tasksQuery, (snapshot) => {
-      const tasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as VideoTask[];
-      callback(tasks);
-    }, (error) => {
-      console.error('监听用户任务失败:', error);
-      toast.error('获取任务列表失败');
-    });
+    let cancelled = false;
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const resp = await fetch(((import.meta as any).env?.VITE_API_BASE_URL || window.location.origin) + `/api/video/list?limit=${limitCount}` , {
+            headers: { 'Authorization': 'Bearer ' + (await (await import('../lib/adapters/authAdapter')).authAdapter.getIdToken()) }
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            callback((data.tasks || []) as VideoTask[]);
+          }
+        } catch (e) {
+          console.error('轮询用户任务失败', e);
+        }
+        await new Promise(r => setTimeout(r, 5000));
+      }
+    };
+    poll();
+    return () => { cancelled = true; };
   }
 }
 

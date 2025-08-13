@@ -1,15 +1,15 @@
 # 童画奇旅 (WhimsyBrush)
 
-[![Deploy Status](https://github.com/maxiusi3/draworld/workflows/Deploy%20WhimsyBrush%20to%20Firebase/badge.svg)](https://github.com/maxiusi3/draworld/actions)
-[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosting-orange?logo=firebase)](https://draworld-6898f.web.app)
+[![Serverless Devs](https://img.shields.io/badge/Serverless-Devs-blue)](https://github.com/Serverless-Devs/Serverless-Devs)
+[![Aliyun](https://img.shields.io/badge/Aliyun-FC%2FOSS%2FTablestore-orange)](https://www.aliyun.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
 
 一个将儿童绘画作品转化为生动动画视频的AI应用。
 
-> 🎉 **部署成功**：应用已成功部署到Firebase Hosting！
-> 🌐 **在线访问**：[https://draworld-6898f.web.app](https://draworld-6898f.web.app)
-> 🚀 **自动部署**：推送代码即可自动更新网站！
+> 🚀 正在迁移至中国本土化架构（阿里云 FC/OSS/Tablestore + Authing OIDC）
+> 🌐 默认同源 API；可在 .env 配置 VITE_API_BASE_URL 指向 API 网关域名
+> 📦 使用 Serverless Devs（s）构建与部署 FC
 
 ## 功能特性
 
@@ -33,23 +33,61 @@
 - **React Hot Toast** - 通知组件
 
 ### 后端
-- **Firebase Authentication** - 用户认证
-- **Firestore Database** - NoSQL 数据库
-- **Firebase Storage** - 文件存储
-- **Firebase Cloud Functions** - 服务端逻辑
-- **Firebase Hosting** - 静态网站托管
+- **Authing OIDC** - 用户认证（手机号验证码）
+- **Tablestore** - NoSQL 数据库
+- **OSS** - 文件存储
+- **函数计算 FC + API 网关** - 服务端逻辑与 API 暴露
+- **OSS 静态网站 + CDN** - 静态网站托管
 
 ### AI 服务
-- **即梦AI (Dreamina)** - Image2Video API
+- **通义万相 wan2.2-i2v-flash（720P）** - 更快更省
+- **演示模式** - 如需可保留（当前默认直连真实 API）
 
-## 快速开始
+## 🚀 立即体验（推荐）
+
+### 最简单的开始方式
+
+1. **克隆并启动**
+```bash
+git clone <repository-url>
+cd whimsy-brush
+npm install
+npm run dev
+```
+
+2. **立即使用**
+- 访问 http://localhost:5173
+- 注册/登录账户
+- 开始使用演示模式创建视频
+
+### 🎭 两种使用模式
+
+#### 演示模式（免费，推荐新用户）
+- ✅ **完全免费，无需配置**
+- ✅ **立即可用，体验完整功能**
+- ⚠️ 生成预设测试视频
+
+#### 云端模式（需要API密钥）
+- ✅ **真实AI生成，个性化内容**
+- ⚠️ 需要通义万相API密钥
+- ⚠️ 消耗API配额
+
+### 配置云端模式（可选）
+
+如果您想使用真实的AI视频生成：
+
+1. 获取 [阿里云通义万相API密钥](https://bailian.console.aliyun.com/)
+2. 在应用中访问 `/api-config` 页面配置
+3. 系统会自动切换到云端模式
+
+## 详细配置（开发者）
 
 ### 前置条件
 
 1. **Node.js** >= 18.0.0
 2. **pnpm** 包管理器
-3. **Firebase CLI**
-4. **即梦AI API 密钥**
+3. **Serverless Devs (s) 工具**
+4. **通义万相 API 密钥**
 
 ### 安装依赖
 
@@ -58,15 +96,15 @@
 npm install -g pnpm
 pnpm install
 
-# 安装 Firebase CLI
-npm install -g firebase-tools
+# 安装 Serverless Devs（s）
+npm i -g @serverless-devs/s
 
 # 安装 Cloud Functions 依赖
 cd functions
 npm install
 ```
 
-### Firebase 配置
+### 阿里云与 Authing 配置
 
 1. **创建 Firebase 项目**
    - 访问 [Firebase Console](https://console.firebase.google.com)
@@ -76,10 +114,11 @@ npm install
 2. **配置 Firebase SDK**
    ```bash
    # 登录 Firebase
-   firebase login
+   s config add --AccessKeyID <AK> --AccessKeySecret <SK> --Name default
    
    # 初始化项目（在项目根目录）
-   firebase init
+   # 配置完成后，进入 serverless 目录执行部署
+cd serverless && npm ci && npm run build:fc && s deploy
    ```
    
    选择以下服务：
@@ -116,10 +155,9 @@ npm install
    pnpm dev
    ```
    
-2. **启动 Firebase 模拟器**
-   ```bash
-   firebase emulators:start
-   ```
+2. **部署/本地联调**
+- 后端：cd serverless && npm ci && npm run build:fc && s deploy
+- 前端：pnpm dev（默认同源调用 API）
 
 3. **编译 TypeScript**
    ```bash

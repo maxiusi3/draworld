@@ -89,7 +89,8 @@ async function otsPutVideoTask(taskId, attrs) {
         tableName: 'videos',
         condition: new tablestore_1.default.Condition(tablestore_1.default.RowExistenceExpectation.IGNORE, null),
         primaryKey: [{ 'tenantId': 'tonghua' }, { 'videoId': taskId }],
-        attributeColumns: Object.entries(attrs).map(([k, v]) => ({ colName: k, colValue: v }))
+        // 注意：Tablestore SDK 字段名为 columnName/columnValue
+        attributeColumns: Object.entries(attrs).map(([k, v]) => ({ columnName: k, columnValue: v }))
     };
     await client.putRow(params);
 }

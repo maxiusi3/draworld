@@ -1,0 +1,25 @@
+{
+  "name": "uploadimage-function",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test_api.js",
+    "quick-test": "node quick_test.js",
+    "deploy": "npm run deploy:create && npm run deploy:get",
+    "deploy:create": "gcloud functions deploy createVideoTask --runtime nodejs20 --trigger-http --allow-unauthenticated --source . --entry-point createVideoTask --memory 512MB --timeout 540s",
+    "deploy:get": "gcloud functions deploy getVideoTaskResult --runtime nodejs20 --trigger-http --allow-unauthenticated --source . --entry-point getVideoTaskResult --memory 512MB --timeout 540s",
+    "logs:create": "gcloud functions logs read createVideoTask --limit 50",
+    "logs:get": "gcloud functions logs read getVideoTaskResult --limit 50",
+    "status": "gcloud functions describe createVideoTask --format='value(state)' && gcloud functions describe getVideoTaskResult --format='value(state)'",
+    "urls": "echo 'Create Task: https://us-central1-draworld-6898f.cloudfunctions.net/createVideoTask' && echo 'Get Result: https://us-central1-draworld-6898f.cloudfunctions.net/getVideoTaskResult'",
+    "clean": "rm -rf node_modules package-lock.json && npm install"
+  },
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.5.0",
+    "node-fetch": "^2.6.7"
+  },
+  "engines": {
+    "node": "20"
+  }
+}

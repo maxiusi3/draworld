@@ -13,12 +13,16 @@ import {
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { taskFixer } from '../utils/taskFixer';
 
 const DashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [tasks, setTasks] = useState<VideoTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fixingTasks, setFixingTasks] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
+  const [serviceStatus, setServiceStatus] = useState<any>(null);
 
   const loadTasks = useCallback(async () => {
     if (!currentUser) return;
@@ -34,6 +38,88 @@ const DashboardPage: React.FC = () => {
       setRefreshing(false);
     }
   }, [currentUser]);
+
+  const loadAnonymousTasks = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      // 匿名任务功能已移除，这里可以显示提示信息
+      setTasks([]);
+      console.log('匿名任务功能已移除');
+    } catch (error) {
+      console.error('加载任务失败:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // 修复失败任务的函数 - 使用专门的修复工具
+  const fixFailedTasks = async () => {
+    const failedTasks = tasks.filter(task => task.status === 'failed');
+
+    if (failedTasks.length === 0) {
+      toast.success('没有需要修复的失败任务');
+      return;
+    }
+
+    setFixingTasks(true);
+
+    try {
+      toast.loading(`正在修复 ${failedTasks.length} 个失败任务...`, { id: 'fixing' });
+
+      // 使用专门的修复工具
+      const results = await taskFixer.fixUserFailedTasks(currentUser?.uid || 'anonymous');
+
+      const successCount = results.filter(r => r.success).length;
+      const errorCount = results.filter(r => !r.success).length;
+
+      if (successCount > 0) {
+        toast.success(`修复完成！成功: ${successCount} 个, 失败: ${errorCount} 个`, { id: 'fixing' });
+      } else {
+        toast.error(`修复失败！所有 ${errorCount} 个任务都修复失败`, { id: 'fixing' });
+      }
+
+      // 2秒后自动刷新页面查看结果
+      setTimeout(() => {
+        loadTasks();
+      }, 2000);
+
+    } catch (error) {
+      console.error('修复失败任务出错:', error);
+      toast.error('修复失败任务出错', { id: 'fixing' });
+    } finally {
+      setFixingTasks(false);
+    }
+  };
+
+  // 创建测试任务的函数
+  const createTestTask = async () => {
+    setCreatingTest(true);
+
+    try {
+      toast.loading('正在创建测试任务...', { id: 'creating' });
+
+      const taskId = await videoService.createVideoTask({
+        imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+        prompt: '测试任务 - 小狮子在草原上奔跑',
+        musicStyle: 'Joyful',
+        aspectRatio: '16:9'
+      });
+
+      toast.success('测试任务创建成功！', { id: 'creating' });
+
+      // 2秒后刷新任务列表
+      setTimeout(() => {
+        loadTasks();
+      }, 2000);
+
+    } catch (error) {
+      console.error('创建测试任务失败:', error);
+      toast.error('创建测试任务失败', { id: 'creating' });
+    } finally {
+      setCreatingTest(false);
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
@@ -51,6 +137,15 @@ const DashboardPage: React.FC = () => {
       return unsubscribe;
     }
   }, [currentUser, loadTasks]);
+
+  // 服务状态已简化，不再需要获取
+  useEffect(() => {
+    setServiceStatus({
+      useMockService: false,
+      cloudFunctionsAvailable: true,
+      hasApiKey: true
+    });
+  }, []);
 
   const handleShare = async (task: VideoTask) => {
     if (!task.videoUrl) return;
@@ -182,18 +277,144 @@ const DashboardPage: React.FC = () => {
             <p className="text-gray-600 mt-1">
               欢迎回来，{currentUser.displayName || '用户'}! 这里是您的所有作品。
             </p>
+            {/* 服务状态指示器 */}
+            {serviceStatus && (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    serviceStatus.useMockService ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}></div>
+                  <span className="text-sm text-gray-500">
+                    {serviceStatus.useMockService ? '🎭 演示模式' : '☁️ 云端模式'}
+                  </span>
+                  {serviceStatus.cloudFunctionsAvailable === false && (
+                    <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                      Cloud Functions 不可用
+                    </span>
+                  )}
+                </div>
+                {serviceStatus.useMockService && (
+                  <div className="text-xs text-gray-500 bg-blue-50 px-3 py-2 rounded-lg border-l-2 border-blue-300">
+                    <span className="font-medium text-blue-700">💡 当前使用演示模式</span>
+                    <br />
+                    生成的视频为测试内容。如需真实AI生成，请
+                    <Link to="/api-config" className="text-blue-600 hover:text-blue-800 underline ml-1">
+                      配置您的API密钥
+                    </Link>
+                    。
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* 修复失败任务按钮 */}
+            {tasks.some(task => task.status === 'failed') && (
+              <>
+                <button
+                  onClick={fixFailedTasks}
+                  disabled={fixingTasks}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
+                  title="修复失败的任务"
+                >
+                  <ExclamationCircleIcon className="w-4 h-4" />
+                  <span>{fixingTasks ? '修复中...' : '修复失败任务'}</span>
+                </button>
+
+                {/* 分析失败任务按钮 */}
+                <button
+                  onClick={() => {
+                    const failedCount = tasks.filter(task => task.status === 'failed').length;
+                    const analysisCode = `
+// 🔍 分析失败任务详情
+console.log('📊 开始分析 ${failedCount} 个失败任务...');
+
+// 显示失败任务的详细信息
+const failedTasks = ${JSON.stringify(tasks.filter(task => task.status === 'failed'), null, 2)};
+
+console.log('❌ 失败任务列表:');
+failedTasks.forEach((task, index) => {
+  console.log(\`\\n\${index + 1}. 任务 \${task.id}\`);
+  console.log(\`   📝 提示词: \${task.prompt || '无'}\`);
+  console.log(\`   🖼️ 图片: \${task.imageUrl || '无'}\`);
+  console.log(\`   ❌ 错误: \${task.error || '无错误信息'}\`);
+  console.log(\`   ⏰ 创建时间: \${new Date(task.createdAt?.seconds * 1000 || task.createdAt).toLocaleString()}\`);
+  if (task.aliyunTaskId) {
+    console.log(\`   🔗 阿里云任务ID: \${task.aliyunTaskId} (已消耗API额度)\`);
+  }
+});
+
+// 统计错误原因
+const errorReasons = {};
+failedTasks.forEach(task => {
+  const error = task.error || '未知错误';
+  errorReasons[error] = (errorReasons[error] || 0) + 1;
+});
+
+console.log('\\n📈 错误原因统计:');
+Object.entries(errorReasons).forEach(([reason, count]) => {
+  console.log(\`  \${reason}: \${count} 次\`);
+});
+
+// API额度消耗分析
+const withAliyunId = failedTasks.filter(t => t.aliyunTaskId);
+console.log(\`\\n💰 API额度消耗分析:\`);
+console.log(\`  已提交到阿里云的任务: \${withAliyunId.length} 个\`);
+console.log(\`  未提交的任务: \${failedTasks.length - withAliyunId.length} 个\`);
+
+if (withAliyunId.length > 0) {
+  console.log('\\n⚠️ 这些任务可能已消耗API额度但生成失败:');
+  withAliyunId.forEach((task, i) => {
+    console.log(\`  \${i+1}. \${task.prompt} (阿里云ID: \${task.aliyunTaskId})\`);
+  });
+  console.log('\\n💡 建议: 联系阿里云客服查询具体的API调用记录和额度消耗情况');
+}
+
+console.log('\\n✅ 分析完成！');
+                    `;
+
+                    navigator.clipboard.writeText(analysisCode).then(() => {
+                      toast.success('分析代码已复制到剪贴板，请在控制台中执行');
+                    });
+                  }}
+                  className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center space-x-1"
+                  title="分析失败任务详情"
+                >
+                  <span className="text-sm">🔍 分析</span>
+                </button>
+              </>
+            )}
+
+            {/* 创建测试任务按钮 */}
+            <button
+              onClick={createTestTask}
+              disabled={creatingTest}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
+              title="创建测试任务"
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span>{creatingTest ? '创建中...' : '测试任务'}</span>
+            </button>
+
             <button
               onClick={loadTasks}
               disabled={refreshing}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white rounded-lg transition-all duration-200 disabled:opacity-50"
-              title="刷新"
+              title="刷新用户任务"
             >
               <ArrowPathIcon className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            
+
+            <button
+              onClick={loadAnonymousTasks}
+              disabled={refreshing}
+              className="px-3 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 disabled:opacity-50"
+              title="测试：加载匿名任务"
+            >
+              测试连接
+            </button>
+
             <Link
               to="/create"
               className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"

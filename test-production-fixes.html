@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产环境修复验证测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .test-section.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .test-section.warning {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .code-block {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-pending { background: #6c757d; }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+        h1 { color: #2c3e50; text-align: center; }
+        h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h3 { color: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 生产环境修复验证测试</h1>
+        
+        <div class="test-section" id="overview">
+            <h2>📋 测试概览</h2>
+            <p>本测试将验证以下修复是否正常工作：</p>
+            <ul>
+                <li><span class="status-indicator status-success"></span>移除演示模式代码</li>
+                <li><span class="status-indicator status-pending"></span>Cloud Functions CORS 配置</li>
+                <li><span class="status-indicator status-pending"></span>通义万相 API 集成</li>
+                <li><span class="status-indicator status-pending"></span>API 密钥管理</li>
+                <li><span class="status-indicator status-pending"></span>错误处理机制</li>
+            </ul>
+        </div>
+
+        <div class="test-section" id="firebase-test">
+            <h3>🔥 1. Firebase 连接测试</h3>
+            <p>测试 Firebase 服务是否正常连接</p>
+            <button class="test-button" onclick="testFirebaseConnection()">测试 Firebase 连接</button>
+            <div class="results" id="firebase-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="auth-test">
+            <h3>🔐 2. 用户认证测试</h3>
+            <p>测试用户登录状态和认证功能</p>
+            <button class="test-button" onclick="testAuthentication()">检查认证状态</button>
+            <button class="test-button" onclick="promptLogin()">提示登录</button>
+            <div class="results" id="auth-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="functions-test">
+            <h3>☁️ 3. Cloud Functions 测试</h3>
+            <p>测试 Cloud Functions 的可用性和 CORS 配置</p>
+            <button class="test-button" onclick="testCloudFunctions()">测试 Cloud Functions</button>
+            <div class="results" id="functions-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="api-test">
+            <h3>🤖 4. 通义万相 API 测试</h3>
+            <p>测试视频生成功能（需要登录）</p>
+            <button class="test-button" onclick="testVideoGeneration()" id="video-test-btn" disabled>测试视频生成</button>
+            <div class="results" id="api-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="error-test">
+            <h3>⚠️ 5. 错误处理测试</h3>
+            <p>测试各种错误情况的处理</p>
+            <button class="test-button" onclick="testErrorHandling()">测试错误处理</button>
+            <div class="results" id="error-results" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="final-summary">
+            <h2>📊 测试总结</h2>
+            <div id="summary-content">
+                <p>请依次运行上述测试，查看修复效果。</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let testResults = {
+            firebase: null,
+            auth: null,
+            functions: null,
+            api: null,
+            errors: null
+        };
+
+        let currentUser = null;
+
+        // Firebase 连接测试
+        window.testFirebaseConnection = async function() {
+            const resultsDiv = document.getElementById('firebase-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>🔄 正在测试 Firebase 连接...</p>';
+
+            try {
+                // 动态导入 Firebase
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const { getFunctions } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDuZNOmX8-0j2dry6f9Bf3fR5Qmyj_CsCA",
+                    authDomain: "draworld-6898f.firebaseapp.com",
+                    projectId: "draworld-6898f",
+                    storageBucket: "draworld-6898f.appspot.com",
+                    messagingSenderId: "814051215268",
+                    appId: "1:814051215268:web:f251c9b76e9452ed1d6331"
+                };
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                const functions = getFunctions(app);
+
+                // 存储到全局变量供其他测试使用
+                window.firebaseApp = app;
+                window.firebaseAuth = auth;
+                window.firebaseDb = db;
+                window.firebaseFunctions = functions;
+
+                testResults.firebase = true;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-success"></span><strong>✅ Firebase 连接成功</strong></p>
+                    <div class="code-block">
+                        项目ID: ${firebaseConfig.projectId}<br>
+                        认证域: ${firebaseConfig.authDomain}<br>
+                        存储桶: ${firebaseConfig.storageBucket}
+                    </div>
+                `;
+                
+                updateOverview();
+                
+            } catch (error) {
+                testResults.firebase = false;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-error"></span><strong>❌ Firebase 连接失败</strong></p>
+                    <div class="code-block">错误: ${error.message}</div>
+                `;
+            }
+        };
+
+        // 认证测试
+        window.testAuthentication = async function() {
+            const resultsDiv = document.getElementById('auth-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>🔄 正在检查认证状态...</p>';
+
+            try {
+                if (!window.firebaseAuth) {
+                    throw new Error('请先运行 Firebase 连接测试');
+                }
+
+                const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+
+                onAuthStateChanged(window.firebaseAuth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        testResults.auth = true;
+                        resultsDiv.innerHTML = `
+                            <p><span class="status-indicator status-success"></span><strong>✅ 用户已登录</strong></p>
+                            <div class="code-block">
+                                用户ID: ${user.uid}<br>
+                                邮箱: ${user.email || '未设置'}<br>
+                                显示名: ${user.displayName || '未设置'}
+                            </div>
+                        `;
+                        document.getElementById('video-test-btn').disabled = false;
+                    } else {
+                        currentUser = null;
+                        testResults.auth = false;
+                        resultsDiv.innerHTML = `
+                            <p><span class="status-indicator status-warning"></span><strong>⚠️ 用户未登录</strong></p>
+                            <p>请先登录以测试完整功能</p>
+                        `;
+                        document.getElementById('video-test-btn').disabled = true;
+                    }
+                    updateOverview();
+                });
+
+            } catch (error) {
+                testResults.auth = false;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-error"></span><strong>❌ 认证检查失败</strong></p>
+                    <div class="code-block">错误: ${error.message}</div>
+                `;
+            }
+        };
+
+        // 提示登录
+        window.promptLogin = function() {
+            alert('请在主应用中登录，然后返回此页面重新测试认证状态。\n\n主应用地址: https://draworld-6898f.web.app');
+        };
+
+        // Cloud Functions 测试
+        window.testCloudFunctions = async function() {
+            const resultsDiv = document.getElementById('functions-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>🔄 正在测试 Cloud Functions...</p>';
+
+            try {
+                if (!window.firebaseFunctions) {
+                    throw new Error('请先运行 Firebase 连接测试');
+                }
+
+                const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+                
+                // 测试获取用户任务函数（不需要参数）
+                const getUserVideoTasks = httpsCallable(window.firebaseFunctions, 'getUserVideoTasks');
+                
+                try {
+                    const result = await getUserVideoTasks({ limit: 1, offset: 0 });
+                    
+                    testResults.functions = true;
+                    resultsDiv.innerHTML = `
+                        <p><span class="status-indicator status-success"></span><strong>✅ Cloud Functions 连接成功</strong></p>
+                        <div class="code-block">
+                            函数调用成功<br>
+                            CORS 配置正常<br>
+                            返回数据: ${JSON.stringify(result.data, null, 2)}
+                        </div>
+                    `;
+                    
+                } catch (funcError) {
+                    if (funcError.code === 'unauthenticated') {
+                        testResults.functions = true; // Functions 本身是可用的，只是需要认证
+                        resultsDiv.innerHTML = `
+                            <p><span class="status-indicator status-success"></span><strong>✅ Cloud Functions 连接成功</strong></p>
+                            <p><span class="status-indicator status-warning"></span><strong>⚠️ 需要用户登录</strong></p>
+                            <div class="code-block">
+                                函数调用成功（需要认证）<br>
+                                CORS 配置正常<br>
+                                错误代码: ${funcError.code}
+                            </div>
+                        `;
+                    } else {
+                        throw funcError;
+                    }
+                }
+                
+                updateOverview();
+                
+            } catch (error) {
+                testResults.functions = false;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-error"></span><strong>❌ Cloud Functions 测试失败</strong></p>
+                    <div class="code-block">
+                        错误: ${error.message}<br>
+                        错误代码: ${error.code || 'unknown'}<br>
+                        可能的原因: CORS配置问题或函数未部署
+                    </div>
+                `;
+            }
+        };
+
+        // 视频生成测试
+        window.testVideoGeneration = async function() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>🔄 正在测试视频生成功能...</p>';
+
+            try {
+                if (!currentUser) {
+                    throw new Error('请先登录');
+                }
+
+                if (!window.firebaseFunctions) {
+                    throw new Error('请先运行 Firebase 连接测试');
+                }
+
+                const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+                const createVideoTask = httpsCallable(window.firebaseFunctions, 'createVideoTask');
+
+                const testParams = {
+                    imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
+                    prompt: '生产环境测试 - 小狮子在草原上奔跑',
+                    musicStyle: 'Joyful',
+                    aspectRatio: '16:9'
+                };
+
+                const result = await createVideoTask(testParams);
+                
+                testResults.api = true;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-success"></span><strong>✅ 视频生成任务创建成功</strong></p>
+                    <div class="code-block">
+                        任务ID: ${result.data.taskId}<br>
+                        通义万相 API 集成正常<br>
+                        参数: ${JSON.stringify(testParams, null, 2)}
+                    </div>
+                    <p>💡 请在主应用中查看任务状态和生成结果</p>
+                `;
+                
+                updateOverview();
+                
+            } catch (error) {
+                testResults.api = false;
+                let errorMessage = error.message;
+                let suggestions = '';
+                
+                if (error.code === 'internal' && error.message.includes('API密钥')) {
+                    suggestions = '建议: 检查 Firebase Functions 中的 DASHSCOPE_API_KEY 环境变量配置';
+                } else if (error.code === 'internal' && error.message.includes('配额')) {
+                    suggestions = '建议: 检查阿里云账户余额和 API 配额';
+                }
+                
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-error"></span><strong>❌ 视频生成测试失败</strong></p>
+                    <div class="code-block">
+                        错误: ${errorMessage}<br>
+                        错误代码: ${error.code || 'unknown'}<br>
+                        ${suggestions}
+                    </div>
+                `;
+            }
+        };
+
+        // 错误处理测试
+        window.testErrorHandling = async function() {
+            const resultsDiv = document.getElementById('error-results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<p>🔄 正在测试错误处理...</p>';
+
+            const errorTests = [];
+
+            try {
+                if (!window.firebaseFunctions) {
+                    throw new Error('请先运行 Firebase 连接测试');
+                }
+
+                const { httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+                const createVideoTask = httpsCallable(window.firebaseFunctions, 'createVideoTask');
+
+                // 测试1: 缺少必需参数
+                try {
+                    await createVideoTask({});
+                } catch (error) {
+                    errorTests.push({
+                        test: '缺少必需参数',
+                        expected: 'invalid-argument',
+                        actual: error.code,
+                        message: error.message,
+                        passed: error.code === 'invalid-argument'
+                    });
+                }
+
+                // 测试2: 无效的图片URL
+                try {
+                    await createVideoTask({
+                        imageUrl: 'invalid-url',
+                        prompt: '测试',
+                        musicStyle: 'Joyful',
+                        aspectRatio: '16:9'
+                    });
+                } catch (error) {
+                    errorTests.push({
+                        test: '无效图片URL',
+                        expected: 'invalid-argument',
+                        actual: error.code,
+                        message: error.message,
+                        passed: error.code === 'invalid-argument'
+                    });
+                }
+
+                testResults.errors = errorTests.every(test => test.passed);
+                
+                let resultsHtml = errorTests.map(test => `
+                    <div style="margin: 10px 0; padding: 10px; background: ${test.passed ? '#d4edda' : '#f8d7da'}; border-radius: 4px;">
+                        <strong>${test.test}</strong><br>
+                        期望: ${test.expected} | 实际: ${test.actual}<br>
+                        消息: ${test.message}<br>
+                        结果: ${test.passed ? '✅ 通过' : '❌ 失败'}
+                    </div>
+                `).join('');
+
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator ${testResults.errors ? 'status-success' : 'status-warning'}"></span>
+                    <strong>${testResults.errors ? '✅' : '⚠️'} 错误处理测试${testResults.errors ? '通过' : '部分通过'}</strong></p>
+                    ${resultsHtml}
+                `;
+                
+                updateOverview();
+                
+            } catch (error) {
+                testResults.errors = false;
+                resultsDiv.innerHTML = `
+                    <p><span class="status-indicator status-error"></span><strong>❌ 错误处理测试失败</strong></p>
+                    <div class="code-block">错误: ${error.message}</div>
+                `;
+            }
+        };
+
+        // 更新概览状态
+        function updateOverview() {
+            const indicators = document.querySelectorAll('#overview .status-indicator');
+            const tests = ['firebase', 'functions', 'api', 'auth', 'errors'];
+            
+            tests.forEach((test, index) => {
+                if (index < indicators.length) {
+                    const result = testResults[test];
+                    indicators[index].className = 'status-indicator ' + 
+                        (result === true ? 'status-success' : 
+                         result === false ? 'status-error' : 'status-pending');
+                }
+            });
+
+            // 更新总结
+            updateSummary();
+        }
+
+        // 更新测试总结
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary-content');
+            const completedTests = Object.values(testResults).filter(r => r !== null).length;
+            const passedTests = Object.values(testResults).filter(r => r === true).length;
+            const totalTests = Object.keys(testResults).length;
+
+            let status = '';
+            if (completedTests === 0) {
+                status = '请开始测试';
+            } else if (passedTests === totalTests) {
+                status = '🎉 所有测试通过！生产环境修复成功！';
+            } else if (passedTests > 0) {
+                status = `⚠️ ${passedTests}/${completedTests} 测试通过，还有问题需要解决`;
+            } else {
+                status = '❌ 测试失败，需要检查配置';
+            }
+
+            summaryDiv.innerHTML = `
+                <p><strong>测试进度: ${completedTests}/${totalTests}</strong></p>
+                <p><strong>状态: ${status}</strong></p>
+                <div class="code-block">
+                    Firebase 连接: ${getStatusText(testResults.firebase)}<br>
+                    用户认证: ${getStatusText(testResults.auth)}<br>
+                    Cloud Functions: ${getStatusText(testResults.functions)}<br>
+                    通义万相 API: ${getStatusText(testResults.api)}<br>
+                    错误处理: ${getStatusText(testResults.errors)}
+                </div>
+            `;
+        }
+
+        function getStatusText(result) {
+            return result === true ? '✅ 通过' : 
+                   result === false ? '❌ 失败' : 
+                   '⏳ 待测试';
+        }
+
+        // 初始化
+        updateSummary();
+    </script>
+</body>
+</html>

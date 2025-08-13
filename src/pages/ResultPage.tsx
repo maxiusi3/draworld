@@ -28,6 +28,8 @@ const ResultPage: React.FC = () => {
   const [videoMuted, setVideoMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,9 +42,14 @@ const ResultPage: React.FC = () => {
 
     // 监听任务状态变化
     const unsubscribe = videoService.subscribeToTask(taskId, (updatedTask) => {
-      setTask(updatedTask);
+      if (updatedTask) {
+        setTask(updatedTask);
+        setConnectionError(false);
+      } else {
+        setConnectionError(true);
+      }
       setLoading(false);
-      
+
       // 如果任务完成，自动播放视频
       if (updatedTask?.status === 'completed' && updatedTask.videoUrl) {
         setTimeout(() => {
@@ -209,14 +216,31 @@ const ResultPage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <ExclamationCircleIcon className="mx-auto h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">作品不存在</h2>
-          <p className="text-gray-600 mb-6">您要查看的作品不存在或已被删除</p>
-          <Link
-            to="/dashboard"
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-200"
-          >
-            返回作品列表
-          </Link>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {connectionError ? '连接中断' : '作品不存在'}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {connectionError
+              ? '网络连接出现问题，无法获取作品信息'
+              : '您要查看的作品不存在或已被删除'
+            }
+          </p>
+          <div className="space-x-4">
+            {connectionError && (
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors duration-200"
+              >
+                重新连接
+              </button>
+            )}
+            <Link
+              to="/dashboard"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-200"
+            >
+              返回作品列表
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -249,17 +273,43 @@ const ResultPage: React.FC = () => {
               <div className="relative aspect-video bg-gray-900">
                 {task.status === 'completed' && task.videoUrl ? (
                   <>
-                    <video
-                      ref={videoRef}
-                      src={task.videoUrl}
-                      className="w-full h-full object-contain"
-                      muted={videoMuted}
-                      loop
-                      playsInline
-                      onPlay={() => setVideoPlaying(true)}
-                      onPause={() => setVideoPlaying(false)}
-                      onEnded={() => setVideoPlaying(false)}
-                    />
+                    {!videoError ? (
+                      <video
+                        ref={videoRef}
+                        src={task.videoUrl}
+                        className="w-full h-full object-contain"
+                        muted={videoMuted}
+                        loop
+                        playsInline
+                        onPlay={() => setVideoPlaying(true)}
+                        onPause={() => setVideoPlaying(false)}
+                        onEnded={() => setVideoPlaying(false)}
+                        onError={(e) => {
+                          console.error('视频加载错误:', e);
+                          setVideoError(true);
+                        }}
+                        onLoadStart={() => setVideoError(false)}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white">
+                        <div className="text-center">
+                          <ExclamationCircleIcon className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+                          <h3 className="text-xl font-semibold mb-2">视频暂时无法播放</h3>
+                          <p className="text-gray-300 mb-4">视频可能还在处理中，或者网络连接有问题</p>
+                          <button
+                            onClick={() => {
+                              setVideoError(false);
+                              if (videoRef.current) {
+                                videoRef.current.load();
+                              }
+                            }}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                          >
+                            重新加载
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* 视频控制按钮 */}
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">

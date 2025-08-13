@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { videoService, CreateVideoTaskParams } from '../services/videoService';
-import { storageService } from '../services/storageService';
+import { storageServiceOSS as storageService } from '../services/storageService.oss';
 import ImageUploader from '../components/ImageUploader/ImageUploader';
 import ImageEditor from '../components/ImageEditor/ImageEditor';
 import {

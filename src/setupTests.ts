@@ -1,39 +1,17 @@
 // Jest-dom 添加自定义的 jest 匹配器来测试 DOM 节点
 import '@testing-library/jest-dom';
 
-// 模拟 Firebase
-jest.mock('./config/firebase', () => ({
-  auth: {
-    currentUser: null,
-    onAuthStateChanged: jest.fn(),
-    signInWithEmailAndPassword: jest.fn(),
-    createUserWithEmailAndPassword: jest.fn(),
-    signOut: jest.fn(),
-  },
-  db: {
-    collection: jest.fn(() => ({
-      doc: jest.fn(() => ({
-        get: jest.fn(),
-        set: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      })),
-      add: jest.fn(),
-      where: jest.fn(() => ({
-        get: jest.fn(),
-      })),
-    })),
-  },
-  storage: {
-    ref: jest.fn(() => ({
-      put: jest.fn(),
-      getDownloadURL: jest.fn(),
-    })),
-  },
-  functions: {
-    httpsCallable: jest.fn(),
-  },
+// 移除 Firebase 相关 mock；如需 mock 认证或 API，请针对 adapters 进行 mock
+jest.mock('./lib/adapters/authAdapter', () => ({
+  authAdapter: {
+    getIdToken: async () => 'test-token',
+    buildAuthorizeUrl: async () => 'http://localhost/callback?code=TEST',
+    exchangeCode: async () => ({ access_token: 'x', id_token: 'y', token_type: 'Bearer' }),
+    getSession: () => ({ tokens: { access_token: 'x', id_token: 'y', token_type: 'Bearer' } }),
+    setSession: () => {},
+  }
 }));
+
 
 // 模拟 React Router
 jest.mock('react-router-dom', () => ({

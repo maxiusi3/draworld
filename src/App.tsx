@@ -9,8 +9,10 @@ import DashboardPage from './pages/DashboardPage';
 import CreatePage from './pages/CreatePage';
 import ResultPage from './pages/ResultPage';
 import SettingsPage from './pages/SettingsPage';
+import AdminPage from './pages/AdminPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import CallbackPage from './pages/CallbackPage';
 import './App.css';
 
 // 受保护的路由组件
@@ -79,6 +81,7 @@ function App() {
                 <RegisterPage />
               </PublicRoute>
             } />
+            <Route path="/callback" element={<CallbackPage />} />
             
             {/* 受保护的路由 */}
             <Route path="dashboard" element={
@@ -101,6 +104,12 @@ function App() {
                 <SettingsPage />
               </ProtectedRoute>
             } />
+            <Route path="admin" element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            } />
+
             
             {/* 404页面 */}
             <Route path="*" element={

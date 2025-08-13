@@ -11,7 +11,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   
-  const { login, loginWithGoogle, resetPassword } = useAuth();
+  const { loginByRedirect } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -19,18 +19,9 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('请填写所有字段');
-      return;
-    }
-    
     setLoading(true);
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
-    } catch (error) {
-      // 错误已在useAuth中处理
+      await loginByRedirect();
     } finally {
       setLoading(false);
     }
@@ -39,29 +30,14 @@ const LoginPage: React.FC = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle();
-      navigate(from, { replace: true });
-    } catch (error) {
-      // 错误已在useAuth中处理
+      await loginByRedirect();
     } finally {
       setLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!email) {
-      toast.error('请先输入邮箱地址');
-      return;
-    }
-    
-    setResetLoading(true);
-    try {
-      await resetPassword(email);
-    } catch (error) {
-      // 错误已在useAuth中处理
-    } finally {
-      setResetLoading(false);
-    }
+    toast.error('Authing 登录不支持此处的邮箱重置，请在登录页使用手机号验证码登录');
   };
 
   return (
@@ -98,48 +74,12 @@ const LoginPage: React.FC = () => {
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 密码
               </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-12"
-                  placeholder="请输入密码"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
               <button
-                type="button"
-                onClick={handleResetPassword}
-                disabled={resetLoading}
-                className="text-sm text-blue-600 hover:text-blue-500 font-medium disabled:opacity-50"
-              >
-                {resetLoading ? '发送中...' : '忘记密码？'}
-              </button>
-            </div>
-            
-            <button
               type="submit"
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? '登录中...' : '登录'}
+              {loading ? '前往登录中...' : '使用手机号验证码登录'}
             </button>
           </form>
           

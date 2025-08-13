@@ -227,8 +227,8 @@ jobs:
 
         echo "🪣 Static bucket name: $OSS_BUCKET_STATIC"
 
-        # 先上传 HTML 文件并设置正确的 Content-Type
-        ossutil cp dist/index.html oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --meta "Content-Type:text/html" --force
+        # 先上传 HTML 文件并设置正确的 Content-Type（使用 headers 而不是 meta）
+        ossutil cp dist/index.html oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --headers "Content-Type:text/html" --force
 
         # 上传其他文件
         ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force --exclude "*.html"
@@ -243,10 +243,12 @@ jobs:
         # 获取实际的访问地址
         cd terraform
         FRONTEND_URL=$(terraform output -raw frontend_url)
+        FRONTEND_WEBSITE_URL=$(terraform output -raw frontend_website_url)
         API_BASE_URL=$(terraform output -raw http_trigger_url)
         cd ..
 
-        echo "🎯 前端访问地址: $FRONTEND_URL"
+        echo "🎯 前端访问地址（对象存储）: $FRONTEND_URL"
+        echo "🌐 前端访问地址（静态网站，推荐）: $FRONTEND_WEBSITE_URL"
         echo "🔗 API 网关地址: $API_BASE_URL"
 
     - name: Complete job
