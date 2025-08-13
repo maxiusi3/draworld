@@ -97,7 +97,7 @@ jobs:
         ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
-        s config add --AccessKeyID "$ACCESS_KEY_ID" --AccessKeySecret "$ACCESS_KEY_SECRET" --AccountID "$ACCOUNT_ID" --Name default --Alias default
+        s config add --AccessKeyID "$ACCESS_KEY_ID" --AccessKeySecret "$ACCESS_KEY_SECRET" --AccountID "$ACCOUNT_ID" --name default --alias default
 
     - name: Build and Deploy FC + API GW
       env:
