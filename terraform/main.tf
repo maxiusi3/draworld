@@ -7,12 +7,21 @@ terraform {
       source  = "aliyun/alicloud"
       version = "~> 1.200"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.1"
+    }
   }
 }
 
 # 配置阿里云 Provider
 provider "alicloud" {
   region = var.region
+}
+
+# 随机 ID 用于存储桶名称唯一性
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
 }
 
 # 数据源：获取当前账户信息
@@ -23,7 +32,8 @@ resource "alicloud_fc_service" "main" {
   name            = var.service_name
   description     = "Tonghua World Video Generation Service"
   internet_access = true
-  
+  role            = alicloud_ram_role.fc_role.arn
+
   log_config {
     project  = alicloud_log_project.main.name
     logstore = alicloud_log_store.main.name
@@ -86,7 +96,7 @@ resource "alicloud_fc_trigger" "http" {
 
 # OSS 存储桶 - 上传
 resource "alicloud_oss_bucket" "upload" {
-  bucket = var.oss_bucket_upload
+  bucket = "draworld2025-${random_id.bucket_suffix.hex}"
   
   cors_rule {
     allowed_origins = ["*"]
@@ -99,7 +109,7 @@ resource "alicloud_oss_bucket" "upload" {
 
 # OSS 存储桶 - 静态文件
 resource "alicloud_oss_bucket" "static" {
-  bucket = var.oss_bucket_static
+  bucket = "draworld2-${random_id.bucket_suffix.hex}"
   
   website {
     index_document = "index.html"
