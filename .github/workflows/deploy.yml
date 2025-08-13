@@ -219,7 +219,15 @@ jobs:
         export OSS_ENDPOINT=oss-cn-hangzhou.aliyuncs.com
 
         echo "📤 Uploading files to OSS..."
-        ossutil cp -rf dist/ oss://draworld2/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force
+
+        # 获取实际的 OSS 存储桶名称
+        cd terraform
+        OSS_BUCKET_STATIC=$(terraform output -raw oss_bucket_static)
+        cd ..
+
+        echo "🪣 Static bucket name: $OSS_BUCKET_STATIC"
+
+        ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --force
         echo "✅ Frontend deployment completed!"
 
 
@@ -227,8 +235,15 @@ jobs:
       if: success()
       run: |
         echo "🌐 部署完成！"
-        echo "前端访问地址: https://draworld2.oss-cn-hangzhou.aliyuncs.com/index.html"
-        echo "API 网关地址: 请查看上方 s deploy 输出的域名"
+
+        # 获取实际的访问地址
+        cd terraform
+        FRONTEND_URL=$(terraform output -raw frontend_url)
+        API_BASE_URL=$(terraform output -raw http_trigger_url)
+        cd ..
+
+        echo "🎯 前端访问地址: $FRONTEND_URL"
+        echo "🔗 API 网关地址: $API_BASE_URL"
 
     - name: Complete job
       if: success()
