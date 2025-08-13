@@ -27,6 +27,26 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: true
+        submodules: recursive
+
+    - name: Debug - Check repository structure
+      run: |
+        echo "🔍 Current working directory:"
+        pwd
+        echo "📁 Repository root contents:"
+        ls -la
+        echo "📁 Checking for serverless directory:"
+        if [ -d "serverless" ]; then
+          echo "✅ serverless directory exists"
+          ls -la serverless/
+        else
+          echo "❌ serverless directory NOT found"
+          echo "Available directories:"
+          find . -type d -maxdepth 2 | head -20
+        fi
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -79,10 +99,34 @@ jobs:
         ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
         echo "🚀 Building and deploying backend..."
+        echo "📍 Current directory: $(pwd)"
+        echo "📁 Available files and directories:"
+        ls -la
+
+        # 确保 serverless 目录存在
+        if [ ! -d "serverless" ]; then
+          echo "❌ serverless directory not found!"
+          echo "🔍 Searching for serverless directory..."
+          find . -name "serverless" -type d 2>/dev/null || echo "No serverless directory found anywhere"
+          exit 1
+        fi
+
+        echo "✅ Entering serverless directory..."
         cd serverless
+        echo "📍 Now in: $(pwd)"
+        echo "📁 Serverless directory contents:"
+        ls -la
+
+        echo "📦 Installing dependencies..."
         npm ci || npm i
+
+        echo "🔨 Building FC function..."
         npm run build:fc
+
+        echo "🗄️ Creating Tablestore tables..."
         node scripts/create_ots_tables.js
+
+        echo "🚀 Deploying to Aliyun FC..."
         s deploy -y
 
     - name: Deploy Frontend to OSS
@@ -91,8 +135,26 @@ jobs:
         ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
         echo "🚀 Uploading frontend to OSS..."
+        echo "📍 Current directory: $(pwd)"
+
+        # 确保 dist 目录存在
+        if [ ! -d "dist" ]; then
+          echo "❌ dist directory not found!"
+          echo "🔍 Available directories:"
+          ls -la
+          exit 1
+        fi
+
+        echo "📁 dist directory contents:"
+        ls -la dist/
+
+        echo "📦 Installing ossutil..."
         npm i -g ossutil
+
+        echo "⚙️ Configuring ossutil..."
         ossutil config -e oss-cn-hangzhou.aliyuncs.com -i $ALIBABA_CLOUD_ACCESS_KEY_ID -k $ALIBABA_CLOUD_ACCESS_KEY_SECRET -L CH --force
+
+        echo "📤 Uploading files to OSS..."
         ossutil cp -rf dist/ oss://draworld2/ --force
         echo "✅ Frontend deployment completed!"
 
