@@ -1,0 +1,66 @@
+# 语言: YAML
+# 说明: Serverless Devs 配置骨架（杭州区域），限制体积，后续细化
+
+edition: 1.0.0
+name: tonghua-world
+access: default
+
+vars:
+  region: cn-hangzhou
+  serviceName: tonghua-world-svc
+  apiGroupName: tonghua
+
+services:
+  api:
+    component: fc
+    props:
+      region: ${vars.region}
+      service:
+        name: ${vars.serviceName}
+        internetAccess: true
+        role: AliyunServiceRoleForFC
+      function:
+        name: api
+        runtime: nodejs20
+        codeUri: ./fc
+        handler: index.handler
+        memorySize: 1024
+        timeout: 120
+        environmentVariables:
+          TONGYI_API_KEY: ${env(DASHSCOPE_API_KEY)}
+          OSS_REGION: cn-hangzhou
+          OSS_BUCKET_UPLOAD: draworld2025
+          OSS_BUCKET_STATIC: draworld2
+          TABESTORE_INSTANCE: i01wvvv53p0q
+          OIDC_ISSUER: https://draworld.authing.cn/oidc
+          OIDC_JWKS: https://draworld.authing.cn/oidc/.well-known/jwks.json
+          OIDC_AUD: 689adde75ecb97cd396860eb
+          ASSUME_ROLE_ARN: acs:ram::1950683455496289:role/upload
+      triggers:
+        - name: httpTrigger
+          type: http
+          config:
+            authType: anonymous
+            methods: [ 'GET', 'POST', 'OPTIONS' ]
+    actions:
+      pre-deploy:
+        - run: npm i --silent && npm run build:fc
+          path: .
+      post-deploy:
+        - component: apigw
+          props:
+            groupName: ${vars.apiGroupName}
+            stageName: RELEASE
+            serviceName: ${vars.serviceName}
+            serviceFunction:
+              name: api
+            routes:
+              - path: /api/video/start
+                method: POST
+              - path: /api/video/status
+                method: GET
+              - path: /api/video/list
+                method: GET
+              - path: /api/oss/sts
+                method: GET
+

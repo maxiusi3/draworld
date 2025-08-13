@@ -1,0 +1,23 @@
+{
+  "name": "tonghua-world-serverless",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:fc": "tsc -p tsconfig.fc.json && cp fc/index.js ./fc/index.js || true",
+    "dev": "echo 'Use s local invoke for FC local testing'",
+    "ots:init": "node scripts/create_ots_tables.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "ali-oss": "^6.23.0",
+    "jsonwebtoken": "^9.0.2",
+    "jose": "^5.6.3",
+    "node-fetch": "^2.7.0",
+    "@alicloud/sts-sdk": "^1.0.2",
+    "tablestore": "^5.4.3"
+  }
+}
+
