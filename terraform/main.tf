@@ -127,22 +127,7 @@ resource "alicloud_oss_bucket" "static" {
   }
 }
 
-# OSS 存储桶策略 - 静态文件公开读取
-resource "alicloud_oss_bucket_policy" "static" {
-  bucket = alicloud_oss_bucket.static.bucket
-  
-  policy = jsonencode({
-    Version = "1"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = ["*"]
-        Action = ["oss:GetObject"]
-        Resource = ["${alicloud_oss_bucket.static.bucket}/*"]
-      }
-    ]
-  })
-}
+# OSS 存储桶策略已通过 ACL 设置为 public-read，无需额外策略
 
 # RAM 角色 - FC 执行角色
 resource "alicloud_ram_role" "fc_role" {
