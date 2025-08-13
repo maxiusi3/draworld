@@ -78,8 +78,10 @@ jobs:
       run: pnpm test
       continue-on-error: true
 
-    - name: Build project
-      run: VITE_API_BASE_URL=${{ secrets.API_BASE_URL }} pnpm build
+    - name: Build project (initial)
+      run: |
+        echo "📦 Building project with default settings..."
+        pnpm build
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -169,6 +171,22 @@ jobs:
         terraform output
 
         echo "✅ Terraform deployment completed!"
+
+    - name: Rebuild Frontend with API URL
+      run: |
+        echo "🔄 Rebuilding frontend with correct API URL..."
+
+        # 获取 API 基础 URL 从 Terraform 输出
+        cd terraform
+        API_BASE_URL=$(terraform output -raw http_trigger_url | sed 's/\/$//')
+        cd ..
+
+        echo "🌐 API Base URL: $API_BASE_URL"
+
+        # 重新构建前端
+        VITE_API_BASE_URL=$API_BASE_URL pnpm build
+
+        echo "✅ Frontend rebuilt with correct API URL!"
 
     - name: Deploy Frontend to OSS
       env:
