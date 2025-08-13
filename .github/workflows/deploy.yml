@@ -227,59 +227,25 @@ jobs:
 
         echo "🪣 Static bucket name: $OSS_BUCKET_STATIC"
 
-        # 先上传 HTML 文件并设置正确的 MIME 类型
-        echo "📄 Uploading HTML files with correct MIME type..."
-        find dist -name "*.html" -type f | while read file; do
-          relative_path=${file#dist/}
-          echo "Uploading $file as $relative_path"
-          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
-            --endpoint $OSS_ENDPOINT \
-            --access-key-id $OSS_ACCESS_KEY_ID \
-            --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --content-type "text/html" \
-            --force
-        done
-
-        # 上传 CSS 文件
-        echo "🎨 Uploading CSS files..."
-        find dist -name "*.css" -type f | while read file; do
-          relative_path=${file#dist/}
-          echo "Uploading $file as $relative_path"
-          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
-            --endpoint $OSS_ENDPOINT \
-            --access-key-id $OSS_ACCESS_KEY_ID \
-            --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --content-type "text/css" \
-            --force
-        done
-
-        # 上传 JS 文件
-        echo "⚡ Uploading JavaScript files..."
-        find dist -name "*.js" -type f | while read file; do
-          relative_path=${file#dist/}
-          echo "Uploading $file as $relative_path"
-          ossutil cp "$file" "oss://$OSS_BUCKET_STATIC/$relative_path" \
-            --endpoint $OSS_ENDPOINT \
-            --access-key-id $OSS_ACCESS_KEY_ID \
-            --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --content-type "application/javascript" \
-            --force
-        done
-
-        # 上传其他文件（图片、字体等）
-        echo "📁 Uploading other files..."
+        # 先简单上传所有文件，让网站运行起来
+        echo "� Uploading all files to OSS..."
         ossutil cp -rf dist/ oss://$OSS_BUCKET_STATIC/ \
           --endpoint $OSS_ENDPOINT \
           --access-key-id $OSS_ACCESS_KEY_ID \
           --access-key-secret $OSS_ACCESS_KEY_SECRET \
-          --force \
-          --exclude "*.html" \
-          --exclude "*.css" \
-          --exclude "*.js"
+          --force
 
-        # 验证 index.html 的 Content-Type
-        echo "🔍 Verifying index.html Content-Type..."
-        ossutil stat oss://$OSS_BUCKET_STATIC/index.html --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
+        # 尝试使用 set-meta 命令设置 Content-Type（如果失败也不影响部署）
+        echo "🔧 Attempting to set Content-Type for HTML files..."
+        ossutil set-meta oss://$OSS_BUCKET_STATIC/index.html "Content-Type:text/html" \
+          --endpoint $OSS_ENDPOINT \
+          --access-key-id $OSS_ACCESS_KEY_ID \
+          --access-key-secret $OSS_ACCESS_KEY_SECRET \
+          --update || echo "⚠️ Content-Type setting failed, but deployment continues"
+
+        # 验证文件是否上传成功
+        echo "🔍 Verifying file upload..."
+        ossutil ls oss://$OSS_BUCKET_STATIC/ --endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET
         echo "✅ Frontend deployment completed!"
 
 
