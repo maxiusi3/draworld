@@ -5,8 +5,9 @@ import sourceIdentifierPlugin from 'vite-plugin-source-info'
 
 const isProd = process.env.BUILD_MODE === 'prod'
 export default defineConfig({
+  base: '', // 使用相对路径，适配静态网站托管
   plugins: [
-    react(), 
+    react(),
     sourceIdentifierPlugin({
       enabled: !isProd,
       attributePrefix: 'data-matrix',
