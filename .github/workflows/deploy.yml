@@ -195,7 +195,15 @@ jobs:
         sudo mv ossutil64 /usr/local/bin/ossutil
 
         echo "⚙️ Configuring ossutil..."
-        ossutil config -e oss-cn-hangzhou.aliyuncs.com -i $ALIBABA_CLOUD_ACCESS_KEY_ID -k $ALIBABA_CLOUD_ACCESS_KEY_SECRET -L CH --force
+        # 创建配置文件
+        mkdir -p ~/.ossutilconfig
+        cat > ~/.ossutilconfig << EOF
+[Credentials]
+language=CH
+endpoint=oss-cn-hangzhou.aliyuncs.com
+accessKeyID=$ALIBABA_CLOUD_ACCESS_KEY_ID
+accessKeySecret=$ALIBABA_CLOUD_ACCESS_KEY_SECRET
+EOF
 
         echo "📤 Uploading files to OSS..."
         ossutil cp -rf dist/ oss://draworld2/ --force
