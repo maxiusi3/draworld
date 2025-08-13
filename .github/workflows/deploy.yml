@@ -100,6 +100,10 @@ jobs:
         DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
         ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        ALIYUN_ACCESS_KEY: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        ALIYUN_SECRET_KEY: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+        ALIYUN_REGION: cn-hangzhou
+        TF_VAR_tongyi_api_key: ${{ secrets.DASHSCOPE_API_KEY }}
       run: |
         echo "🚀 Building and deploying backend..."
         echo "📍 Current directory: $(pwd)"
