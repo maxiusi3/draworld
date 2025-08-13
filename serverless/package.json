@@ -9,7 +9,10 @@
     "ots:init": "node scripts/create_ots_tables.js"
   },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@types/node-fetch": "^2.6.4",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/node": "^20.14.10"
   },
   "dependencies": {
     "ali-oss": "^6.23.0",
