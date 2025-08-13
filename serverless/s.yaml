@@ -22,12 +22,12 @@ services:
       function:
         name: api
         runtime: nodejs20
-        codeUri: ./fc
+        codeUri: fc
         handler: index.handler
         memorySize: 1024
         timeout: 120
         environmentVariables:
-          TONGYI_API_KEY: ${env(DASHSCOPE_API_KEY)}
+          TONGYI_API_KEY: ${env.DASHSCOPE_API_KEY}
           OSS_REGION: cn-hangzhou
           OSS_BUCKET_UPLOAD: draworld2025
           OSS_BUCKET_STATIC: draworld2
