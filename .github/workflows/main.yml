@@ -91,17 +91,10 @@ jobs:
     - name: Install Serverless Devs
       run: npm i -g @serverless-devs/s
 
-    - name: Configure Aliyun Credentials
-      env:
-        ACCOUNT_ID: ${{ secrets.ALIYUN_ACCOUNT_ID }}
-        ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-        ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
-      run: |
-        s config add --AccessKeyID "$ACCESS_KEY_ID" --AccessKeySecret "$ACCESS_KEY_SECRET" --AccountID "$ACCOUNT_ID" --name default --alias default
-
     - name: Build and Deploy FC + API GW
       env:
         DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+        ALIBABA_CLOUD_ACCOUNT_ID: ${{ secrets.ALIYUN_ACCOUNT_ID }}
         ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
         ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
       run: |
