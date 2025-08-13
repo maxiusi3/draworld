@@ -236,7 +236,7 @@ jobs:
             --endpoint $OSS_ENDPOINT \
             --access-key-id $OSS_ACCESS_KEY_ID \
             --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --meta "Content-Type:text/html" \
+            --content-type "text/html" \
             --force
         done
 
@@ -249,7 +249,7 @@ jobs:
             --endpoint $OSS_ENDPOINT \
             --access-key-id $OSS_ACCESS_KEY_ID \
             --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --meta "Content-Type:text/css" \
+            --content-type "text/css" \
             --force
         done
 
@@ -262,7 +262,7 @@ jobs:
             --endpoint $OSS_ENDPOINT \
             --access-key-id $OSS_ACCESS_KEY_ID \
             --access-key-secret $OSS_ACCESS_KEY_SECRET \
-            --meta "Content-Type:application/javascript" \
+            --content-type "application/javascript" \
             --force
         done
 
