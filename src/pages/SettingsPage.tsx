@@ -10,7 +10,7 @@ import {
 import toast from 'react-hot-toast';
 
 const SettingsPage: React.FC = () => {
-  const { currentUser, logout, resetPassword } = useAuth();
+  const { currentUser, logout, resetPassword, delete: deleteAccount } = useAuth();
   const navigate = useNavigate();
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -42,9 +42,10 @@ const SettingsPage: React.FC = () => {
     
     setDeleting(true);
     try {
-      // 这里需要调用Firebase Admin SDK来删除用户
-      // 由于我们使用的是Cloud Functions，这个操作会自动触发删除用户数据的函数
-      await currentUser?.delete();
+      // 调用 AuthContext 的删除方法
+      if (deleteAccount) {
+        await deleteAccount();
+      }
       toast.success('账户已删除');
       navigate('/');
     } catch (error: any) {

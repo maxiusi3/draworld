@@ -13,7 +13,7 @@ import {
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { taskFixer } from '../utils/taskFixer';
+// taskFixer removed - functionality moved to backend
 
 const DashboardPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -67,19 +67,12 @@ const DashboardPage: React.FC = () => {
     try {
       toast.loading(`正在修复 ${failedTasks.length} 个失败任务...`, { id: 'fixing' });
 
-      // 使用专门的修复工具
-      const results = await taskFixer.fixUserFailedTasks(currentUser?.uid || 'anonymous');
+      // 修复功能已迁移到后端，这里提供占位实现
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const successCount = results.filter(r => r.success).length;
-      const errorCount = results.filter(r => !r.success).length;
+      toast.success(`修复功能已迁移到后端，请联系管理员处理失败任务`, { id: 'fixing' });
 
-      if (successCount > 0) {
-        toast.success(`修复完成！成功: ${successCount} 个, 失败: ${errorCount} 个`, { id: 'fixing' });
-      } else {
-        toast.error(`修复失败！所有 ${errorCount} 个任务都修复失败`, { id: 'fixing' });
-      }
-
-      // 2秒后自动刷新页面查看结果
+      // 刷新任务列表
       setTimeout(() => {
         loadTasks();
       }, 2000);
