@@ -97,7 +97,8 @@ resource "alicloud_fc_trigger" "http" {
 # OSS 存储桶 - 上传
 resource "alicloud_oss_bucket" "upload" {
   bucket = "draworld2025-${random_id.bucket_suffix.hex}"
-  
+  acl    = "private"
+
   cors_rule {
     allowed_origins = ["*"]
     allowed_methods = ["GET", "POST", "PUT", "DELETE", "HEAD"]
@@ -110,12 +111,13 @@ resource "alicloud_oss_bucket" "upload" {
 # OSS 存储桶 - 静态文件
 resource "alicloud_oss_bucket" "static" {
   bucket = "draworld2-${random_id.bucket_suffix.hex}"
-  
+  acl    = "public-read"
+
   website {
     index_document = "index.html"
     error_document = "error.html"
   }
-  
+
   cors_rule {
     allowed_origins = ["*"]
     allowed_methods = ["GET", "HEAD"]
