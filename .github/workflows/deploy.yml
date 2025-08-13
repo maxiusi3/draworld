@@ -20,18 +20,19 @@ env:
   NODE_VERSION: '20'
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-    
+
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
@@ -59,34 +60,6 @@ jobs:
 
     - name: Build project
       run: VITE_API_BASE_URL=${{ secrets.API_BASE_URL }} pnpm build
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-        retention-days: 1
-
-  # 部署作业
-  deploy:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
 
     - name: Install Serverless Devs
       run: npm i -g @serverless-devs/s
@@ -124,51 +97,12 @@ jobs:
         echo "✅ Frontend deployment completed!"
 
 
-    - name: Clean up service account file
-      if: always()
-      run: |
-        if [ -f "${{ github.workspace }}/service-account.json" ]; then
-          rm "${{ github.workspace }}/service-account.json"
-          echo "🧹 Service account file cleaned up"
-        fi
-
-
-
     - name: Get deployment URL
       if: success()
       run: |
         echo "🌐 部署完成！"
-        echo "访问地址: https://(请在阿里云CDN与域名控制台查看绑定域名)"
-
-    - name: Comment deployment URL on PR
-      if: github.event_name == 'pull_request' && success()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `🚀 **部署成功！**
-            
-            预览地址: https://(阿里云CDN绑定域名)
-            
-            构建时间: ${new Date().toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'})}`
-          })
-
-    - name: Post Setup Node.js
-      if: success()
-      run: |
-        echo "Node.js version: $(node --version)"
-        echo "npm version: $(npm --version)"
-
-    - name: Post Checkout repository
-      if: success()
-      run: |
-        echo "Repository checked out successfully"
-        echo "Current directory: $(pwd)"
-        echo "Files in current directory:"
-        ls -la
+        echo "前端访问地址: https://draworld2.oss-cn-hangzhou.aliyuncs.com/index.html"
+        echo "API 网关地址: 请查看上方 s deploy 输出的域名"
 
     - name: Complete job
       if: success()
