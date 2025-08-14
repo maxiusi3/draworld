@@ -37,10 +37,22 @@ const Header: React.FC = () => {
             {currentUser ? (
               <>
                 <Link
+                  to="/gallery"
+                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
+                >
+                  创意广场
+                </Link>
+                <Link
                   to="/dashboard"
                   className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
                 >
                   我的作品
+                </Link>
+                <Link
+                  to="/credit-store"
+                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
+                >
+                  积分商店
                 </Link>
                 <Link
                   to="/create"

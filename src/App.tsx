@@ -14,6 +14,8 @@ import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CallbackPage from './pages/CallbackPage';
 import TestCreditsPage from './pages/TestCreditsPage';
+import GalleryPage from './pages/GalleryPage';
+import CreditStorePage from './pages/CreditStorePage';
 import './App.css';
 
 // 受保护的路由组件
@@ -113,6 +115,16 @@ function App() {
             <Route path="test-credits" element={
               <ProtectedRoute>
                 <TestCreditsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="gallery" element={
+              <ProtectedRoute>
+                <GalleryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="credit-store" element={
+              <ProtectedRoute>
+                <CreditStorePage />
               </ProtectedRoute>
             } />
 
