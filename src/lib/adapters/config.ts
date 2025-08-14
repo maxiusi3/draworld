@@ -7,8 +7,9 @@ export const oidcConfig = {
   clientSecret: '200d21d51aa1b7dffadece15fa3c269b',
   discovery: {
     issuer: 'https://draworld.authing.cn/oidc',
-    authorization_endpoint: 'https://draworld.authing.cn/oidc/auth',
+    authorization_endpoint: 'https://draworld.authing.cn/oidc/authToken',
     token_endpoint: 'https://draworld.authing.cn/oidc/token',
+    userinfo_endpoint: 'https://draworld.authing.cn/oidc/me',
     jwks_uri: 'https://draworld.authing.cn/oidc/.well-known/jwks.json',
   } as OIDCDiscovery,
   defaultScope: 'openid profile phone',

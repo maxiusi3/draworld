@@ -122,3 +122,4 @@ docker-deploy.sh
 # diagnose-firebase.sh
 # check-config.sh
 # verify-deployment.sh
+.vercel
