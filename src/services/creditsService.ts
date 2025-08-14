@@ -26,11 +26,45 @@ export class CreditsService {
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
+    // 临时模拟API响应用于测试
+    if (path === '/api/credits/balance') {
+      return {
+        balance: 150,
+        totalEarned: 150,
+        totalSpent: 0,
+      } as T;
+    }
+
+    if (path === '/api/credits/daily-signin' && options?.method === 'POST') {
+      const today = new Date().toDateString();
+      const lastSignin = localStorage.getItem('lastSigninDate');
+      const alreadySignedToday = lastSignin === today;
+
+      if (!alreadySignedToday) {
+        localStorage.setItem('lastSigninDate', today);
+      }
+
+      return {
+        success: true,
+        creditsEarned: alreadySignedToday ? 0 : 15,
+        alreadySignedToday,
+      } as T;
+    }
+
+    if (path === '/api/credits/consume' && options?.method === 'POST') {
+      return {
+        success: true,
+        newBalance: 90, // 模拟消费60积分后的余额
+        transactionId: `tx_${Date.now()}`,
+      } as T;
+    }
+
+    // 原始API调用逻辑（当后端准备好时使用）
     const token = await authAdapter.getIdToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }

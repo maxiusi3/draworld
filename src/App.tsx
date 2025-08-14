@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CallbackPage from './pages/CallbackPage';
+import TestCreditsPage from './pages/TestCreditsPage';
 import './App.css';
 
 // 受保护的路由组件
@@ -109,8 +110,13 @@ function App() {
                 <AdminPage />
               </ProtectedRoute>
             } />
+            <Route path="test-credits" element={
+              <ProtectedRoute>
+                <TestCreditsPage />
+              </ProtectedRoute>
+            } />
 
-            
+
             {/* 404页面 */}
             <Route path="*" element={
               <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
