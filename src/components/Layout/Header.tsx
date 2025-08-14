@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { PaintBrushIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { CreditBalance } from '../Credits/CreditBalance';
 import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
@@ -66,38 +67,51 @@ const Header: React.FC = () => {
             )}
           </nav>
 
-          {/* User Menu */}
+          {/* Credits and User Menu */}
           {currentUser && (
-            <div className="relative group">
-              <button className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt="用户头像"
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <UserCircleIcon className="w-8 h-8 text-gray-600" />
-                )}
-                <span className="hidden md:block text-gray-700 font-medium">
-                  {currentUser.displayName || '用户'}
-                </span>
-              </button>
-              
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                >
-                  账户设置
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
-                >
-                  退出登录
+            <div className="flex items-center space-x-4">
+              {/* Credit Balance */}
+              <CreditBalance
+                size="medium"
+                showRechargeButton={true}
+                onRechargeClick={() => {
+                  // TODO: 实现充值页面跳转
+                  toast('充值功能即将上线', { icon: 'ℹ️' });
+                }}
+              />
+
+              {/* User Menu */}
+              <div className="relative group">
+                <button className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                  {currentUser.photoURL ? (
+                    <img
+                      src={currentUser.photoURL}
+                      alt="用户头像"
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <UserCircleIcon className="w-8 h-8 text-gray-600" />
+                  )}
+                  <span className="hidden md:block text-gray-700 font-medium">
+                    {currentUser.displayName || '用户'}
+                  </span>
                 </button>
+
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <Link
+                    to="/settings"
+                    className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+                  >
+                    账户设置
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+                  >
+                    退出登录
+                  </button>
+                </div>
               </div>
             </div>
           )}

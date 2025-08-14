@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import { createLocalJWKSet, jwtVerify } from 'jose';
 import STS from '@alicloud/sts-sdk';
 import TableStore from 'tablestore';
+import { CreditsService, CreditTransactionType, CreditTransactionReason } from './creditsService';
 
 // 环境变量（在 s.yaml 中注入）
 const {
@@ -18,6 +19,9 @@ const {
   OIDC_JWKS = 'https://draworld.authing.cn/oidc/.well-known/jwks.json',
   OIDC_AUD = '689adde75ecb97cd396860eb',
 } = process.env as Record<string, string>;
+
+// 初始化积分服务
+const creditsService = new CreditsService(TABESTORE_INSTANCE);
 
 // 简易响应工具
 const json = (code: number, data: any) => ({ statusCode: code, headers: corsHeaders(), body: JSON.stringify(data) });
@@ -275,6 +279,58 @@ exports.handler = async function (req: any, res: any, context: any) {
         resultVideoUrl,
         inputImageUrl: row.inputImageUrl,
         userId: row.userId
+      }));
+    }
+
+    // 积分系统API端点
+    if (url.pathname === '/api/credits/balance' && req.method === 'GET') {
+      const payload = await verifyBearer(req.headers['authorization']);
+      const userId = String(payload.sub);
+      const userCredits = await creditsService.getUserCredits(userId);
+
+      if (!userCredits) {
+        // 新用户，创建账户并给予注册奖励
+        await creditsService.grantRegistrationReward(userId);
+        const newUserCredits = await creditsService.getUserCredits(userId);
+        return res.status(200).set(corsHeaders()).send(JSON.stringify({
+          balance: newUserCredits?.balance || 0,
+          totalEarned: newUserCredits?.totalEarned || 0,
+          totalSpent: newUserCredits?.totalSpent || 0,
+        }));
+      }
+
+      return res.status(200).set(corsHeaders()).send(JSON.stringify({
+        balance: userCredits.balance,
+        totalEarned: userCredits.totalEarned,
+        totalSpent: userCredits.totalSpent,
+      }));
+    }
+
+    if (url.pathname === '/api/credits/daily-signin' && req.method === 'POST') {
+      const payload = await verifyBearer(req.headers['authorization']);
+      const userId = String(payload.sub);
+      const result = await creditsService.dailySignin(userId);
+      return res.status(200).set(corsHeaders()).send(JSON.stringify(result));
+    }
+
+    if (url.pathname === '/api/credits/consume' && req.method === 'POST') {
+      const payload = await verifyBearer(req.headers['authorization']);
+      const userId = String(payload.sub);
+      const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
+
+      const result = await creditsService.executeTransaction(
+        userId,
+        CreditTransactionType.SPEND,
+        body.amount,
+        body.reason,
+        body.referenceId,
+        body.description
+      );
+
+      return res.status(200).set(corsHeaders()).send(JSON.stringify({
+        success: result.success,
+        newBalance: result.newBalance,
+        transactionId: result.transactionId,
       }));
     }
 

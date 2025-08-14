@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useConsumeCredits } from '../hooks/useCredits';
 import { videoService, CreateVideoTaskParams } from '../services/videoService';
 import { storageServiceOSS as storageService } from '../services/storageService.oss';
 import ImageUploader from '../components/ImageUploader/ImageUploader';
 import ImageEditor from '../components/ImageEditor/ImageEditor';
+import { CreditBalance, InsufficientCreditsAlert } from '../components/Credits/CreditBalance';
+import { CREDIT_RULES } from '../types/credits';
 import {
   SparklesIcon,
   PencilSquareIcon,
@@ -26,6 +29,7 @@ interface Step {
 
 const CreatePage: React.FC = () => {
   const { currentUser } = useAuth();
+  const { consumeCreditsForVideo, hasSufficientCredits, loading: creditsLoading } = useConsumeCredits();
   const navigate = useNavigate();
   
   // 状态管理
@@ -135,13 +139,19 @@ const CreatePage: React.FC = () => {
       return;
     }
 
+    // 检查积分余额
+    if (!hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST)) {
+      toast.error(`积分余额不足，需要 ${CREDIT_RULES.VIDEO_GENERATION_COST} 积分`);
+      return;
+    }
+
     setUploading(true);
     setGenerating(true);
 
     try {
-      // 首先上传图片到Firebase Storage
+      // 首先上传图片到OSS Storage
       let fileToUpload = originalFile;
-      
+
       // 如果有编辑过的图片，使用编辑后的版本
       if (editedImageUrl) {
         // 将DataURL转换为Blob
@@ -149,10 +159,10 @@ const CreatePage: React.FC = () => {
         const blob = await response.blob();
         fileToUpload = new File([blob], originalFile.name, { type: 'image/jpeg' });
       }
-      
+
       const imageUrl = await storageService.uploadUserImage(fileToUpload, currentUser.uid);
       setUploading(false);
-      
+
       // 创建视频生成任务
       const params: CreateVideoTaskParams = {
         imageUrl,
@@ -160,14 +170,23 @@ const CreatePage: React.FC = () => {
         musicStyle,
         aspectRatio
       };
-      
+
       const taskId = await videoService.createVideoTask(params);
-      
+
+      // 消费积分
+      const consumeResult = await consumeCreditsForVideo(taskId);
+      if (!consumeResult) {
+        toast.error('积分消费失败，请重试');
+        setGenerating(false);
+        return;
+      }
+
       // 跳转到结果页面
       navigate(`/result/${taskId}`);
-      
+
     } catch (error) {
       console.error('生成视频失败:', error);
+      toast.error('生成视频失败，请重试');
       setGenerating(false);
       setUploading(false);
     }
@@ -322,6 +341,36 @@ const CreatePage: React.FC = () => {
                   添加描述文字和选择音乐风格，让AI更好地理解您的需求
                 </p>
               </div>
+
+              {/* 积分余额显示 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-blue-600">
+                      <SparklesIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-blue-800">
+                        视频生成消费
+                      </h3>
+                      <p className="text-sm text-blue-600">
+                        每个视频需要消费 {CREDIT_RULES.VIDEO_GENERATION_COST} 积分
+                      </p>
+                    </div>
+                  </div>
+                  <CreditBalance
+                    size="medium"
+                    showRechargeButton={true}
+                    onRechargeClick={() => toast('充值功能即将上线', { icon: 'ℹ️' })}
+                  />
+                </div>
+              </div>
+
+              {/* 积分不足提示 */}
+              <InsufficientCreditsAlert
+                requiredCredits={CREDIT_RULES.VIDEO_GENERATION_COST}
+                onRechargeClick={() => toast('充值功能即将上线', { icon: 'ℹ️' })}
+              />
               
               {/* 描述文字 */}
               <div>
@@ -409,12 +458,22 @@ const CreatePage: React.FC = () => {
               <div className="text-center pt-4">
                 <button
                   onClick={handleGenerate}
-                  disabled={!prompt.trim() || generating || uploading}
+                  disabled={
+                    !prompt.trim() ||
+                    generating ||
+                    uploading ||
+                    creditsLoading ||
+                    !hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST)
+                  }
                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2 mx-auto"
                 >
                   <SparklesIcon className="w-6 h-6" />
                   <span>
-                    {uploading ? '上传中...' : generating ? '生成中...' : '生成神奇动画'}
+                    {uploading ? '上传中...' :
+                     generating ? '生成中...' :
+                     creditsLoading ? '检查积分中...' :
+                     !hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST) ? '积分不足' :
+                     '生成神奇动画'}
                   </span>
                 </button>
                 
