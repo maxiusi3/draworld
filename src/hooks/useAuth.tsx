@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { sessionManager } from '../lib/auth';
 import { AuthSession } from '../lib/adapters/types';
 import { authAdapter } from '../lib/adapters/authAdapter';
+import { oidcConfig } from '../lib/adapters/config';
 
 interface User {
   uid: string;
@@ -71,8 +72,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // 登录跳转：重定向至 Authing 授权页
   const loginByRedirect = async () => {
-    const url = await authAdapter.buildAuthorizeUrl({ redirectUri: window.location.origin + '/callback' });
-    window.location.href = url;
+    try {
+      const callbackUrl = oidcConfig.getCallbackUrl();
+      console.log('使用回调URL:', callbackUrl);
+      const url = await authAdapter.buildAuthorizeUrl({ redirectUri: callbackUrl });
+      window.location.href = url;
+    } catch (error) {
+      console.error('构建授权URL失败:', error);
+      toast.error('登录失败，请重试');
+    }
   };
 
   // 登出：清空本地会话
