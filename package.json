@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "vite",
     "dev:demo": "DASHSCOPE_API_KEY=sk-bac53038fc8e433bb2c42f394649a379 NODE_ENV=development vite",

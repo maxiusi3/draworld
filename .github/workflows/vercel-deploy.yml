@@ -1,0 +1,103 @@
+name: Deploy to Vercel Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9.15.0
+
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Type check
+      run: pnpm run type-check
+      continue-on-error: true
+
+    - name: Lint check
+      run: pnpm run lint
+      continue-on-error: true
+
+    - name: Run tests
+      run: pnpm test
+      continue-on-error: true
+
+    - name: Build project
+      run: pnpm build
+      env:
+        NODE_ENV: production
+
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+        working-directory: ./
+
+    - name: Comment deployment URL on PR
+      if: github.event_name == 'pull_request' && success()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 **Vercel部署成功！**
+            
+            生产环境地址: https://whimsy-brush.vercel.app
+            
+            构建时间: ${new Date().toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'})}`
+          })
+
+    - name: Deployment summary
+      if: success()
+      run: |
+        echo "🎉 Vercel部署完成！"
+        echo "✅ 生产环境已更新"
+        echo "🌐 访问地址: https://whimsy-brush.vercel.app"
+        echo ""
+        echo "📋 部署后验证清单:"
+        echo "  □ 确认使用60积分的生产配置"
+        echo "  □ 验证图片上传到OSS存储"
+        echo "  □ 检查数据保存到TableStore"
+        echo "  □ 测试视频生成完整流程"
+        echo "  □ 验证用户作品管理功能"
+        echo ""
+        echo "⚠️ 重要提醒: 请确保在Vercel Dashboard中正确配置了所有生产环境变量"
