@@ -504,7 +504,7 @@ export const useArtworkPagination = (
     if (page >= 1 && page <= totalPages && page !== currentPage) {
       loadPage(page);
     }
-  }, [currentPage, totalPages, pageSize, sortBy, searchQuery]);
+  }, [currentPage, totalPages, loadPage]);
 
   const nextPage = useCallback(() => {
     goToPage(currentPage + 1);

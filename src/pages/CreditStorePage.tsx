@@ -304,7 +304,7 @@ const CreditStorePage: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        {order.totalCredits} 积分 • ¥{order.priceYuan} • {new Date(order.createdAt).toLocaleDateString()}
+                        {order.totalCredits || order.credits} 积分 • ¥{order.priceYuan || order.amount} • {new Date(order.createdAt).toLocaleDateString()}
                       </div>
                     </div>
 

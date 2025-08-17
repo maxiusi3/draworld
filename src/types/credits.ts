@@ -138,7 +138,10 @@ export interface Order {
   packageId: string;
   packageName: string;
   credits: number;
+  bonusCredits?: number; // 赠送积分
+  totalCredits?: number; // 总积分（基础+赠送）
   amount: number; // 支付金额（元）
+  priceYuan?: number; // 价格（元）- 用于显示
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
   paymentId?: string; // 第三方支付订单号
@@ -167,8 +170,10 @@ export interface CreateOrderRequest {
 }
 
 export interface CreateOrderResponse {
-  order: Order;
-  paymentInfo: PaymentInfo;
+  success: boolean;
+  order?: Order;
+  paymentInfo?: PaymentInfo;
+  message?: string;
 }
 
 export interface PaymentInfo {

@@ -239,23 +239,23 @@ export class PaymentService {
 
   // 轮询支付状态
   async pollPaymentStatus(
-    orderId: string, 
+    orderId: string,
     onStatusChange: (status: PaymentStatusResponse) => void,
     maxAttempts: number = 60, // 最多轮询60次（5分钟）
     interval: number = 5000   // 每5秒轮询一次
   ): Promise<void> {
     let attempts = 0;
-    
+
     const poll = async () => {
       try {
         const status = await this.getPaymentStatus(orderId);
         onStatusChange(status);
-        
+
         // 如果支付完成或失败，停止轮询
         if (status.status === 'PAID' || status.status === 'FAILED' || status.status === 'CANCELLED') {
           return;
         }
-        
+
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(poll, interval);
@@ -268,8 +268,75 @@ export class PaymentService {
         }
       }
     };
-    
+
     poll();
+  }
+
+  // 获取订单状态（用于usePayment hook）
+  async getOrderStatus(orderId: string): Promise<{
+    success: boolean;
+    order?: { status: string };
+    message?: string;
+  }> {
+    try {
+      const response = await this.request<any>(`/api/orders?action=status&orderId=${orderId}`);
+      return {
+        success: true,
+        order: response.order
+      };
+    } catch (error) {
+      console.error('获取订单状态失败:', error);
+      return {
+        success: false,
+        message: '获取订单状态失败'
+      };
+    }
+  }
+
+  // 轮询订单状态（用于usePayment hook）
+  async pollOrderStatus(
+    orderId: string,
+    onStatusChange: (status: string) => void,
+    maxAttempts: number = 60,
+    interval: number = 5000
+  ): Promise<string> {
+    return new Promise((resolve) => {
+      let attempts = 0;
+
+      const poll = async () => {
+        try {
+          const result = await this.getOrderStatus(orderId);
+
+          if (result.success && result.order) {
+            const status = result.order.status;
+            onStatusChange(status);
+
+            // 如果支付完成或失败，停止轮询
+            if (status === 'PAID' || status === 'FAILED' || status === 'CANCELLED') {
+              resolve(status);
+              return;
+            }
+          }
+
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(poll, interval);
+          } else {
+            resolve('TIMEOUT');
+          }
+        } catch (error) {
+          console.error('轮询订单状态失败:', error);
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(poll, interval);
+          } else {
+            resolve('ERROR');
+          }
+        }
+      };
+
+      poll();
+    });
   }
 
   // 格式化价格显示
@@ -286,6 +353,12 @@ export class PaymentService {
   // 格式化性价比显示
   static formatValueRatio(ratio: number): string {
     return `${ratio.toFixed(1)}倍`;
+  }
+
+  // 格式化折扣显示
+  static formatDiscount(originalPrice: number, currentPrice: number): string {
+    const discountPercent = Math.round((1 - currentPrice / originalPrice) * 100);
+    return `${discountPercent}% OFF`;
   }
 
   // 获取支付方式显示名称

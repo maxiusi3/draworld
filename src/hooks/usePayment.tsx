@@ -102,7 +102,8 @@ export function useCreateOrder() {
         (status: string) => {
           console.log('支付状态更新:', status);
           if (status === 'PAID') {
-            toast.success(`支付成功！获得 ${response.order.totalCredits} 积分`);
+            const totalCredits = response.order?.totalCredits || response.order?.credits || 0;
+            toast.success(`支付成功！获得 ${totalCredits} 积分`);
           }
         }
       );
