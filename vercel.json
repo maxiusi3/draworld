@@ -1,7 +1,14 @@
 {
+  "version": 2,
+  "name": "whimsy-brush",
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api|src|@vite|node_modules|assets).*)",
       "destination": "/index.html"
     }
   ],
@@ -12,6 +19,23 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type"
         }
       ]
     }

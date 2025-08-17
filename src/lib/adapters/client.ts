@@ -5,8 +5,10 @@ import { HttpFunctionsAdapter } from './functionsAdapter';
 import { OSSStorageAdapter } from './storageAdapter';
 import { authAdapter } from './authAdapter';
 
+// 生产环境始终使用当前域名，避免跨域问题
+const isDevelopment = import.meta.env.DEV;
 const API_BASE_URL = (typeof window !== 'undefined')
-  ? (import.meta as any).env?.VITE_API_BASE_URL || window.location.origin
+  ? (isDevelopment ? ((import.meta as any).env?.VITE_API_BASE_URL || window.location.origin) : window.location.origin)
   : '';
 
 export const functionsClient = new HttpFunctionsAdapter({

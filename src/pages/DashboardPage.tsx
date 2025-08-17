@@ -509,7 +509,7 @@ console.log('\\n✅ 分析完成！');
                   {/* 操作按钮 */}
                   <div className="flex items-center space-x-2">
                     {task.status === 'completed' && task.videoUrl && (
-                      <>
+                      <React.Fragment key={`completed-${task.id}`}>
                         <Link
                           to={`/result/${task.id}`}
                           className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 text-center flex items-center justify-center space-x-1"
@@ -531,7 +531,7 @@ console.log('\\n✅ 分析完成！');
                         >
                           <ArrowDownTrayIcon className="w-4 h-4" />
                         </button>
-                      </>
+                      </React.Fragment>
                     )}
                     
                     {task.status === 'processing' && (

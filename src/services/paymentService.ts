@@ -23,8 +23,27 @@ export class PaymentService {
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
+    const token = localStorage.getItem('auth_token') || 'demo-token';
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(options?.headers || {}),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  private async requestMock<T>(path: string): Promise<T> {
     // 临时模拟API响应用于测试
-    if (path === '/api/credits/packages') {
+    if (path === '/api/credits/packages' || path === '/api/orders?action=packages') {
       return {
         packages: [
           {
@@ -130,15 +149,40 @@ export class PaymentService {
 
   // 获取积分套餐列表
   async getCreditPackages(): Promise<CreditPackagesResponse> {
-    return this.request<CreditPackagesResponse>('/api/credits/packages');
+    try {
+      // 尝试使用新的订单API
+      const result = await this.request<any>('/api/orders?action=packages');
+      return {
+        packages: result.packages || [],
+      };
+    } catch (error) {
+      console.error('获取积分套餐失败:', error);
+      // 回退到模拟数据
+      return this.requestMock<CreditPackagesResponse>('/api/credits/packages');
+    }
   }
 
   // 创建订单
   async createOrder(request: CreateOrderRequest): Promise<CreateOrderResponse> {
-    return this.request<CreateOrderResponse>('/api/orders', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    try {
+      const result = await this.request<any>('/api/orders?action=create', {
+        method: 'POST',
+        body: JSON.stringify({ packageId: request.packageId }),
+      });
+
+      return {
+        success: result.success,
+        order: result.order,
+        paymentInfo: result.paymentInfo,
+        message: result.message,
+      };
+    } catch (error) {
+      console.error('创建订单失败:', error);
+      return {
+        success: false,
+        message: '创建订单失败，请稍后重试',
+      };
+    }
   }
 
   // 获取订单详情
@@ -163,6 +207,34 @@ export class PaymentService {
     await this.request<void>(`/api/orders/${orderId}/cancel`, {
       method: 'POST',
     });
+  }
+
+  // 获取用户订单列表
+  async getUserOrders(limit: number = 10, offset: number = 0): Promise<{
+    success: boolean;
+    orders: any[];
+    hasMore: boolean;
+    total: number;
+  }> {
+    try {
+      const response = await this.request<{ orders: any[] }>(`/api/orders?action=list&limit=${limit}&offset=${offset}`);
+      const orders = response.orders || [];
+
+      return {
+        success: true,
+        orders,
+        hasMore: orders.length === limit, // 如果返回的数量等于limit，可能还有更多
+        total: orders.length
+      };
+    } catch (error) {
+      console.error('获取用户订单失败:', error);
+      return {
+        success: false,
+        orders: [],
+        hasMore: false,
+        total: 0
+      };
+    }
   }
 
   // 轮询支付状态

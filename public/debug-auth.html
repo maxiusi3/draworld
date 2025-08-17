@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证状态调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .token-display {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 5px;
+            border-radius: 3px;
+            word-break: break-all;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 认证状态调试工具</h1>
+        
+        <div class="section info">
+            <h3>📍 当前环境信息</h3>
+            <p><strong>当前域名:</strong> <span id="currentDomain"></span></p>
+            <p><strong>时间戳:</strong> <span id="timestamp"></span></p>
+        </div>
+
+        <div class="section">
+            <h3>🔐 认证状态检查</h3>
+            <button onclick="checkAuthStatus()">检查认证状态</button>
+            <button onclick="clearAllAuth()">清除所有认证信息</button>
+            <div id="authStatus"></div>
+        </div>
+
+        <div class="section">
+            <h3>💾 存储信息</h3>
+            <button onclick="showStorageInfo()">显示存储信息</button>
+            <div id="storageInfo"></div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 Token 测试</h3>
+            <button onclick="testTokenExtraction()">测试 Token 提取</button>
+            <div id="tokenTest"></div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('currentDomain').textContent = window.location.origin;
+            document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        });
+
+        // 检查认证状态
+        function checkAuthStatus() {
+            const statusDiv = document.getElementById('authStatus');
+            
+            try {
+                // 检查 localStorage
+                const localAuthSession = localStorage.getItem('auth_session');
+                
+                // 检查 sessionStorage
+                const sessionAuthSession = sessionStorage.getItem('auth_session');
+                
+                let result = '<h4>认证状态检查结果</h4>';
+                
+                if (localAuthSession) {
+                    try {
+                        const session = JSON.parse(localAuthSession);
+                        result += '<div class="success">';
+                        result += '<h5>✅ localStorage 中找到认证会话</h5>';
+                        result += `<p><strong>会话结构:</strong> ${Object.keys(session).join(', ')}</p>`;
+                        
+                        if (session.tokens) {
+                            result += `<p><strong>Tokens 结构:</strong> ${Object.keys(session.tokens).join(', ')}</p>`;
+                            
+                            if (session.tokens.id_token) {
+                                result += '<p><strong>ID Token:</strong> <span class="token-display">' + session.tokens.id_token.substring(0, 50) + '...</span></p>';
+                            }
+                            
+                            if (session.tokens.access_token) {
+                                result += '<p><strong>Access Token:</strong> <span class="token-display">' + session.tokens.access_token.substring(0, 50) + '...</span></p>';
+                            }
+                        }
+                        
+                        if (session.expiresAt) {
+                            const expiresDate = new Date(session.expiresAt);
+                            const isExpired = Date.now() > session.expiresAt;
+                            result += `<p><strong>过期时间:</strong> ${expiresDate.toLocaleString()} ${isExpired ? '(已过期)' : '(有效)'}</p>`;
+                        }
+                        
+                        result += '</div>';
+                    } catch (e) {
+                        result += '<div class="error">';
+                        result += '<h5>❌ localStorage 认证会话解析失败</h5>';
+                        result += `<p><strong>错误:</strong> ${e.message}</p>`;
+                        result += '</div>';
+                    }
+                } else {
+                    result += '<div class="error">';
+                    result += '<h5>❌ localStorage 中未找到认证会话</h5>';
+                    result += '</div>';
+                }
+                
+                if (sessionAuthSession) {
+                    try {
+                        const session = JSON.parse(sessionAuthSession);
+                        result += '<div class="info">';
+                        result += '<h5>📋 sessionStorage 中找到认证会话</h5>';
+                        result += `<p><strong>会话结构:</strong> ${Object.keys(session).join(', ')}</p>`;
+                        result += '</div>';
+                    } catch (e) {
+                        result += '<div class="error">';
+                        result += '<h5>❌ sessionStorage 认证会话解析失败</h5>';
+                        result += '</div>';
+                    }
+                } else {
+                    result += '<div class="info">';
+                    result += '<h5>📋 sessionStorage 中未找到认证会话</h5>';
+                    result += '</div>';
+                }
+                
+                statusDiv.innerHTML = result;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ 检查认证状态时发生错误</h4>
+                        <p><strong>错误:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 显示存储信息
+        function showStorageInfo() {
+            const infoDiv = document.getElementById('storageInfo');
+            
+            const storageInfo = {
+                localStorage: {
+                    keys: Object.keys(localStorage),
+                    items: {}
+                },
+                sessionStorage: {
+                    keys: Object.keys(sessionStorage),
+                    items: {}
+                }
+            };
+            
+            // 获取所有 localStorage 项目
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                storageInfo.localStorage.items[key] = value ? value.substring(0, 100) + (value.length > 100 ? '...' : '') : value;
+            }
+            
+            // 获取所有 sessionStorage 项目
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                storageInfo.sessionStorage.items[key] = value ? value.substring(0, 100) + (value.length > 100 ? '...' : '') : value;
+            }
+            
+            infoDiv.innerHTML = `
+                <h4>💾 存储信息详情</h4>
+                <pre>${JSON.stringify(storageInfo, null, 2)}</pre>
+            `;
+        }
+
+        // 测试 Token 提取
+        function testTokenExtraction() {
+            const testDiv = document.getElementById('tokenTest');
+            
+            try {
+                console.log('[DEBUG] 开始测试 Token 提取...');
+                
+                let result = '<h4>🧪 Token 提取测试结果</h4>';
+                
+                // 模拟 storageService 的 getAuthToken 逻辑
+                const authSession = localStorage.getItem('auth_session');
+                
+                if (authSession) {
+                    const session = JSON.parse(authSession);
+                    
+                    result += '<div class="info">';
+                    result += '<h5>📋 提取过程</h5>';
+                    
+                    if (session.tokens?.id_token) {
+                        result += '<p>✅ 找到 session.tokens.id_token</p>';
+                        result += `<p><strong>Token:</strong> <span class="token-display">${session.tokens.id_token}</span></p>`;
+                    } else if (session.tokens?.access_token) {
+                        result += '<p>✅ 找到 session.tokens.access_token</p>';
+                        result += `<p><strong>Token:</strong> <span class="token-display">${session.tokens.access_token}</span></p>`;
+                    } else {
+                        result += '<p>❌ 未找到有效的 token</p>';
+                        result += `<p><strong>Tokens 内容:</strong> <pre>${JSON.stringify(session.tokens, null, 2)}</pre></p>`;
+                    }
+                    
+                    result += '</div>';
+                } else {
+                    result += '<div class="error">';
+                    result += '<p>❌ 未找到认证会话</p>';
+                    result += '</div>';
+                }
+                
+                testDiv.innerHTML = result;
+                
+            } catch (error) {
+                testDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Token 提取测试失败</h4>
+                        <p><strong>错误:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 清除所有认证信息
+        function clearAllAuth() {
+            if (confirm('确定要清除所有认证信息吗？')) {
+                localStorage.removeItem('auth_session');
+                sessionStorage.removeItem('auth_session');
+                
+                // 清除其他可能的认证相关项目
+                const authKeys = ['authing_token', 'access_token', 'id_token', 'authToken', 'userToken'];
+                authKeys.forEach(key => {
+                    localStorage.removeItem(key);
+                    sessionStorage.removeItem(key);
+                });
+                
+                alert('所有认证信息已清除');
+                location.reload();
+            }
+        }
+
+        // 自动检查认证状态
+        checkAuthStatus();
+    </script>
+</body>
+</html>

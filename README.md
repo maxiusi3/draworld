@@ -67,18 +67,40 @@ npm run dev
 - ✅ **立即可用，体验完整功能**
 - ⚠️ 生成预设测试视频
 
-#### 云端模式（需要API密钥）
+#### 真实模式（需要API密钥）
 - ✅ **真实AI生成，个性化内容**
+- ✅ **通义万相2.2 i2v flash模型**
 - ⚠️ 需要通义万相API密钥
-- ⚠️ 消耗API配额
+- ⚠️ 消耗API配额（约0.5-1元/视频）
 
-### 配置云端模式（可选）
+### 🚀 启用真实视频生成
 
-如果您想使用真实的AI视频生成：
+#### 快速配置（推荐）
+
+```bash
+# 1. 安装依赖
+npm install
+
+# 2. 运行配置脚本
+npm run setup:video
+
+# 3. 测试配置
+npm run test:video
+
+# 4. 启动应用
+npm run dev
+```
+
+#### 手动配置
 
 1. 获取 [阿里云通义万相API密钥](https://bailian.console.aliyun.com/)
-2. 在应用中访问 `/api-config` 页面配置
-3. 系统会自动切换到云端模式
+2. 创建 `.env` 文件并添加：
+   ```
+   DASHSCOPE_API_KEY=sk-your-api-key-here
+   ```
+3. 重启开发服务器
+
+详细配置指南请参考：[REAL_VIDEO_SETUP.md](./REAL_VIDEO_SETUP.md)
 
 ## 详细配置（开发者）
 

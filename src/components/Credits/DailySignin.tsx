@@ -28,14 +28,10 @@ export const DailySignin: React.FC<DailySigninProps> = ({
   const handleSignin = async () => {
     const result = await signin();
     if (result) {
-      if (result.success && !result.alreadySignedToday) {
-        // 记录签到日期
-        const today = new Date().toDateString();
-        localStorage.setItem('lastSigninDate', today);
-        setHasSignedToday(true);
-      } else if (result.alreadySignedToday) {
-        setHasSignedToday(true);
-      }
+      // 记录签到日期
+      const today = new Date().toDateString();
+      localStorage.setItem('lastSigninDate', today);
+      setHasSignedToday(true);
     }
   };
 

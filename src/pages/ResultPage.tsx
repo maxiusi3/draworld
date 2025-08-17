@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { videoService, VideoTask } from '../services/videoService';
+import { communityService } from '../services/communityService';
 import {
   PlayIcon,
   PauseIcon,
@@ -13,7 +14,9 @@ import {
   ArrowPathIcon,
   HomeIcon,
   ClockIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -30,9 +33,38 @@ const ResultPage: React.FC = () => {
   const [regenerating, setRegenerating] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
-  
+  const [artworkCreated, setArtworkCreated] = useState(false);
+  const [artworkId, setArtworkId] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 自动创建作品记录
+  const createArtworkRecord = async (task: VideoTask) => {
+    console.log('[RESULT PAGE] 尝试创建作品记录:', { videoUrl: task.videoUrl, artworkCreated });
+    if (!task.videoUrl || artworkCreated) return;
+
+    try {
+      console.log('[RESULT PAGE] 开始创建作品记录...');
+      const artwork = await communityService.createArtwork({
+        title: task.prompt || '我的视频作品',
+        description: `使用提示词"${task.prompt}"创作的视频`,
+        videoUrl: task.videoUrl,
+        thumbnailUrl: undefined, // 暂时不设置缩略图
+        isPublic: true, // 默认公开
+      });
+
+      setArtworkCreated(true);
+      setArtworkId(artwork.id);
+      setIsPublic(artwork.is_public);
+      console.log('[RESULT PAGE] 作品记录创建成功:', artwork);
+    } catch (error) {
+      console.error('[RESULT PAGE] 创建作品记录失败:', error);
+      // 不影响用户体验，静默处理错误
+    }
+  };
 
   useEffect(() => {
     if (!taskId) {
@@ -50,7 +82,7 @@ const ResultPage: React.FC = () => {
       }
       setLoading(false);
 
-      // 如果任务完成，自动播放视频
+      // 如果任务完成，自动播放视频并创建作品记录
       if (updatedTask?.status === 'completed' && updatedTask.videoUrl) {
         setTimeout(() => {
           if (videoRef.current) {
@@ -58,6 +90,9 @@ const ResultPage: React.FC = () => {
             setVideoPlaying(true);
           }
         }, 1000);
+
+        // 自动创建作品记录
+        createArtworkRecord(updatedTask);
       }
     });
 
@@ -157,6 +192,23 @@ const ResultPage: React.FC = () => {
     } catch (error) {
       console.error('分享失败:', error);
       toast.error('分享失败');
+    }
+  };
+
+  const handleVisibilityToggle = async () => {
+    if (!artworkId || visibilityLoading) return;
+
+    setVisibilityLoading(true);
+    try {
+      const newVisibility = !isPublic;
+      await communityService.updateArtworkVisibility(artworkId, newVisibility);
+      setIsPublic(newVisibility);
+      toast.success(newVisibility ? '作品已设为公开' : '作品已设为私密');
+    } catch (error) {
+      console.error('更新作品可见性失败:', error);
+      toast.error('更新失败，请稍后重试');
+    } finally {
+      setVisibilityLoading(false);
     }
   };
 
@@ -389,6 +441,25 @@ const ResultPage: React.FC = () => {
               </div>
             </div>
             
+            {/* 作品发布提示 */}
+            {task.status === 'completed' && task.videoUrl && artworkCreated && (
+              <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="flex items-center justify-center space-x-2 text-green-700">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">作品已自动发布到创意广场</span>
+                </div>
+                <p className="text-green-600 text-sm mt-1">其他用户现在可以浏览和点赞你的作品了</p>
+                <button
+                  onClick={() => navigate('/community')}
+                  className="mt-2 text-green-700 hover:text-green-800 text-sm underline"
+                >
+                  前往创意广场查看 →
+                </button>
+              </div>
+            )}
+
             {/* 操作按钮 */}
             {task.status === 'completed' && task.videoUrl && (
               <div className="mt-6 flex items-center justify-center space-x-4">
@@ -452,6 +523,45 @@ const ResultPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">完成时间</label>
                     <p className="text-gray-800">{formatDate(task.completedAt)}</p>
+                  </div>
+                )}
+
+                {/* 可见性控制 */}
+                {artworkCreated && artworkId && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <label className="block text-sm font-medium text-gray-600 mb-3">作品可见性</label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${isPublic ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          {isPublic ? (
+                            <EyeIcon className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <EyeSlashIcon className="w-5 h-5 text-gray-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {isPublic ? '公开' : '私密'}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {isPublic ? '所有人都可以在创意广场看到这个作品' : '只有你可以看到这个作品'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleVisibilityToggle}
+                        disabled={visibilityLoading}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${
+                          isPublic ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            isPublic ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -2,16 +2,19 @@
 // 说明: 积分商店页面
 
 import React, { useState } from 'react';
-import { useCreditPackages, useCreateOrder, usePaymentMethod } from '../hooks/usePayment';
+import { useCreditPackages, useCreateOrder, usePaymentMethod, useOrders, useOrderManagement } from '../hooks/usePayment';
 import { useCreditBalance } from '../hooks/useCredits';
 import { CreditBalance } from '../components/Credits/CreditBalance';
 import { paymentService, PaymentService } from '../services/paymentService';
-import { 
-  CurrencyDollarIcon, 
-  SparklesIcon, 
+import {
+  CurrencyDollarIcon,
+  SparklesIcon,
   CheckIcon,
   StarIcon,
-  GiftIcon 
+  GiftIcon,
+  ExclamationTriangleIcon,
+  ArrowPathIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
@@ -19,12 +22,15 @@ import type { CreditPackage } from '../types/credits';
 import { PaymentMethod } from '../types/credits';
 
 const CreditStorePage: React.FC = () => {
-  const { packages, loading, error } = useCreditPackages();
+  const { packages, loading, error, refresh: refreshPackages } = useCreditPackages();
   const { balance } = useCreditBalance();
   const { createOrderAndPay, loading: orderLoading } = useCreateOrder();
   const { selectedMethod, setSelectedMethod, availableMethods, getMethodInfo } = usePaymentMethod();
+  const { orders, loading: ordersLoading, refresh: refreshOrders } = useOrders();
+  const { cancelOrder, retryPayment, loading: managementLoading } = useOrderManagement();
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
 
   const handlePurchase = async (pkg: CreditPackage) => {
     setSelectedPackage(pkg);
@@ -34,19 +40,43 @@ const CreditStorePage: React.FC = () => {
   const handleConfirmPurchase = async () => {
     if (!selectedPackage) return;
 
-    const orderId = await createOrderAndPay(
-      selectedPackage.id,
-      selectedMethod,
-      () => {
-        setShowPaymentModal(false);
-        setSelectedPackage(null);
-      }
-    );
+    try {
+      const orderId = await createOrderAndPay(
+        selectedPackage.id,
+        selectedMethod,
+        () => {
+          setShowPaymentModal(false);
+          setSelectedPackage(null);
+          refreshOrders(); // 刷新订单列表
+        }
+      );
 
-    if (orderId) {
-      // 可以跳转到支付页面或显示支付二维码
-      console.log('订单创建成功:', orderId);
+      if (orderId) {
+        console.log('订单创建成功:', orderId);
+        // 可以跳转到支付页面或显示支付二维码
+      }
+    } catch (error) {
+      console.error('购买失败:', error);
+      toast.error('购买失败，请稍后重试');
     }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    const success = await cancelOrder(orderId);
+    if (success) {
+      refreshOrders();
+    }
+  };
+
+  const handleRetryPayment = async (orderId: string) => {
+    const success = await retryPayment(orderId);
+    if (success) {
+      refreshOrders();
+    }
+  };
+
+  const handleRetryLoadPackages = () => {
+    refreshPackages();
   };
 
   if (loading) {
@@ -63,14 +93,35 @@ const CreditStorePage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            重试
-          </button>
+        <div className="text-center max-w-md mx-auto p-6">
+          <ExclamationTriangleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">加载失败</h2>
+          <p className="text-red-600 mb-6">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={handleRetryLoadPackages}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {loading ? (
+                <>
+                  <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                  重试中...
+                </>
+              ) : (
+                <>
+                  <ArrowPathIcon className="w-4 h-4 mr-2" />
+                  重试
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+            >
+              刷新页面
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -89,15 +140,25 @@ const CreditStorePage: React.FC = () => {
             购买积分，解锁更多创作可能
           </p>
           
-          {/* 当前积分余额 */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 inline-block">
-            <div className="flex items-center space-x-3">
-              <CurrencyDollarIcon className="w-6 h-6" />
-              <span className="text-lg">当前余额:</span>
-              <span className="text-2xl font-bold">
-                {balance ? balance.balance.toLocaleString() : '--'} 积分
-              </span>
+          {/* 当前积分余额和操作按钮 */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <CurrencyDollarIcon className="w-6 h-6" />
+                <span className="text-lg">当前余额:</span>
+                <span className="text-2xl font-bold">
+                  {balance !== null ? balance.toLocaleString() : '--'} 积分
+                </span>
+              </div>
             </div>
+
+            <button
+              onClick={() => setShowOrderHistory(!showOrderHistory)}
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg px-4 py-2 transition-colors flex items-center space-x-2"
+            >
+              <span>订单历史</span>
+              <span className="text-sm opacity-75">({orders.length})</span>
+            </button>
           </div>
         </div>
       </div>
@@ -200,6 +261,85 @@ const CreditStorePage: React.FC = () => {
             );
           })}
         </div>
+
+        {/* 订单历史 */}
+        {showOrderHistory && (
+          <div className="mt-8 bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">订单历史</h3>
+              <button
+                onClick={() => setShowOrderHistory(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {ordersLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p className="text-gray-600">加载订单中...</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>暂无订单记录</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {orders.slice(0, 5).map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-medium">{order.packageName}</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          order.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          order.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {order.status === 'PAID' ? '已支付' :
+                           order.status === 'PENDING' ? '待支付' :
+                           order.status === 'FAILED' ? '支付失败' :
+                           order.status === 'CANCELLED' ? '已取消' : order.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        {order.totalCredits} 积分 • ¥{order.priceYuan} • {new Date(order.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      {order.status === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={() => handleRetryPayment(order.id)}
+                            disabled={managementLoading}
+                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                          >
+                            重试支付
+                          </button>
+                          <button
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={managementLoading}
+                            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                          >
+                            取消
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {orders.length > 5 && (
+                  <div className="text-center pt-4">
+                    <p className="text-sm text-gray-500">显示最近 5 条订单</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 购买说明 */}
         <div className="mt-12 bg-white rounded-lg shadow p-6">

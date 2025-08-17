@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { PaintBrushIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { CreditBalance } from '../Credits/CreditBalance';
+import { CreditBalance } from '../CreditBalance';
+import UserSwitcher from '../UserSwitcher';
 import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
@@ -43,19 +44,19 @@ const Header: React.FC = () => {
                   创意广场
                 </Link>
                 <Link
-                  to="/dashboard"
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
-                >
-                  我的作品
-                </Link>
-                <Link
-                  to="/credit-store"
+                  to="/credits"
                   className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
                 >
                   积分商店
                 </Link>
                 <Link
-                  to="/create"
+                  to="/profile"
+                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
+                >
+                  个人中心
+                </Link>
+                <Link
+                  to="/"
                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   创作新视频
@@ -82,14 +83,13 @@ const Header: React.FC = () => {
           {/* Credits and User Menu */}
           {currentUser && (
             <div className="flex items-center space-x-4">
+              {/* User Switcher (Demo Mode) */}
+              <UserSwitcher />
+
               {/* Credit Balance */}
               <CreditBalance
-                size="medium"
-                showRechargeButton={true}
-                onRechargeClick={() => {
-                  // TODO: 实现充值页面跳转
-                  toast('充值功能即将上线', { icon: 'ℹ️' });
-                }}
+                showSigninButton={true}
+                className="mr-2"
               />
 
               {/* User Menu */}

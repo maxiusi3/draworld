@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 部署测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .url-display {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 5px;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 API 部署测试工具</h1>
+        
+        <div class="test-section info">
+            <h3>📍 当前环境信息</h3>
+            <p><strong>当前域名:</strong> <span class="url-display" id="currentDomain"></span></p>
+            <p><strong>API 基础 URL:</strong> <span class="url-display" id="apiBaseUrl"></span></p>
+            <p><strong>测试 API URL:</strong> <span class="url-display" id="testApiUrl"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 API 端点测试</h3>
+            <button onclick="testVideoListAPI()">测试 /api/video/list</button>
+            <button onclick="testCreditsAPI()">测试 /api/credits/balance</button>
+            <button onclick="testAllAPIs()">测试所有 API</button>
+            <div id="apiTestResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 测试结果</h3>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 调试信息</h3>
+            <button onclick="showDebugInfo()">显示调试信息</button>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentDomain = window.location.origin;
+            const apiBaseUrl = currentDomain;
+            const testApiUrl = `${apiBaseUrl}/api/video/list?limit=20`;
+            
+            document.getElementById('currentDomain').textContent = currentDomain;
+            document.getElementById('apiBaseUrl').textContent = apiBaseUrl;
+            document.getElementById('testApiUrl').textContent = testApiUrl;
+        });
+
+        // 测试 API 函数
+        async function testAPI(endpoint, description) {
+            const startTime = Date.now();
+            const url = `${window.location.origin}${endpoint}`;
+            
+            try {
+                console.log(`[TEST] 开始测试: ${description}`);
+                console.log(`[TEST] URL: ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer test-token-for-testing',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                console.log(`[TEST] 响应状态: ${response.status}`);
+                console.log(`[TEST] 响应时间: ${duration}ms`);
+                
+                let responseData;
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else {
+                    responseData = await response.text();
+                }
+                
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: responseData,
+                    duration: duration,
+                    url: url,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+                
+            } catch (error) {
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                console.error(`[TEST] 错误: ${error.message}`);
+                
+                return {
+                    success: false,
+                    error: error.message,
+                    duration: duration,
+                    url: url
+                };
+            }
+        }
+
+        // 测试视频列表 API
+        async function testVideoListAPI() {
+            const result = await testAPI('/api/video/list?limit=20', '视频列表 API');
+            displayTestResult('video-list', '视频列表 API', result);
+        }
+
+        // 测试积分 API
+        async function testCreditsAPI() {
+            const result = await testAPI('/api/credits/balance', '积分余额 API');
+            displayTestResult('credits-balance', '积分余额 API', result);
+        }
+
+        // 测试所有 API
+        async function testAllAPIs() {
+            document.getElementById('testResults').innerHTML = '<p>🔄 正在测试所有 API...</p>';
+            
+            const tests = [
+                { endpoint: '/api/video/list?limit=20', name: '视频列表 API', id: 'video-list' },
+                { endpoint: '/api/credits/balance', name: '积分余额 API', id: 'credits-balance' },
+                { endpoint: '/api/credits/daily-signin', name: '每日签到 API', id: 'daily-signin' }
+            ];
+            
+            for (const test of tests) {
+                const result = await testAPI(test.endpoint, test.name);
+                displayTestResult(test.id, test.name, result);
+                
+                // 等待一秒再测试下一个
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        // 显示测试结果
+        function displayTestResult(testId, testName, result) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultClass = result.success ? 'success' : 'error';
+            
+            const resultHTML = `
+                <div class="test-section ${resultClass}">
+                    <h4>${result.success ? '✅' : '❌'} ${testName}</h4>
+                    <p><strong>状态:</strong> ${result.status || 'N/A'} ${result.statusText || ''}</p>
+                    <p><strong>响应时间:</strong> ${result.duration}ms</p>
+                    <p><strong>URL:</strong> <span class="url-display">${result.url}</span></p>
+                    ${result.error ? `<p><strong>错误:</strong> ${result.error}</p>` : ''}
+                    ${result.data ? `<p><strong>响应数据:</strong></p><pre>${JSON.stringify(result.data, null, 2)}</pre>` : ''}
+                    ${result.headers ? `<details><summary>响应头</summary><pre>${JSON.stringify(result.headers, null, 2)}</pre></details>` : ''}
+                </div>
+            `;
+            
+            resultsDiv.innerHTML += resultHTML;
+        }
+
+        // 显示调试信息
+        function showDebugInfo() {
+            const debugInfo = {
+                userAgent: navigator.userAgent,
+                currentUrl: window.location.href,
+                origin: window.location.origin,
+                timestamp: new Date().toISOString(),
+                localStorage: {
+                    keys: Object.keys(localStorage),
+                    authSession: localStorage.getItem('auth_session')
+                },
+                sessionStorage: {
+                    keys: Object.keys(sessionStorage)
+                }
+            };
+            
+            document.getElementById('debugInfo').innerHTML = `
+                <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+            `;
+        }
+    </script>
+</body>
+</html>

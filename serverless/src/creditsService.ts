@@ -27,6 +27,9 @@ export enum CreditTransactionReason {
   DAILY_SIGNIN = 'DAILY_SIGNIN',
   INVITE_REGISTER = 'INVITE_REGISTER',
   INVITE_FIRST_VIDEO = 'INVITE_FIRST_VIDEO',
+  INVITATION_REWARD = 'INVITATION_REWARD',           // 邀请者奖励
+  INVITATION_BONUS = 'INVITATION_BONUS',             // 被邀请者奖励
+  INVITATION_VIDEO_REWARD = 'INVITATION_VIDEO_REWARD', // 首次视频奖励
   LIKE_RECEIVED = 'LIKE_RECEIVED',
   LIKE_GIVEN = 'LIKE_GIVEN',
   PURCHASE = 'PURCHASE',
@@ -285,5 +288,218 @@ export class CreditsService {
       '新用户注册奖励'
     );
     return result.success;
+  }
+
+  // 邀请者奖励（注册时）
+  async grantInviterReward(inviterUserId: string, referenceId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      inviterUserId,
+      CreditTransactionType.EARN,
+      CREDIT_RULES.INVITE_REGISTER_REWARD,
+      CreditTransactionReason.INVITATION_REWARD,
+      referenceId,
+      '邀请新用户奖励'
+    );
+    return result.success;
+  }
+
+  // 被邀请者奖励（注册时）
+  async grantInviteeReward(inviteeUserId: string, referenceId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      inviteeUserId,
+      CreditTransactionType.EARN,
+      50, // 被邀请者获得50积分
+      CreditTransactionReason.INVITATION_BONUS,
+      referenceId,
+      '使用邀请码注册额外奖励'
+    );
+    return result.success;
+  }
+
+  // 首次视频奖励（给邀请者）
+  async grantFirstVideoReward(inviterUserId: string, amount: number, referenceId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      inviterUserId,
+      CreditTransactionType.EARN,
+      amount,
+      CreditTransactionReason.INVITATION_VIDEO_REWARD,
+      referenceId,
+      '被邀请用户首次视频奖励'
+    );
+    return result.success;
+  }
+
+  // 购买积分
+  async grantPurchaseCredits(userId: string, amount: number, orderId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      userId,
+      CreditTransactionType.EARN,
+      amount,
+      CreditTransactionReason.PURCHASE,
+      orderId,
+      '购买积分'
+    );
+    return result.success;
+  }
+
+  // 社交奖励：作品获得点赞奖励
+  async grantLikeReceivedReward(authorId: string, likeCount: number, artworkId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      authorId,
+      CreditTransactionType.EARN,
+      1,
+      CreditTransactionReason.LIKE_RECEIVED,
+      artworkId,
+      `作品获得${likeCount}个点赞奖励`
+    );
+    return result.success;
+  }
+
+  // 社交奖励：点赞他人奖励
+  async grantLikeGivenReward(likerId: string, dailyLikeCount: number, artworkId: string): Promise<boolean> {
+    const result = await this.executeTransaction(
+      likerId,
+      CreditTransactionType.EARN,
+      1,
+      CreditTransactionReason.LIKE_GIVEN,
+      artworkId,
+      `给他人点赞${dailyLikeCount}次奖励`
+    );
+    return result.success;
+  }
+
+  // 检查是否需要重置每日数据
+  private isNewDay(lastResetTimestamp: number): boolean {
+    const today = new Date();
+    const lastReset = new Date(lastResetTimestamp);
+    return today.toDateString() !== lastReset.toDateString();
+  }
+
+  // 更新用户每日点赞数并检查奖励
+  async updateDailyLikeCount(userId: string): Promise<{
+    dailyLikeCount: number;
+    shouldReward: boolean;
+    reachedLimit: boolean;
+  }> {
+    try {
+      // 获取用户积分信息
+      const userCredits = await this.getUserCredits(userId);
+      if (!userCredits) {
+        return { dailyLikeCount: 0, shouldReward: false, reachedLimit: false };
+      }
+
+      const now = Date.now();
+      let dailyLikeGiven = userCredits.dailyLikeGiven || 0;
+      let lastDailyReset = userCredits.lastDailyReset || now;
+
+      // 检查是否需要重置每日数据
+      if (this.isNewDay(lastDailyReset)) {
+        dailyLikeGiven = 0;
+        lastDailyReset = now;
+      }
+
+      // 增加每日点赞数
+      dailyLikeGiven += 1;
+
+      // 更新用户积分表
+      const params = {
+        tableName: 'user_credits',
+        condition: new TableStore.Condition(TableStore.RowExistenceExpectation.EXPECT_EXIST, null),
+        primaryKey: [{ 'userId': userId }],
+        attributeColumns: [
+          { 'dailyLikeGiven': dailyLikeGiven },
+          { 'lastDailyReset': lastDailyReset },
+          { 'updatedAt': now },
+        ],
+      };
+
+      await this.client.updateRow(params);
+
+      // 检查是否应该发放奖励
+      const LIKES_PER_REWARD = 10;
+      const MAX_DAILY_REWARDED_LIKES = 50;
+      const shouldReward = dailyLikeGiven % LIKES_PER_REWARD === 0;
+      const reachedLimit = dailyLikeGiven >= MAX_DAILY_REWARDED_LIKES;
+
+      return {
+        dailyLikeCount: dailyLikeGiven,
+        shouldReward,
+        reachedLimit,
+      };
+    } catch (error) {
+      console.error('更新每日点赞数失败:', error);
+      return { dailyLikeCount: 0, shouldReward: false, reachedLimit: false };
+    }
+  }
+
+  // 处理社交奖励逻辑
+  async processSocialRewards(
+    likerId: string,
+    authorId: string,
+    artworkId: string,
+    newLikeCount: number,
+    isLiking: boolean
+  ): Promise<{
+    success: boolean;
+    authorReward?: number;
+    likerReward?: number;
+    messages: string[];
+  }> {
+    const result = {
+      success: true,
+      messages: [] as string[],
+    };
+
+    try {
+      // 不能给自己的作品点赞获得奖励
+      if (likerId === authorId) {
+        return result;
+      }
+
+      if (!isLiking) {
+        // 取消点赞，暂时不扣除已发放的奖励
+        result.messages.push('取消点赞成功');
+        return result;
+      }
+
+      // 1. 检查作品作者是否应该获得点赞奖励（每5个点赞获得1积分）
+      const LIKES_PER_AUTHOR_REWARD = 5;
+      if (newLikeCount > 0 && newLikeCount % LIKES_PER_AUTHOR_REWARD === 0) {
+        const authorRewardSuccess = await this.grantLikeReceivedReward(authorId, newLikeCount, artworkId);
+        if (authorRewardSuccess) {
+          result.authorReward = 1;
+          result.messages.push(`作品获得${LIKES_PER_AUTHOR_REWARD}个点赞，作者获得1积分奖励！`);
+        }
+      }
+
+      // 2. 检查点赞者是否应该获得点赞奖励
+      const likeUpdate = await this.updateDailyLikeCount(likerId);
+
+      if (!likeUpdate.reachedLimit) {
+        if (likeUpdate.shouldReward) {
+          const likerRewardSuccess = await this.grantLikeGivenReward(likerId, likeUpdate.dailyLikeCount, artworkId);
+          if (likerRewardSuccess) {
+            result.likerReward = 1;
+            result.messages.push('今日点赞10次，获得1积分奖励！');
+          }
+        }
+
+        const remaining = 50 - likeUpdate.dailyLikeCount;
+        if (remaining > 0) {
+          result.messages.push(`今日还可获得奖励的点赞次数：${remaining}`);
+        } else {
+          result.messages.push('今日点赞奖励已达上限');
+        }
+      } else {
+        result.messages.push('今日点赞奖励已达上限');
+      }
+
+      return result;
+    } catch (error) {
+      console.error('处理社交奖励失败:', error);
+      result.success = false;
+      result.messages.push('奖励处理失败');
+      return result;
+    }
   }
 }

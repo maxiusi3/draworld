@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useConsumeCredits } from '../hooks/useCredits';
+import { useConsumeCredits, useCreditCheck } from '../hooks/useCredits';
+import { useInvitation } from '../hooks/useInvitation';
 import { videoService, CreateVideoTaskParams } from '../services/videoService';
 import { storageServiceOSS as storageService } from '../services/storageService.oss';
 import ImageUploader from '../components/ImageUploader/ImageUploader';
 import ImageEditor from '../components/ImageEditor/ImageEditor';
-import { CreditBalance, InsufficientCreditsAlert } from '../components/Credits/CreditBalance';
+import { CreditBalance } from '../components/CreditBalance';
+import { useInsufficientCreditsCheck } from '../components/InsufficientCreditsDialog';
 import { CREDIT_RULES } from '../types/credits';
+import { getVideoGenerationCost, getDemoEnvironmentInfo } from '../config/demo';
 import {
   SparklesIcon,
   PencilSquareIcon,
@@ -16,6 +19,7 @@ import {
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { useErrorHandler } from '../utils/errorHandler';
 
 type MusicStyle = 'Joyful' | 'Warm' | 'Epic' | 'Mysterious' | 'Calm';
 type AspectRatio = '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '21:9' | '9:21';
@@ -30,6 +34,9 @@ interface Step {
 const CreatePage: React.FC = () => {
   const { currentUser } = useAuth();
   const { consumeCreditsForVideo, hasSufficientCredits, loading: creditsLoading } = useConsumeCredits();
+  const { checkCredits, InsufficientCreditsDialog } = useInsufficientCreditsCheck();
+  const { handleFirstVideoReward } = useInvitation();
+  const { handleError } = useErrorHandler();
   const navigate = useNavigate();
   
   // 状态管理
@@ -139,10 +146,17 @@ const CreatePage: React.FC = () => {
       return;
     }
 
-    // 检查积分余额
-    if (!hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST)) {
-      toast.error(`积分余额不足，需要 ${CREDIT_RULES.VIDEO_GENERATION_COST} 积分`);
-      return;
+    // 检查积分余额 - 使用演示环境配置
+    const requiredCredits = getVideoGenerationCost();
+    const hasEnoughCredits = await checkCredits(requiredCredits);
+    if (!hasEnoughCredits) {
+      return; // checkCredits 会显示不足提示对话框
+    }
+
+    // 显示演示环境信息
+    const demoInfo = getDemoEnvironmentInfo();
+    if (demoInfo) {
+      console.log(`[CREATE PAGE] ${demoInfo.message}`);
     }
 
     setUploading(true);
@@ -163,6 +177,17 @@ const CreatePage: React.FC = () => {
       const imageUrl = await storageService.uploadUserImage(fileToUpload, currentUser.uid);
       setUploading(false);
 
+      // 先消费积分，再创建视频任务
+      console.log('[CREATE PAGE] 开始消费积分...');
+      const consumeResult = await consumeCreditsForVideo('video-generation-' + Date.now());
+      if (!consumeResult) {
+        console.log('[CREATE PAGE] 积分消费失败，停止视频生成');
+        toast.error('积分消费失败，请重试');
+        setGenerating(false);
+        return;
+      }
+      console.log('[CREATE PAGE] 积分消费成功，继续创建视频任务');
+
       // 创建视频生成任务
       const params: CreateVideoTaskParams = {
         imageUrl,
@@ -172,13 +197,17 @@ const CreatePage: React.FC = () => {
       };
 
       const taskId = await videoService.createVideoTask(params);
+      console.log('[CREATE PAGE] 视频任务创建成功:', taskId);
 
-      // 消费积分
-      const consumeResult = await consumeCreditsForVideo(taskId);
-      if (!consumeResult) {
-        toast.error('积分消费失败，请重试');
-        setGenerating(false);
-        return;
+      // 尝试触发首次视频奖励
+      try {
+        const rewardGiven = await handleFirstVideoReward();
+        if (rewardGiven) {
+          console.log('[CREATE PAGE] 首次视频奖励已发放');
+        }
+      } catch (error) {
+        console.error('[CREATE PAGE] 处理首次视频奖励失败:', error);
+        // 不影响主流程，继续执行
       }
 
       // 跳转到结果页面
@@ -186,7 +215,7 @@ const CreatePage: React.FC = () => {
 
     } catch (error) {
       console.error('生成视频失败:', error);
-      toast.error('生成视频失败，请重试');
+      handleError(error, '生成视频失败，请重试');
       setGenerating(false);
       setUploading(false);
     }
@@ -354,23 +383,23 @@ const CreatePage: React.FC = () => {
                         视频生成消费
                       </h3>
                       <p className="text-sm text-blue-600">
-                        每个视频需要消费 {CREDIT_RULES.VIDEO_GENERATION_COST} 积分
+                        每个视频需要消费 {getVideoGenerationCost()} 积分
+                        {getDemoEnvironmentInfo() && (
+                          <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            演示环境优惠
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
                   <CreditBalance
-                    size="medium"
-                    showRechargeButton={true}
-                    onRechargeClick={() => toast('充值功能即将上线', { icon: 'ℹ️' })}
+                    showSigninButton={true}
+                    className="mr-2"
                   />
                 </div>
               </div>
 
-              {/* 积分不足提示 */}
-              <InsufficientCreditsAlert
-                requiredCredits={CREDIT_RULES.VIDEO_GENERATION_COST}
-                onRechargeClick={() => toast('充值功能即将上线', { icon: 'ℹ️' })}
-              />
+              {/* 积分不足提示将通过 InsufficientCreditsDialog 显示 */}
               
               {/* 描述文字 */}
               <div>
@@ -456,6 +485,18 @@ const CreatePage: React.FC = () => {
               
               {/* 生成按钮 */}
               <div className="text-center pt-4">
+                {/* 积分要求提示 */}
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600">
+                    生成视频需要 <span className="font-semibold text-blue-600">{getVideoGenerationCost()}</span> 积分
+                    {getDemoEnvironmentInfo() && (
+                      <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        演示环境优惠
+                      </span>
+                    )}
+                  </p>
+                </div>
+
                 <button
                   onClick={handleGenerate}
                   disabled={
@@ -463,7 +504,7 @@ const CreatePage: React.FC = () => {
                     generating ||
                     uploading ||
                     creditsLoading ||
-                    !hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST)
+                    !hasSufficientCredits(getVideoGenerationCost())
                   }
                   className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2 mx-auto"
                 >
@@ -472,7 +513,7 @@ const CreatePage: React.FC = () => {
                     {uploading ? '上传中...' :
                      generating ? '生成中...' :
                      creditsLoading ? '检查积分中...' :
-                     !hasSufficientCredits(CREDIT_RULES.VIDEO_GENERATION_COST) ? '积分不足' :
+                     !hasSufficientCredits(getVideoGenerationCost()) ? '积分不足' :
                      '生成神奇动画'}
                   </span>
                 </button>
@@ -490,6 +531,9 @@ const CreatePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* 积分不足提示对话框 */}
+      <InsufficientCreditsDialog />
     </div>
   );
 };

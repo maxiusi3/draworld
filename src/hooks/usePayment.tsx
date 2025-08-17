@@ -27,10 +27,11 @@ export function useCreditPackages() {
       setLoading(true);
       setError(null);
       const response = await paymentService.getCreditPackages();
-      setPackages(response.packages);
+      setPackages(response.packages || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取套餐列表失败');
       console.error('获取套餐列表失败:', err);
+      toast.error('获取套餐列表失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -51,14 +52,20 @@ export function useCreditPackages() {
 // 创建订单Hook
 export function useCreateOrder() {
   const [loading, setLoading] = useState(false);
-  const { refreshBalance } = useCreditBalance();
+  const { refresh: refreshBalance } = useCreditBalance();
 
   const createOrder = useCallback(async (request: CreateOrderRequest): Promise<CreateOrderResponse | null> => {
     try {
       setLoading(true);
       const response = await paymentService.createOrder(request);
-      toast.success('订单创建成功！');
-      return response;
+
+      if (response.success) {
+        toast.success('订单创建成功！');
+        return response;
+      } else {
+        toast.error(response.message || '创建订单失败');
+        return null;
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : '创建订单失败';
       toast.error(message);
@@ -70,30 +77,50 @@ export function useCreateOrder() {
   }, []);
 
   const createOrderAndPay = useCallback(async (
-    packageId: string, 
+    packageId: string,
     paymentMethod: PaymentMethod,
     onPaymentSuccess?: () => void
   ): Promise<string | null> => {
     const response = await createOrder({ packageId, paymentMethod });
-    if (!response) return null;
+    if (!response || !response.order) return null;
+
+    const orderId = response.order.id;
+
+    // 显示支付信息
+    if (response.paymentInfo?.paymentUrl) {
+      toast.success('订单创建成功，正在跳转支付...');
+      // 在实际应用中，这里会跳转到支付页面
+      console.log('支付链接:', response.paymentInfo.paymentUrl);
+    } else {
+      toast.success('订单创建成功，正在处理支付...');
+    }
 
     // 开始轮询支付状态
-    paymentService.pollPaymentStatus(
-      response.order.id,
-      (status: PaymentStatusResponse) => {
-        if (status.status === 'PAID') {
-          toast.success(`支付成功！获得 ${status.creditsAdded} 积分`);
-          refreshBalance(); // 刷新积分余额
-          onPaymentSuccess?.();
-        } else if (status.status === 'FAILED') {
-          toast.error('支付失败，请重试');
-        } else if (status.status === 'CANCELLED') {
-          toast('支付已取消', { icon: 'ℹ️' });
+    try {
+      const finalStatus = await paymentService.pollOrderStatus(
+        orderId,
+        (status: string) => {
+          console.log('支付状态更新:', status);
+          if (status === 'PAID') {
+            toast.success(`支付成功！获得 ${response.order.totalCredits} 积分`);
+          }
         }
-      }
-    );
+      );
 
-    return response.order.id;
+      if (finalStatus === 'PAID') {
+        refreshBalance(); // 刷新积分余额
+        onPaymentSuccess?.();
+      } else if (finalStatus === 'FAILED') {
+        toast.error('支付失败，请重试');
+      } else if (finalStatus === 'CANCELLED') {
+        toast('支付已取消', { icon: 'ℹ️' });
+      }
+    } catch (error) {
+      console.error('支付状态轮询失败:', error);
+      toast.error('支付状态检查失败，请手动刷新查看结果');
+    }
+
+    return orderId;
   }, [createOrder, refreshBalance]);
 
   return {
@@ -118,19 +145,27 @@ export function useOrders() {
     try {
       setLoading(true);
       setError(null);
-      const response = await paymentService.getOrders(page);
-      
-      if (append) {
-        setOrders(prev => [...prev, ...response.orders]);
+      const limit = 20;
+      const offset = (page - 1) * limit;
+      const response = await paymentService.getUserOrders(limit, offset);
+
+      if (response.success) {
+        if (append) {
+          setOrders(prev => [...prev, ...response.orders]);
+        } else {
+          setOrders(response.orders);
+        }
+
+        setHasMore(response.hasMore);
+        setTotal(response.total);
       } else {
-        setOrders(response.orders);
+        setError('获取订单列表失败');
+        toast.error('获取订单列表失败');
       }
-      
-      setHasMore(response.hasMore);
-      setTotal(response.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取订单列表失败');
       console.error('获取订单列表失败:', err);
+      toast.error('获取订单列表失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -219,7 +254,7 @@ export function useOrder(orderId: string) {
 export function usePaymentStatus(orderId: string, enabled: boolean = true) {
   const [status, setStatus] = useState<PaymentStatusResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const { refreshBalance } = useCreditBalance();
+  const { refresh: refreshBalance } = useCreditBalance();
 
   useEffect(() => {
     if (!orderId || !enabled) return;
@@ -276,5 +311,96 @@ export function usePaymentMethod() {
     setSelectedMethod,
     availableMethods,
     getMethodInfo,
+  };
+}
+
+// 订单管理Hook
+export function useOrderManagement() {
+  const [loading, setLoading] = useState(false);
+  const { refresh: refreshBalance } = useCreditBalance();
+
+  const cancelOrder = useCallback(async (orderId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const result = await paymentService.cancelOrder(orderId);
+
+      if (result.success) {
+        toast.success(result.message || '订单已取消');
+        return true;
+      } else {
+        toast.error(result.message || '取消订单失败');
+        return false;
+      }
+    } catch (error) {
+      console.error('取消订单失败:', error);
+      toast.error('取消订单失败，请稍后重试');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const checkOrderStatus = useCallback(async (orderId: string) => {
+    try {
+      const result = await paymentService.getOrderStatus(orderId);
+
+      if (result.success && result.order) {
+        return result.order.status;
+      } else {
+        console.error('获取订单状态失败:', result.message);
+        return null;
+      }
+    } catch (error) {
+      console.error('获取订单状态失败:', error);
+      return null;
+    }
+  }, []);
+
+  const retryPayment = useCallback(async (orderId: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+
+      // 检查订单状态
+      const status = await checkOrderStatus(orderId);
+      if (status !== 'PENDING') {
+        toast.error('只能重试待支付的订单');
+        return false;
+      }
+
+      // 开始轮询支付状态
+      const finalStatus = await paymentService.pollOrderStatus(
+        orderId,
+        (status: string) => {
+          console.log('重试支付状态更新:', status);
+        }
+      );
+
+      if (finalStatus === 'PAID') {
+        toast.success('支付成功！');
+        refreshBalance();
+        return true;
+      } else if (finalStatus === 'FAILED') {
+        toast.error('支付失败');
+        return false;
+      } else if (finalStatus === 'CANCELLED') {
+        toast('支付已取消', { icon: 'ℹ️' });
+        return false;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('重试支付失败:', error);
+      toast.error('重试支付失败，请稍后重试');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [checkOrderStatus, refreshBalance]);
+
+  return {
+    loading,
+    cancelOrder,
+    checkOrderStatus,
+    retryPayment,
   };
 }

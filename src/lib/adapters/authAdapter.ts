@@ -57,18 +57,69 @@ export class AuthingOIDCAdapter implements AuthAdapter {
     if (this.cfg.clientSecret) body.set('client_secret', this.cfg.clientSecret);
     if (params.codeVerifier) body.set('code_verifier', params.codeVerifier);
 
-    const res = await fetch(this.cfg.discovery.token_endpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-    if (!res.ok) throw new Error('Auth token exchange failed');
+    console.log('[AUTH DEBUG] Token exchange request:', {
+      endpoint: this.cfg.discovery.token_endpoint,
+      redirectUri: params.redirectUri,
+      clientId: this.cfg.clientId,
+      hasClientSecret: !!this.cfg.clientSecret,
+      hasCodeVerifier: !!params.codeVerifier,
+      code: params.code.substring(0, 10) + '...' // 只显示前10个字符用于调试
+    });
+
+    // 打印完整的请求体用于调试（生产环境应移除）
+    console.log('[AUTH DEBUG] Request body parameters:', {
+      grant_type: 'authorization_code',
+      code: params.code.substring(0, 10) + '...',
+      redirect_uri: params.redirectUri,
+      client_id: this.cfg.clientId,
+      has_client_secret: !!this.cfg.clientSecret,
+      has_code_verifier: !!params.codeVerifier
+    });
+
+    const res = await fetch(this.cfg.discovery.token_endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[AUTH DEBUG] Token exchange failed:', {
+        status: res.status,
+        statusText: res.statusText,
+        error: errorText,
+        requestDetails: {
+          endpoint: this.cfg.discovery.token_endpoint,
+          redirectUri: params.redirectUri,
+          clientId: this.cfg.clientId
+        }
+      });
+      throw new Error(`Auth token exchange failed: ${res.status} ${res.statusText} - ${errorText}`);
+    }
+
     const tokens = await res.json() as OIDCTokens;
+    console.log('[AUTH DEBUG] Token exchange successful');
     this.setSession(tokens);
     return tokens;
   }
 
-  getSession(): AuthSession | null { return this.readStorage(); }
+  getSession(): AuthSession | null {
+    const session = this.readStorage();
+    console.log('[AUTH ADAPTER] getSession() 返回:', session);
+    return session;
+  }
   setSession(tokens: OIDCTokens): void {
+    console.log('[AUTH ADAPTER] setSession() 调用，tokens:', tokens);
     const now = Date.now();
     const expiresAt = tokens.expires_in ? now + tokens.expires_in * 1000 : undefined;
-    this.writeStorage({ tokens, expiresAt });
+    const session = { tokens, expiresAt };
+    console.log('[AUTH ADAPTER] 准备写入会话:', session);
+    this.writeStorage(session);
+    console.log('[AUTH ADAPTER] 会话写入完成');
+
+    // 验证写入是否成功
+    const verifySession = this.readStorage();
+    console.log('[AUTH ADAPTER] 验证写入结果:', verifySession);
   }
   clearSession(): void { this.writeStorage(null); }
   getIdToken(): string | null { return this.getSession()?.tokens?.id_token ?? null; }

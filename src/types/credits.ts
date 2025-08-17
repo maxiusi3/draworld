@@ -23,10 +23,13 @@ export enum CreditTransactionReason {
   DAILY_SIGNIN = 'DAILY_SIGNIN',          // 每日签到
   INVITE_REGISTER = 'INVITE_REGISTER',     // 邀请注册奖励
   INVITE_FIRST_VIDEO = 'INVITE_FIRST_VIDEO', // 被邀请者首次生成视频奖励
+  INVITATION_REWARD = 'INVITATION_REWARD', // 邀请新用户奖励
+  INVITATION_BONUS = 'INVITATION_BONUS',   // 邀请码注册奖励
+  INVITATION_VIDEO_REWARD = 'INVITATION_VIDEO_REWARD', // 被邀请用户首次视频奖励
   LIKE_RECEIVED = 'LIKE_RECEIVED',         // 被点赞奖励
   LIKE_GIVEN = 'LIKE_GIVEN',              // 点赞奖励
   PURCHASE = 'PURCHASE',                   // 购买积分
-  
+
   // 消费积分的原因
   VIDEO_GENERATION = 'VIDEO_GENERATION',   // 视频生成消费
 }
@@ -77,8 +80,13 @@ export interface CreditTransactionListResponse {
 
 export interface DailySigninResponse {
   success: boolean;
-  creditsEarned: number;
-  alreadySignedToday: boolean;
+  reward: number;
+  message: string;
+  newBalance?: number;
+  transactionId?: string;
+  isNewUser?: boolean;
+  nextSigninTime?: string;
+  lastSigninTime?: string;
 }
 
 export interface ConsumeCreditsRequest {
@@ -90,8 +98,9 @@ export interface ConsumeCreditsRequest {
 
 export interface ConsumeCreditsResponse {
   success: boolean;
-  newBalance: number;
-  transactionId: string;
+  newBalance?: number;
+  transactionId?: string;
+  error?: string;
 }
 
 export interface GenerateInviteCodeResponse {

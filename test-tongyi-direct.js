@@ -60,18 +60,18 @@ async function runTests() {
   console.log('API Key:', API_KEY.substring(0, 10) + '...');
   console.log('测试图片:', TEST_IMAGE_URL);
   
-  // 测试 1: 通义万相 2.2 格式 (wan2.2-i2v-plus)
+  // 测试 1: 通义万相 2.2 格式 (wan2.2-i2v-flash)
   await testAPI(
-    '测试 1: 通义万相 2.2 格式 (wan2.2-i2v-plus)',
+    '测试 1: 通义万相 2.2 格式 (wan2.2-i2v-flash)',
     '/services/aigc/video-generation/video-synthesis',
     {
-      model: 'wan2.2-i2v-plus',
+      model: 'wan2.2-i2v-flash',
       input: {
         prompt: '测试视频生成',
         img_url: TEST_IMAGE_URL
       },
       parameters: {
-        resolution: '1080P',
+        resolution: '480P',
         prompt_extend: true,
         watermark: false
       }

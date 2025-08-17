@@ -2,6 +2,7 @@
 // 说明: 积分系统服务类，处理所有积分相关的业务逻辑
 
 import { authAdapter } from '../lib/adapters/authAdapter';
+import { demoCreditsService } from './demoCreditsService';
 import type {
   UserCredits,
   CreditTransaction,
@@ -25,68 +26,91 @@ export class CreditsService {
       : '';
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    // 临时模拟API响应用于测试
-    if (path === '/api/credits/balance') {
-      return {
-        balance: 150,
-        totalEarned: 150,
-        totalSpent: 0,
-      } as T;
+  // 检查是否为演示模式
+  private isDemoMode(): boolean {
+    // 在演示模式下，我们使用前端状态管理来避免 Vercel 无服务器环境的内存共享问题
+    return true; // 目前总是使用演示模式
+  }
+
+  // 获取当前用户ID
+  private async getCurrentUserId(): Promise<string> {
+    const token = await authAdapter.getIdToken();
+    if (!token) {
+      throw new Error('用户未登录');
     }
 
-    if (path === '/api/credits/daily-signin' && options?.method === 'POST') {
-      const today = new Date().toDateString();
-      const lastSignin = localStorage.getItem('lastSigninDate');
-      const alreadySignedToday = lastSignin === today;
+    // 使用一个更稳定的用户ID生成方式
+    // 在演示模式下，我们使用一个固定的用户ID
+    if (this.isDemoMode()) {
+      // 尝试从 localStorage 获取已存在的用户ID，如果没有则创建一个
+      let demoUserId = localStorage.getItem('demo_user_id');
+      if (!demoUserId) {
+        demoUserId = `demo-user-${Date.now()}`;
+        localStorage.setItem('demo_user_id', demoUserId);
+      }
+      return demoUserId;
+    }
 
-      if (!alreadySignedToday) {
-        localStorage.setItem('lastSigninDate', today);
+    // 生产模式下从 token 中提取用户ID
+    return `user-${token.slice(-8)}`;
+  }
+
+  private async request<T>(path: string, options?: RequestInit): Promise<T> {
+    try {
+      console.log('[CREDITS SERVICE] 发起请求:', path);
+
+      let token = await authAdapter.getIdToken();
+
+      // 演示模式：如果无法获取真实 token，使用模拟 token
+      if (!token) {
+        console.log('[CREDITS SERVICE] 无法获取真实 token，使用演示模式 token');
+        token = 'test-token-for-demo';
       }
 
-      return {
-        success: true,
-        creditsEarned: alreadySignedToday ? 0 : 15,
-        alreadySignedToday,
-      } as T;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        ...options,
+        headers: {
+          ...headers,
+          ...(options?.headers as Record<string, string>),
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[CREDITS SERVICE] 请求失败:', {
+          path,
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[CREDITS SERVICE] 请求成功:', path, data);
+      return data;
+    } catch (error) {
+      console.error('[CREDITS SERVICE] 请求异常:', path, error);
+      throw error;
     }
-
-    if (path === '/api/credits/consume' && options?.method === 'POST') {
-      return {
-        success: true,
-        newBalance: 90, // 模拟消费60积分后的余额
-        transactionId: `tx_${Date.now()}`,
-      } as T;
-    }
-
-    // 原始API调用逻辑（当后端准备好时使用）
-    const token = await authAdapter.getIdToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: {
-        ...headers,
-        ...(options?.headers as Record<string, string>),
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API Error ${response.status}: ${errorText}`);
-    }
-
-    return response.json();
   }
 
   // 获取用户积分余额
   async getCreditBalance(): Promise<CreditBalanceResponse> {
+    if (this.isDemoMode()) {
+      const userId = await this.getCurrentUserId();
+      const credits = demoCreditsService.getUserCredits(userId);
+      return {
+        ...credits,
+        totalEarned: credits.total_earned,
+        totalSpent: credits.total_spent,
+      };
+    }
     return this.request<CreditBalanceResponse>('/api/credits/balance');
   }
 
@@ -95,13 +119,70 @@ export class CreditsService {
     page: number = 1,
     limit: number = 20
   ): Promise<CreditTransactionListResponse> {
+    const offset = (page - 1) * limit;
     return this.request<CreditTransactionListResponse>(
-      `/api/credits/transactions?page=${page}&limit=${limit}`
+      `/api/credits/history?limit=${limit}&offset=${offset}`
     );
+  }
+
+  // 获取积分历史记录
+  async getHistory(params: {
+    limit?: number;
+    offset?: number;
+    type?: 'EARN' | 'SPEND';
+    reason?: string;
+  } = {}): Promise<any> {
+    if (this.isDemoMode()) {
+      const userId = await this.getCurrentUserId();
+      return demoCreditsService.getTransactionHistory(
+        userId,
+        params.limit,
+        params.offset,
+        params.type,
+        params.reason
+      );
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.offset) queryParams.append('offset', params.offset.toString());
+    if (params.type) queryParams.append('type', params.type);
+    if (params.reason) queryParams.append('reason', params.reason);
+
+    return this.request<any>(`/api/credits/history?${queryParams.toString()}`);
+  }
+
+  // 获取积分历史（新方法，支持更多过滤选项）
+  async getCreditHistory(
+    limit: number = 20,
+    offset: number = 0,
+    type?: 'EARN' | 'SPEND',
+    reason?: string
+  ): Promise<any> {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+    });
+
+    if (type) params.append('type', type);
+    if (reason) params.append('reason', reason);
+
+    return this.request(`/api/credits/history?${params.toString()}`);
   }
 
   // 每日签到
   async dailySignin(): Promise<DailySigninResponse> {
+    if (this.isDemoMode()) {
+      const userId = await this.getCurrentUserId();
+      const result = demoCreditsService.dailySignin(userId);
+      return {
+        success: result.success,
+        reward: result.reward || 0,
+        message: result.message,
+        newBalance: result.newBalance,
+        transactionId: result.transactionId,
+      };
+    }
     return this.request<DailySigninResponse>('/api/credits/daily-signin', {
       method: 'POST',
     });
@@ -109,9 +190,27 @@ export class CreditsService {
 
   // 消费积分
   async consumeCredits(request: ConsumeCreditsRequest): Promise<ConsumeCreditsResponse> {
-    return this.request<ConsumeCreditsResponse>('/api/credits/consume', {
+    if (this.isDemoMode()) {
+      const userId = await this.getCurrentUserId();
+      const result = demoCreditsService.createTransaction(
+        userId,
+        'SPEND',
+        request.amount,
+        request.reason,
+        request.referenceId,
+        request.description
+      );
+      return result;
+    }
+    return this.request<ConsumeCreditsResponse>('/api/credits/transaction', {
       method: 'POST',
-      body: JSON.stringify(request),
+      body: JSON.stringify({
+        transactionType: 'SPEND',
+        amount: request.amount,
+        reason: request.reason,
+        referenceId: request.referenceId,
+        description: request.description,
+      }),
     });
   }
 
@@ -159,8 +258,12 @@ export class CreditsService {
 
   // 视频生成消费积分的便捷方法
   async consumeCreditsForVideo(videoId: string): Promise<ConsumeCreditsResponse> {
+    // 动态获取视频生成积分要求（演示环境1积分，生产环境60积分）
+    const { getVideoGenerationCost } = await import('../config/demo');
+    const requiredCredits = getVideoGenerationCost();
+
     return this.consumeCredits({
-      amount: 60, // CREDIT_RULES.VIDEO_GENERATION_COST
+      amount: requiredCredits,
       reason: CreditTransactionReason.VIDEO_GENERATION,
       referenceId: videoId,
       description: '视频生成消费',
@@ -179,6 +282,9 @@ export class CreditsService {
       [CreditTransactionReason.DAILY_SIGNIN]: '每日签到',
       [CreditTransactionReason.INVITE_REGISTER]: '邀请注册奖励',
       [CreditTransactionReason.INVITE_FIRST_VIDEO]: '邀请首次生成视频奖励',
+      [CreditTransactionReason.INVITATION_REWARD]: '邀请新用户奖励',
+      [CreditTransactionReason.INVITATION_BONUS]: '邀请码注册奖励',
+      [CreditTransactionReason.INVITATION_VIDEO_REWARD]: '被邀请用户首次视频奖励',
       [CreditTransactionReason.LIKE_RECEIVED]: '被点赞奖励',
       [CreditTransactionReason.LIKE_GIVEN]: '点赞奖励',
       [CreditTransactionReason.PURCHASE]: '购买积分',

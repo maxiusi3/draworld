@@ -42,7 +42,7 @@ class TongyiWanxiangAPIService {
     };
 
     const requestBody = {
-      model: 'wan2.2-i2v-plus',
+      model: 'wan2.2-i2v-flash',
       input: {
         prompt: prompt,
         img_url: imageUrl
@@ -99,7 +99,7 @@ class TongyiWanxiangAPIService {
   async getTaskResult(taskId) {
     try {
       const requestBody = {
-        model: 'wan2.2-i2v-plus',
+        model: 'wan2.2-i2v-flash',
         task_id: taskId
       };
 

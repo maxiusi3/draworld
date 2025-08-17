@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:demo": "DASHSCOPE_API_KEY=sk-bac53038fc8e433bb2c42f394649a379 NODE_ENV=development vite",
+    "dev:vercel": "vercel dev --listen 3000",
     "build:preview": "tsc -b && vite build",
     "build": "tsc -b && BUILD_MODE=prod vite build",
     "lint": "eslint .",
@@ -17,7 +19,15 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:video": "node setup-real-video.cjs",
+    "test:video": "node test-real-video.cjs",
+    "deploy:demo": "bash deploy-demo.sh",
+    "test:demo": "node test-demo-environment.js",
+    "fix-issues": "node fix-issues.js",
+    "pre-deploy": "node pre-deploy-check.js",
+    "init-tablestore": "node serverless/scripts/init-tablestore.js",
+    "check-deployment": "node final-deployment-check.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -58,6 +68,7 @@
     "embla-carousel-react": "^8.5.2",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "jose": "^5.2.0",
     "lucide-react": "^0.364.0",
     "next-themes": "^0.4.4",
     "react": "^18.3.1",
@@ -71,10 +82,13 @@
     "react-router-dom": "^6",
     "recharts": "^2.12.4",
     "sonner": "^1.7.2",
+    "@supabase/supabase-js": "^2.39.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "dotenv": "^16.4.5",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.0",
@@ -90,6 +104,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-router-dom": "^5",
+    "@vercel/node": "^5.3.12",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "10.4.20",
     "babel-jest": "^30.0.5",
@@ -106,7 +121,6 @@
     "ts-jest": "^29.4.1",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.15.0",
-    "vite": "^6.0.1",
-    "vite-plugin-source-info": "^1.0.0"
+    "vite": "^5.4.10"
   }
 }

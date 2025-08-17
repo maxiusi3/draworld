@@ -4,6 +4,9 @@ import { sessionManager } from '../lib/auth';
 import { AuthSession } from '../lib/adapters/types';
 import { authAdapter } from '../lib/adapters/authAdapter';
 import { oidcConfig } from '../lib/adapters/config';
+import { invitationService } from '../services/invitationService';
+import { creditsService } from '../services/creditsService';
+import { CreditTransactionReason } from '../types/credits';
 
 interface User {
   uid: string;
@@ -65,9 +68,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(false);
   }, []);
 
+  // 处理邀请奖励
+  const handleInvitationRewards = async () => {
+    try {
+      const result = await invitationService.handleInvitationFromUrl();
+      if (result.hasInvitation && result.result) {
+        if (result.result.success && result.result.rewards) {
+          // 邀请者与被邀请者奖励均由后端代发，前端仅显示提示
+          if (result.result.rewards.invitee > 0) {
+            toast.success(`欢迎加入！您获得了${result.result.rewards.invitee}积分奖励！`);
+            // 刷新余额（后端已入账）
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('creditsUpdated'));
+            }
+          }
+        } else if (result.result && !result.result.success) {
+          console.log('[AUTH] 邀请码处理失败:', result.result.message);
+        }
+      }
+    } catch (error) {
+      console.error('[AUTH] 处理邀请奖励失败:', error);
+      // 不影响登录流程，静默处理错误
+    }
+  };
+
   const setSession = (newSession: AuthSession) => {
+    console.log('[USE AUTH] setSession 被调用，newSession:', newSession);
     sessionManager.setSession(newSession);
     setSessionState(newSession);
+
+    // 设置用户状态
+    if (newSession?.tokens?.id_token) {
+      console.log('[USE AUTH] 设置用户状态...');
+      setCurrentUser({
+        uid: 'oidc-user',
+        email: 'user@example.com',
+        displayName: '用户',
+        photoURL: '',
+        metadata: {
+          creationTime: new Date().toISOString(),
+          lastSignInTime: new Date().toISOString()
+        }
+      });
+      console.log('[USE AUTH] 用户状态设置完成');
+
+      // 处理邀请奖励（异步执行，不阻塞登录流程）
+      handleInvitationRewards();
+    } else {
+      console.log('[USE AUTH] 清除用户状态');
+      setCurrentUser(null);
+    }
   };
 
   // 登录跳转：重定向至 Authing 授权页

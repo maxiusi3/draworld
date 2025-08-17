@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .upload-preview {
+            max-width: 300px;
+            max-height: 300px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ 图片上传测试工具</h1>
+        
+        <div class="test-section info">
+            <h3>📍 当前环境信息</h3>
+            <p><strong>当前域名:</strong> <span id="currentDomain"></span></p>
+            <p><strong>上传 API URL:</strong> <span id="uploadApiUrl"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 图片上传测试</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            <br>
+            <button onclick="testImageUpload()" id="uploadBtn">测试上传</button>
+            <button onclick="generateTestImage()" id="generateBtn">生成测试图片</button>
+            
+            <div id="uploadPreview"></div>
+            <div id="uploadResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 调试信息</h3>
+            <button onclick="showDebugInfo()">显示调试信息</button>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentDomain = window.location.origin;
+            const uploadApiUrl = `${currentDomain}/api/upload/image`;
+            
+            document.getElementById('currentDomain').textContent = currentDomain;
+            document.getElementById('uploadApiUrl').textContent = uploadApiUrl;
+        });
+
+        // 生成测试图片
+        function generateTestImage() {
+            // 创建一个简单的测试图片
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制彩色背景
+            const gradient = ctx.createLinearGradient(0, 0, 200, 200);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#4ecdc4');
+            gradient.addColorStop(1, '#45b7d1');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 200, 200);
+            
+            // 绘制文字
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('测试图片', 100, 100);
+            ctx.fillText(new Date().toLocaleTimeString(), 100, 130);
+            
+            // 转换为 Blob 并设置到文件输入
+            canvas.toBlob(function(blob) {
+                const file = new File([blob], 'test-image.png', { type: 'image/png' });
+                
+                // 创建一个新的 FileList
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('imageInput').files = dt.files;
+                
+                // 显示预览
+                showImagePreview(file);
+                
+                console.log('生成测试图片:', file);
+            }, 'image/png');
+        }
+
+        // 显示图片预览
+        function showImagePreview(file) {
+            const previewDiv = document.getElementById('uploadPreview');
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                previewDiv.innerHTML = `
+                    <h4>📷 图片预览</h4>
+                    <img src="${e.target.result}" class="upload-preview" alt="预览图片">
+                    <p><strong>文件名:</strong> ${file.name}</p>
+                    <p><strong>文件大小:</strong> ${(file.size / 1024).toFixed(2)} KB</p>
+                    <p><strong>文件类型:</strong> ${file.type}</p>
+                `;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // 测试图片上传
+        async function testImageUpload() {
+            const fileInput = document.getElementById('imageInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const resultsDiv = document.getElementById('uploadResults');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                resultsDiv.innerHTML = '<div class="test-section error"><p>❌ 请先选择一个图片文件</p></div>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // 显示预览
+            showImagePreview(file);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            resultsDiv.innerHTML = '<div class="test-section info"><p>🔄 正在上传图片...</p></div>';
+            
+            try {
+                console.log('开始上传图片:', file);
+                
+                // 将文件转换为 base64
+                const base64Data = await fileToBase64(file);
+                console.log('文件已转换为 base64');
+                
+                // 模拟认证 token（实际应用中应该从认证系统获取）
+                const mockToken = 'test-token-for-upload-testing';
+                
+                const uploadUrl = `${window.location.origin}/api/upload/image`;
+                console.log('上传 URL:', uploadUrl);
+                
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${mockToken}`
+                    },
+                    body: JSON.stringify({
+                        imageData: base64Data,
+                        fileName: file.name,
+                        contentType: file.type
+                    })
+                });
+                
+                console.log('上传响应状态:', response.status);
+                
+                const result = await response.json();
+                console.log('上传结果:', result);
+                
+                if (response.ok && result.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="test-section success">
+                            <h4>✅ 上传成功！</h4>
+                            <p><strong>图片 URL:</strong> <a href="${result.url}" target="_blank">${result.url}</a></p>
+                            <p><strong>消息:</strong> ${result.message}</p>
+                            <img src="${result.url}" class="upload-preview" alt="上传的图片" style="margin-top: 10px;">
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="test-section error">
+                            <h4>❌ 上传失败</h4>
+                            <p><strong>状态码:</strong> ${response.status}</p>
+                            <p><strong>错误信息:</strong> ${result.error || result.message || '未知错误'}</p>
+                            <details>
+                                <summary>详细信息</summary>
+                                <pre>${JSON.stringify(result, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('上传失败:', error);
+                resultsDiv.innerHTML = `
+                    <div class="test-section error">
+                        <h4>❌ 上传异常</h4>
+                        <p><strong>错误:</strong> ${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '测试上传';
+            }
+        }
+
+        // 将文件转换为 base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result;
+                    // 移除 data:image/jpeg;base64, 前缀，只保留 base64 数据
+                    const base64Data = result.split(',')[1];
+                    resolve(base64Data);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 显示调试信息
+        function showDebugInfo() {
+            const debugInfo = {
+                userAgent: navigator.userAgent,
+                currentUrl: window.location.href,
+                origin: window.location.origin,
+                timestamp: new Date().toISOString(),
+                localStorage: {
+                    keys: Object.keys(localStorage),
+                    authSession: localStorage.getItem('auth_session')
+                },
+                sessionStorage: {
+                    keys: Object.keys(sessionStorage)
+                }
+            };
+            
+            document.getElementById('debugInfo').innerHTML = `
+                <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+            `;
+        }
+
+        // 文件输入变化时显示预览
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                showImagePreview(e.target.files[0]);
+            }
+        });
+    </script>
+</body>
+</html>

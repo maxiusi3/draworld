@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分系统测试工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 积分系统测试工具</h1>
+        
+        <div class="section info">
+            <h3>📍 测试环境信息</h3>
+            <p><strong>当前域名:</strong> <span id="currentDomain"></span></p>
+            <p><strong>时间戳:</strong> <span id="timestamp"></span></p>
+            <p><strong>测试 Token:</strong> <code>test-token-for-demo</code></p>
+        </div>
+
+        <div class="grid">
+            <!-- 左侧：API 测试 -->
+            <div>
+                <div class="section">
+                    <h3>🔧 API 端点测试</h3>
+                    
+                    <div style="margin: 10px 0;">
+                        <button onclick="testCreditBalance()">
+                            <span class="status-indicator" id="balance-status"></span>
+                            测试积分余额 API
+                        </button>
+                        <div id="balance-result"></div>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                        <button onclick="testDailySignin()">
+                            <span class="status-indicator" id="signin-status"></span>
+                            测试每日签到 API
+                        </button>
+                        <div id="signin-result"></div>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                        <button onclick="testEarnCredits()">
+                            <span class="status-indicator" id="earn-status"></span>
+                            测试获得积分 API
+                        </button>
+                        <div id="earn-result"></div>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                        <button onclick="testSpendCredits()">
+                            <span class="status-indicator" id="spend-status"></span>
+                            测试消费积分 API
+                        </button>
+                        <div id="spend-result"></div>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                        <button onclick="testCreditHistory()">
+                            <span class="status-indicator" id="history-status"></span>
+                            测试积分历史 API
+                        </button>
+                        <div id="history-result"></div>
+                    </div>
+
+                    <div style="margin: 20px 0;">
+                        <button onclick="runAllTests()" style="background-color: #28a745;">
+                            🚀 运行所有测试
+                        </button>
+                        <button onclick="clearResults()" style="background-color: #6c757d;">
+                            🧹 清除结果
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：测试结果 -->
+            <div>
+                <div class="section">
+                    <h3>📊 测试结果总览</h3>
+                    <div id="testSummary">
+                        <p>点击左侧按钮开始测试...</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>📜 详细日志</h3>
+                    <div id="testLogs" style="max-height: 400px; overflow-y: auto;">
+                        <p>测试日志将在这里显示...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('currentDomain').textContent = window.location.origin;
+            document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        });
+
+        const TEST_TOKEN = 'test-token-for-demo';
+        let testResults = {};
+
+        // 日志记录函数
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('testLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<small>[${timestamp}]</small> ${message}`;
+            logEntry.style.marginBottom = '5px';
+            
+            if (type === 'error') {
+                logEntry.style.color = '#dc3545';
+            } else if (type === 'success') {
+                logEntry.style.color = '#28a745';
+            } else if (type === 'warning') {
+                logEntry.style.color = '#ffc107';
+            }
+            
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        // 更新状态指示器
+        function updateStatus(testName, status) {
+            const indicator = document.getElementById(`${testName}-status`);
+            if (indicator) {
+                indicator.className = `status-indicator status-${status}`;
+            }
+        }
+
+        // 通用 API 请求函数
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                log(`🔄 发起请求: ${endpoint}`);
+                
+                const response = await fetch(`${window.location.origin}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        ...options.headers,
+                    },
+                    ...options,
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ 请求成功: ${endpoint}`, 'success');
+                    return { success: true, data, status: response.status };
+                } else {
+                    log(`❌ 请求失败: ${endpoint} - ${response.status}`, 'error');
+                    return { success: false, data, status: response.status };
+                }
+            } catch (error) {
+                log(`💥 请求异常: ${endpoint} - ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 测试积分余额
+        async function testCreditBalance() {
+            updateStatus('balance', 'pending');
+            const result = await apiRequest('/api/credits/balance');
+            
+            if (result.success) {
+                updateStatus('balance', 'success');
+                testResults.balance = result.data;
+                document.getElementById('balance-result').innerHTML = `
+                    <div class="success" style="margin-top: 10px; padding: 10px;">
+                        <strong>✅ 积分余额获取成功</strong>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                updateStatus('balance', 'error');
+                document.getElementById('balance-result').innerHTML = `
+                    <div class="error" style="margin-top: 10px; padding: 10px;">
+                        <strong>❌ 积分余额获取失败</strong>
+                        <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateTestSummary();
+        }
+
+        // 测试每日签到
+        async function testDailySignin() {
+            updateStatus('signin', 'pending');
+            const result = await apiRequest('/api/credits/daily-signin', { method: 'POST' });
+            
+            if (result.success) {
+                updateStatus('signin', 'success');
+                testResults.signin = result.data;
+                document.getElementById('signin-result').innerHTML = `
+                    <div class="success" style="margin-top: 10px; padding: 10px;">
+                        <strong>✅ 每日签到成功</strong>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                updateStatus('signin', 'error');
+                document.getElementById('signin-result').innerHTML = `
+                    <div class="error" style="margin-top: 10px; padding: 10px;">
+                        <strong>❌ 每日签到失败</strong>
+                        <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateTestSummary();
+        }
+
+        // 测试获得积分
+        async function testEarnCredits() {
+            updateStatus('earn', 'pending');
+            const result = await apiRequest('/api/credits/transaction', {
+                method: 'POST',
+                body: JSON.stringify({
+                    transactionType: 'EARN',
+                    amount: 50,
+                    reason: 'MANUAL_ADJUSTMENT',
+                    description: '测试获得积分'
+                })
+            });
+            
+            if (result.success) {
+                updateStatus('earn', 'success');
+                testResults.earn = result.data;
+                document.getElementById('earn-result').innerHTML = `
+                    <div class="success" style="margin-top: 10px; padding: 10px;">
+                        <strong>✅ 获得积分成功</strong>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                updateStatus('earn', 'error');
+                document.getElementById('earn-result').innerHTML = `
+                    <div class="error" style="margin-top: 10px; padding: 10px;">
+                        <strong>❌ 获得积分失败</strong>
+                        <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateTestSummary();
+        }
+
+        // 测试消费积分
+        async function testSpendCredits() {
+            updateStatus('spend', 'pending');
+            const result = await apiRequest('/api/credits/transaction', {
+                method: 'POST',
+                body: JSON.stringify({
+                    transactionType: 'SPEND',
+                    amount: 30,
+                    reason: 'VIDEO_GENERATION',
+                    description: '测试消费积分'
+                })
+            });
+            
+            if (result.success) {
+                updateStatus('spend', 'success');
+                testResults.spend = result.data;
+                document.getElementById('spend-result').innerHTML = `
+                    <div class="success" style="margin-top: 10px; padding: 10px;">
+                        <strong>✅ 消费积分成功</strong>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                updateStatus('spend', 'error');
+                document.getElementById('spend-result').innerHTML = `
+                    <div class="error" style="margin-top: 10px; padding: 10px;">
+                        <strong>❌ 消费积分失败</strong>
+                        <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateTestSummary();
+        }
+
+        // 测试积分历史
+        async function testCreditHistory() {
+            updateStatus('history', 'pending');
+            const result = await apiRequest('/api/credits/history?limit=5&offset=0');
+            
+            if (result.success) {
+                updateStatus('history', 'success');
+                testResults.history = result.data;
+                document.getElementById('history-result').innerHTML = `
+                    <div class="success" style="margin-top: 10px; padding: 10px;">
+                        <strong>✅ 积分历史获取成功</strong>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                updateStatus('history', 'error');
+                document.getElementById('history-result').innerHTML = `
+                    <div class="error" style="margin-top: 10px; padding: 10px;">
+                        <strong>❌ 积分历史获取失败</strong>
+                        <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateTestSummary();
+        }
+
+        // 运行所有测试
+        async function runAllTests() {
+            log('🚀 开始运行所有积分系统测试...', 'info');
+            
+            await testCreditBalance();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testDailySignin();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testEarnCredits();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testSpendCredits();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testCreditHistory();
+            
+            log('🏁 所有测试完成！', 'success');
+        }
+
+        // 更新测试总览
+        function updateTestSummary() {
+            const tests = ['balance', 'signin', 'earn', 'spend', 'history'];
+            const results = tests.map(test => testResults[test] ? '✅' : '❌');
+            const successCount = tests.filter(test => testResults[test]).length;
+            
+            document.getElementById('testSummary').innerHTML = `
+                <div>
+                    <h4>测试进度: ${successCount}/${tests.length}</h4>
+                    <p>积分余额: ${results[0]} | 每日签到: ${results[1]} | 获得积分: ${results[2]} | 消费积分: ${results[3]} | 积分历史: ${results[4]}</p>
+                    <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                        <strong>通过率:</strong> ${Math.round(successCount/tests.length*100)}%
+                    </div>
+                </div>
+            `;
+        }
+
+        // 清除结果
+        function clearResults() {
+            testResults = {};
+            const resultDivs = ['balance-result', 'signin-result', 'earn-result', 'spend-result', 'history-result'];
+            resultDivs.forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+            
+            const statusIndicators = ['balance-status', 'signin-status', 'earn-status', 'spend-status', 'history-status'];
+            statusIndicators.forEach(id => {
+                const indicator = document.getElementById(id);
+                if (indicator) {
+                    indicator.className = 'status-indicator';
+                }
+            });
+            
+            document.getElementById('testSummary').innerHTML = '<p>点击左侧按钮开始测试...</p>';
+            document.getElementById('testLogs').innerHTML = '<p>测试日志将在这里显示...</p>';
+            
+            log('🧹 测试结果已清除', 'info');
+        }
+    </script>
+</body>
+</html>

@@ -110,7 +110,12 @@ class VideoService {
    */
   async getUserVideoTasks(_userId: string, limitCount = 20, _offset = 0): Promise<VideoTask[]> {
     try {
-      const resp = await fetch(((import.meta as any).env?.VITE_API_BASE_URL || window.location.origin) + `/api/video/list?limit=${limitCount}` , {
+      // 始终使用当前域名，避免跨域问题
+      const apiUrl = `${window.location.origin}/api/video/list?limit=${limitCount}`;
+      console.log('[VIDEO SERVICE] API调用URL:', apiUrl);
+      console.log('[VIDEO SERVICE] 当前域名:', window.location.origin);
+
+      const resp = await fetch(apiUrl, {
         headers: { 'Authorization': 'Bearer ' + (await (await import('../lib/adapters/authAdapter')).authAdapter.getIdToken()) }
       });
       if (!resp.ok) throw new Error('获取列表失败');
@@ -133,7 +138,11 @@ class VideoService {
     const poll = async () => {
       while (!cancelled) {
         try {
-          const resp = await fetch(((import.meta as any).env?.VITE_API_BASE_URL || window.location.origin) + `/api/video/list?limit=${limitCount}` , {
+          // 始终使用当前域名，避免跨域问题
+          const apiUrl = `${window.location.origin}/api/video/list?limit=${limitCount}`;
+          console.log('[VIDEO SERVICE POLL] API调用URL:', apiUrl);
+
+          const resp = await fetch(apiUrl, {
             headers: { 'Authorization': 'Bearer ' + (await (await import('../lib/adapters/authAdapter')).authAdapter.getIdToken()) }
           });
           if (resp.ok) {

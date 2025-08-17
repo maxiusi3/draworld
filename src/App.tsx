@@ -16,6 +16,15 @@ import CallbackPage from './pages/CallbackPage';
 import TestCreditsPage from './pages/TestCreditsPage';
 import GalleryPage from './pages/GalleryPage';
 import CreditStorePage from './pages/CreditStorePage';
+import CreditHistoryPage from './pages/CreditHistoryPage';
+import InvitationPage from './pages/InvitationPage';
+import CommunityPage from './pages/CommunityPage';
+import ArtworkDetailPage from './pages/ArtworkDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminModerationPage from './pages/AdminModerationPage';
+import AdminPaymentMonitorPage from './pages/AdminPaymentMonitorPage';
+import OIDCDebugPage from './pages/OIDCDebugPage';
+import { PageErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
 // 受保护的路由组件
@@ -64,8 +73,9 @@ const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <PageErrorBoundary>
+      <AuthProvider>
+        <Router>
         <Routes>
           {/* 公开路由 */}
           <Route path="/" element={<Layout />}>
@@ -85,7 +95,8 @@ function App() {
               </PublicRoute>
             } />
             <Route path="/callback" element={<CallbackPage />} />
-            
+            <Route path="/oidc-debug" element={<OIDCDebugPage />} />
+
             {/* 受保护的路由 */}
             <Route path="dashboard" element={
               <ProtectedRoute>
@@ -122,12 +133,51 @@ function App() {
                 <GalleryPage />
               </ProtectedRoute>
             } />
+            <Route path="credits" element={
+              <ProtectedRoute>
+                <CreditStorePage />
+              </ProtectedRoute>
+            } />
             <Route path="credit-store" element={
               <ProtectedRoute>
                 <CreditStorePage />
               </ProtectedRoute>
             } />
-
+            <Route path="credit-history" element={
+              <ProtectedRoute>
+                <CreditHistoryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="invitation" element={
+              <ProtectedRoute>
+                <InvitationPage />
+              </ProtectedRoute>
+            } />
+            <Route path="community" element={
+              <ProtectedRoute>
+                <CommunityPage />
+              </ProtectedRoute>
+            } />
+            <Route path="community/artwork/:id" element={
+              <ProtectedRoute>
+                <ArtworkDetailPage />
+              </ProtectedRoute>
+            } />
+            <Route path="profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="admin/moderation" element={
+              <ProtectedRoute>
+                <AdminModerationPage />
+              </ProtectedRoute>
+            } />
+            <Route path="admin/payment-monitor" element={
+              <ProtectedRoute>
+                <AdminPaymentMonitorPage />
+              </ProtectedRoute>
+            } />
 
             {/* 404页面 */}
             <Route path="*" element={
@@ -149,6 +199,7 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
+    </PageErrorBoundary>
   );
 }
 

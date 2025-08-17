@@ -78,7 +78,7 @@ export const CreditBalance: React.FC<CreditBalanceProps> = ({
       <div className="flex items-center space-x-1">
         <CurrencyDollarIcon className={`${classes.icon} text-yellow-500`} />
         <span className={`${classes.text} font-semibold text-gray-900`}>
-          {CreditsService.formatCredits(balance.balance)}
+          {balance?.toLocaleString() || '0'}
         </span>
       </div>
       
@@ -125,7 +125,7 @@ export const SimpleCreditBalance: React.FC<{
     <div className={`flex items-center space-x-1 ${className}`}>
       {showIcon && <CurrencyDollarIcon className="w-4 h-4 text-yellow-500" />}
       <span className="font-semibold">
-        {CreditsService.formatCredits(balance.balance)}
+        {balance?.toLocaleString() || '0'}
       </span>
     </div>
   );
@@ -138,11 +138,11 @@ export const InsufficientCreditsAlert: React.FC<{
 }> = ({ requiredCredits, onRechargeClick }) => {
   const { balance } = useCreditBalance();
 
-  if (!balance || balance.balance >= requiredCredits) {
+  if (!balance || balance >= requiredCredits) {
     return null;
   }
 
-  const shortfall = requiredCredits - balance.balance;
+  const shortfall = requiredCredits - balance;
 
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -155,11 +155,11 @@ export const InsufficientCreditsAlert: React.FC<{
             积分余额不足
           </h3>
           <p className="mt-1 text-sm text-red-700">
-            当前余额：{CreditsService.formatCredits(balance.balance)} 积分
+            当前余额：{balance?.toLocaleString() || '0'} 积分
             <br />
-            所需积分：{CreditsService.formatCredits(requiredCredits)} 积分
+            所需积分：{requiredCredits.toLocaleString()} 积分
             <br />
-            还需充值：{CreditsService.formatCredits(shortfall)} 积分
+            还需充值：{shortfall.toLocaleString()} 积分
           </p>
           {onRechargeClick && (
             <div className="mt-3">

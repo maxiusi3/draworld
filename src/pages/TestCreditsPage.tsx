@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const TestCreditsPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const { balance, loading, error, refreshBalance } = useCreditBalance();
+  const { balance, loading, error, refresh: refreshBalance } = useCreditBalance();
   const { signin, loading: signinLoading } = useDailySignin();
   const { consumeCreditsForVideo, loading: consumeLoading } = useConsumeCredits();
 
@@ -78,11 +78,11 @@ const TestCreditsPage: React.FC = () => {
               {error && (
                 <p className="text-sm text-red-600">错误: {error}</p>
               )}
-              {balance && (
+              {balance !== null && (
                 <div className="text-sm text-gray-600 mt-2">
-                  <p>当前余额: {balance.balance}</p>
-                  <p>总获得: {balance.totalEarned}</p>
-                  <p>总消费: {balance.totalSpent}</p>
+                  <p>当前余额: {balance}</p>
+                  <p>总获得: --</p>
+                  <p>总消费: --</p>
                 </div>
               )}
             </div>
@@ -135,7 +135,14 @@ const TestCreditsPage: React.FC = () => {
                   disabled={consumeLoading}
                   className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
                 >
-                  {consumeLoading ? '消费中...' : `测试消费 ${CREDIT_RULES.VIDEO_GENERATION_COST} 积分`}
+                  {consumeLoading ? '消费中...' : `测试消费 ${(() => {
+                    try {
+                      const { getVideoGenerationCost } = require('../config/demo');
+                      return getVideoGenerationCost();
+                    } catch {
+                      return CREDIT_RULES.VIDEO_GENERATION_COST;
+                    }
+                  })()} 积分`}
                 </button>
               </div>
 
@@ -164,7 +171,24 @@ const TestCreditsPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>视频生成消费:</span>
-                <span className="font-medium">{CREDIT_RULES.VIDEO_GENERATION_COST} 积分</span>
+                <span className="font-medium">
+                  {(() => {
+                    try {
+                      const { getVideoGenerationCost } = require('../config/demo');
+                      return getVideoGenerationCost();
+                    } catch {
+                      return CREDIT_RULES.VIDEO_GENERATION_COST;
+                    }
+                  })()} 积分
+                  {(() => {
+                    try {
+                      const { getDemoEnvironmentInfo } = require('../config/demo');
+                      return getDemoEnvironmentInfo() ? ' (演示环境)' : '';
+                    } catch {
+                      return '';
+                    }
+                  })()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>邀请注册奖励:</span>

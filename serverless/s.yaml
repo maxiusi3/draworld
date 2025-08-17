@@ -22,7 +22,7 @@ services:
           OSS_REGION: cn-hangzhou
           OSS_BUCKET_UPLOAD: draworld2025
           OSS_BUCKET_STATIC: draworld2
-          TABESTORE_INSTANCE: i01wvvv53p0q
+          TABLESTORE_INSTANCE: i01wvvv53p0q
           OIDC_ISSUER: https://draworld.authing.cn/oidc
           OIDC_JWKS: https://draworld.authing.cn/oidc/.well-known/jwks.json
           OIDC_AUD: 689adde75ecb97cd396860eb

@@ -1,0 +1,42 @@
+{
+  "name": "whimsy-brush-demo",
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "development",
+    "SUPABASE_URL": "https://demo-project.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "demo-service-key",
+    "AUTHING_OIDC_ISSUER": "https://draworld.authing.cn/oidc",
+    "AUTHING_OIDC_AUDIENCE": "676a0e3c6c9a2b2d8e9c4c5e",
+    "TABLESTORE_INSTANCE": "demo-instance",
+    "DASHSCOPE_API_KEY": "@dashscope_api_key"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "development"
+    }
+  },
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
