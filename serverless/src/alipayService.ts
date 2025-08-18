@@ -106,7 +106,7 @@ export class AlipayService {
 
       // 生成签名
       const sign = this.generateSign(params);
-      params.sign = sign;
+      (params as any).sign = sign;
 
       // 发送请求到支付宝网关
       const response = await this.sendRequest(params);
@@ -141,7 +141,7 @@ export class AlipayService {
       };
 
       const sign = this.generateSign(params);
-      params.sign = sign;
+      (params as any).sign = sign;
 
       const response = await this.sendRequest(params);
       return this.parseQueryResponse(response);

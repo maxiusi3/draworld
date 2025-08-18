@@ -1,7 +1,7 @@
 // 语言: TypeScript
 // 说明: 积分系统服务，基于TableStore实现
 
-import TableStore from 'tablestore';
+import * as TableStore from 'tablestore';
 
 // 积分规则常量
 export const CREDIT_RULES = {
@@ -66,7 +66,7 @@ export class CreditsService {
     this.instanceName = instanceName;
     this.client = new TableStore.Client({
       accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET!,
+      accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET!,
       endpoint: `https://${instanceName}.cn-hangzhou.ots.aliyuncs.com`,
       instancename: instanceName,
     });
