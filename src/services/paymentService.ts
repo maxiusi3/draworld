@@ -253,7 +253,7 @@ export class PaymentService {
     total: number;
   }> {
     try {
-      const response = await this.request<{ orders: any[] }>(`/api/orders?action=list&limit=${limit}&offset=${offset}`);
+      const response = await this.request<{ orders: any[] }>(`/api/commerce?action=orders&subAction=list&limit=${limit}&offset=${offset}`);
       const orders = response.orders || [];
 
       return {
@@ -315,7 +315,7 @@ export class PaymentService {
     message?: string;
   }> {
     try {
-      const response = await this.request<any>(`/api/orders?action=status&orderId=${orderId}`);
+      const response = await this.request<any>(`/api/commerce?action=orders&subAction=status&orderId=${orderId}`);
       return {
         success: true,
         order: response.order
