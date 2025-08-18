@@ -42,7 +42,7 @@ class ModerationService {
   private baseUrl = '/api/admin/moderation';
 
   private async request(endpoint: string, options: RequestInit = {}) {
-    // 从sessionStorage获取认证会话
+    // 从localStorage获取认证会话
     const authSession = localStorage.getItem('auth_session');
     let token = null;
 

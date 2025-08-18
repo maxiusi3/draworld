@@ -59,6 +59,13 @@ export class CreditsService {
         'Authorization': `Bearer ${token}`,
       };
 
+      console.log('[CREDITS SERVICE] 发送请求:', {
+        url: `${this.baseUrl}${path}`,
+        hasToken: !!token,
+        tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
+        headers: { ...headers, Authorization: token ? 'Bearer [HIDDEN]' : 'missing' }
+      });
+
       const response = await fetch(`${this.baseUrl}${path}`, {
         ...options,
         headers: { ...headers, ...options?.headers },

@@ -21,12 +21,12 @@ export class AuthingOIDCAdapter implements AuthAdapter {
 
   private readStorage(): AuthSession | null {
     try {
-      const raw = (this.cfg.storage ?? window.sessionStorage).getItem('auth_session');
+      const raw = (this.cfg.storage ?? window.localStorage).getItem('auth_session');
       return raw ? JSON.parse(raw) as AuthSession : null;
     } catch { return null; }
   }
   private writeStorage(s: AuthSession | null) {
-    const st = (this.cfg.storage ?? window.sessionStorage);
+    const st = (this.cfg.storage ?? window.localStorage);
     if (!s) st.removeItem('auth_session'); else st.setItem('auth_session', JSON.stringify(s));
   }
 

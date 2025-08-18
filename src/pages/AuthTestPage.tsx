@@ -24,9 +24,24 @@ export default function AuthTestPage() {
     setLoading(true);
     setError(null);
     try {
+      // 检查localStorage中的认证信息
+      const authSession = localStorage.getItem('auth_session');
+      console.log('[AUTH TEST] localStorage auth_session:', authSession ? 'exists' : 'not found');
+
+      if (authSession) {
+        const session = JSON.parse(authSession);
+        console.log('[AUTH TEST] Session tokens:', {
+          hasIdToken: !!session.tokens?.id_token,
+          hasAccessToken: !!session.tokens?.access_token,
+          idTokenPreview: session.tokens?.id_token?.substring(0, 20) + '...',
+          accessTokenPreview: session.tokens?.access_token?.substring(0, 20) + '...'
+        });
+      }
+
       const balance = await creditsService.getCreditBalance();
       setCreditBalance(balance.balance);
     } catch (err) {
+      console.error('[AUTH TEST] Credit balance error:', err);
       setError(err instanceof Error ? err.message : '获取积分余额失败');
     } finally {
       setLoading(false);

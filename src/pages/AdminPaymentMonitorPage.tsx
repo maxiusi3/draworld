@@ -78,7 +78,7 @@ const AdminPaymentMonitorPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      // 从sessionStorage获取认证会话
+      // 从localStorage获取认证会话
       const authSession = localStorage.getItem('auth_session');
       let token = null;
 
@@ -122,7 +122,7 @@ const AdminPaymentMonitorPage: React.FC = () => {
   const loadLogs = async () => {
     try {
       setLogsLoading(true);
-      // 从sessionStorage获取认证会话
+      // 从localStorage获取认证会话
       const authSession = localStorage.getItem('auth_session');
       let token = null;
 

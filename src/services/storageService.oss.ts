@@ -118,26 +118,7 @@ export class OSSStorageService {
         }
       }
 
-      // 方法2：尝试从 sessionStorage 获取（authAdapter 可能使用 sessionStorage）
-      const sessionAuthSession = localStorage.getItem('auth_session');
-      if (sessionAuthSession) {
-        try {
-          const session = JSON.parse(sessionAuthSession);
-          console.log('[STORAGE SERVICE] 从 sessionStorage 找到认证会话');
-
-          if (session.tokens?.id_token) {
-            console.log('[STORAGE SERVICE] 从 sessionStorage 找到 ID token');
-            return session.tokens.id_token;
-          }
-
-          if (session.tokens?.access_token) {
-            console.log('[STORAGE SERVICE] 从 sessionStorage 找到 access token');
-            return session.tokens.access_token;
-          }
-        } catch (parseError) {
-          console.error('[STORAGE SERVICE] 解析 sessionStorage 认证会话失败:', parseError);
-        }
-      }
+      // 方法2已移除 - 现在统一使用localStorage
 
       // 生产环境：如果没有找到token，抛出错误
       console.error('[STORAGE SERVICE] 未找到认证 token');
