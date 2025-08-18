@@ -5,7 +5,7 @@
  * 直接测试TableStore API端点
  */
 
-const PRODUCTION_URL = 'https://draworld-e8ncxonhq-fangzero-3350s-projects.vercel.app';
+const PRODUCTION_URL = 'https://draworld-8t00qx6on-fangzero-3350s-projects.vercel.app';
 
 console.log('🧪 测试生产环境TableStore API...\n');
 console.log(`📍 生产URL: ${PRODUCTION_URL}\n`);

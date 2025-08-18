@@ -347,13 +347,13 @@ export class OrdersRepository {
           { 'logId': logId }
         ],
         attributeColumns: [
-          { 'orderId': log.orderId },
-          { 'userId': log.userId },
-          { 'action': log.action },
-          { 'status': log.status },
-          { 'processingTime': log.processingTime },
-          { 'createdAt': log.createdAt },
-        ],
+          { orderId: log.orderId },
+          { userId: log.userId },
+          { action: log.action },
+          { status: log.status },
+          { processingTime: log.processingTime },
+          { createdAt: log.createdAt },
+        ] as any[],
       };
 
       // 添加可选字段

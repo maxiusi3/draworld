@@ -103,22 +103,22 @@ export class ModerationRepository {
           { 'recordId': recordId }
         ],
         attributeColumns: [
-          { 'contentType': record.contentType },
-          { 'contentId': record.contentId },
-          { 'contentTitle': record.contentTitle },
-          { 'contentBody': record.contentBody },
-          { 'authorId': record.authorId },
-          { 'authorName': record.authorName },
-          { 'moderatorId': record.moderatorId },
-          { 'moderatorName': record.moderatorName },
-          { 'action': record.action },
-          { 'previousStatus': record.previousStatus },
-          { 'newStatus': record.newStatus },
-          { 'reportCount': record.reportCount },
-          { 'autoModerated': record.autoModerated },
-          { 'processingTime': record.processingTime },
-          { 'createdAt': now },
-        ],
+          { contentType: record.contentType },
+          { contentId: record.contentId },
+          { contentTitle: record.contentTitle },
+          { contentBody: record.contentBody },
+          { authorId: record.authorId },
+          { authorName: record.authorName },
+          { moderatorId: record.moderatorId },
+          { moderatorName: record.moderatorName },
+          { action: record.action },
+          { previousStatus: record.previousStatus },
+          { newStatus: record.newStatus },
+          { reportCount: record.reportCount },
+          { autoModerated: record.autoModerated },
+          { processingTime: record.processingTime },
+          { createdAt: now },
+        ] as any[],
       };
 
       // 添加可选字段
@@ -149,15 +149,15 @@ export class ModerationRepository {
           { 'reportId': reportId }
         ],
         attributeColumns: [
-          { 'contentType': report.contentType },
-          { 'contentId': report.contentId },
-          { 'reporterId': report.reporterId },
-          { 'reporterName': report.reporterName },
-          { 'reason': report.reason },
-          { 'description': report.description },
-          { 'status': 'PENDING' },
-          { 'createdAt': now },
-        ],
+          { contentType: report.contentType },
+          { contentId: report.contentId },
+          { reporterId: report.reporterId },
+          { reporterName: report.reporterName },
+          { reason: report.reason },
+          { description: report.description },
+          { status: 'PENDING' },
+          { createdAt: now },
+        ] as any[],
       };
 
       // 添加可选字段
@@ -316,11 +316,11 @@ export class ModerationRepository {
           { [primaryKeyName]: contentId }
         ],
         attributeColumns: [
-          { 'moderationStatus': status },
-          { 'moderatedAt': now },
-          { 'moderatorId': moderatorId },
-          { 'updatedAt': now },
-        ],
+          { moderationStatus: status },
+          { moderatedAt: now },
+          { moderatorId: moderatorId },
+          { updatedAt: now },
+        ] as any[],
       };
 
       if (reason) {
