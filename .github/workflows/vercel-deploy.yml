@@ -67,6 +67,19 @@ jobs:
         ls -la dist/
         echo "Build output verified successfully"
 
+    - name: Verify Serverless Functions count
+      run: |
+        echo "Checking Serverless Functions count..."
+        COUNT=$(find api -name "*.js" -type f | wc -l)
+        echo "Found $COUNT Serverless Functions"
+        if [ "$COUNT" -gt 12 ]; then
+          echo "❌ Error: Too many Serverless Functions ($COUNT > 12) for Vercel Hobby plan"
+          echo "Please consolidate functions or upgrade to Pro plan"
+          exit 1
+        else
+          echo "✅ Serverless Functions count ($COUNT) is within Hobby plan limit (≤12)"
+        fi
+
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v41.1.4
       with:
