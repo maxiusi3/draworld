@@ -10,12 +10,12 @@ const TableStore = require('tablestore');
 // 配置信息
 const config = {
   accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID,
-  secretAccessKey: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
+  accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
   endpoint: `https://${process.env.TABLESTORE_INSTANCE || 'i01wvvv53p0q'}.cn-hangzhou.ots.aliyuncs.com`,
   instancename: process.env.TABLESTORE_INSTANCE || 'i01wvvv53p0q',
 };
 
-if (!config.accessKeyId || !config.secretAccessKey) {
+if (!config.accessKeyId || !config.accessKeySecret) {
   console.error('请设置环境变量 ALIBABA_CLOUD_ACCESS_KEY_ID 和 ALIBABA_CLOUD_ACCESS_KEY_SECRET');
   process.exit(1);
 }

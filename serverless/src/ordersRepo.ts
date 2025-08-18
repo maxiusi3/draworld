@@ -78,7 +78,7 @@ export class OrdersRepository {
     this.tenantId = tenantId;
     this.client = new TableStore.Client({
       accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET!,
+      accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET!,
       endpoint: `https://${instanceName}.cn-hangzhou.ots.aliyuncs.com`,
       instancename: instanceName,
     });
