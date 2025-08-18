@@ -7,12 +7,14 @@ import { oidcConfig } from '../lib/adapters/config';
 import { invitationService } from '../services/invitationService';
 import { creditsService } from '../services/creditsService';
 import { CreditTransactionReason } from '../types/credits';
+import { parseJWTPayload, extractUserInfo, isTokenExpired } from '../utils/jwtUtils';
 
 interface User {
   uid: string;
   email?: string;
   displayName?: string;
   photoURL?: string;
+  phone?: string;
   metadata?: {
     creationTime?: string;
     lastSignInTime?: string;
@@ -53,17 +55,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const storedSession = sessionManager.getSession();
     if (storedSession?.tokens?.id_token) {
       setSessionState(storedSession);
-      // 简化：仅基于 id_token 存在视为已登录用户
-      setCurrentUser({
-        uid: 'oidc-user',
-        email: 'user@example.com',
-        displayName: '用户',
-        photoURL: '',
-        metadata: {
-          creationTime: new Date().toISOString(),
-          lastSignInTime: new Date().toISOString()
-        }
-      });
+
+      // 解析JWT token获取真实用户信息
+      const payload = parseJWTPayload(storedSession.tokens.id_token);
+      if (payload && !isTokenExpired(payload)) {
+        const userInfo = extractUserInfo(payload);
+        console.log('[USE AUTH] 从JWT解析用户信息:', userInfo);
+        setCurrentUser(userInfo);
+      } else {
+        console.log('[USE AUTH] JWT token无效或已过期，清除会话');
+        sessionManager.clearSession();
+        setSessionState(null);
+        setCurrentUser(null);
+      }
     }
     setLoading(false);
   }, []);
@@ -98,20 +102,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 设置用户状态
     if (newSession?.tokens?.id_token) {
       console.log('[USE AUTH] 设置用户状态...');
-      setCurrentUser({
-        uid: 'oidc-user',
-        email: 'user@example.com',
-        displayName: '用户',
-        photoURL: '',
-        metadata: {
-          creationTime: new Date().toISOString(),
-          lastSignInTime: new Date().toISOString()
-        }
-      });
-      console.log('[USE AUTH] 用户状态设置完成');
 
-      // 处理邀请奖励（异步执行，不阻塞登录流程）
-      handleInvitationRewards();
+      // 解析JWT token获取真实用户信息
+      const payload = parseJWTPayload(newSession.tokens.id_token);
+      if (payload && !isTokenExpired(payload)) {
+        const userInfo = extractUserInfo(payload);
+        console.log('[USE AUTH] 从JWT解析用户信息:', userInfo);
+        setCurrentUser(userInfo);
+        console.log('[USE AUTH] 用户状态设置完成');
+
+        // 处理邀请奖励（异步执行，不阻塞登录流程）
+        handleInvitationRewards();
+      } else {
+        console.log('[USE AUTH] JWT token无效或已过期');
+        setCurrentUser(null);
+      }
     } else {
       console.log('[USE AUTH] 清除用户状态');
       setCurrentUser(null);

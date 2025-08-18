@@ -30,7 +30,8 @@ export class PaymentService {
     if (authSession) {
       try {
         const session = JSON.parse(authSession);
-        token = session.tokens?.access_token;
+        // 优先使用id_token，因为API端使用id_token进行用户身份验证
+        token = session.tokens?.id_token || session.tokens?.access_token;
       } catch (error) {
         console.error('解析认证会话失败:', error);
       }

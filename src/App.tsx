@@ -24,6 +24,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminModerationPage from './pages/AdminModerationPage';
 import AdminPaymentMonitorPage from './pages/AdminPaymentMonitorPage';
 import OIDCDebugPage from './pages/OIDCDebugPage';
+import AuthTestPage from './pages/AuthTestPage';
 import { PageErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
@@ -96,6 +97,7 @@ function App() {
             } />
             <Route path="/callback" element={<CallbackPage />} />
             <Route path="/oidc-debug" element={<OIDCDebugPage />} />
+            <Route path="/auth-test" element={<AuthTestPage />} />
 
             {/* 受保护的路由 */}
             <Route path="dashboard" element={

@@ -35,14 +35,15 @@ export class CreditsService {
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
     try {
-      // 从sessionStorage获取认证会话，使用access_token
+      // 从sessionStorage获取认证会话，优先使用id_token进行身份验证
       const authSession = sessionStorage.getItem('auth_session');
       let token = null;
 
       if (authSession) {
         try {
           const session = JSON.parse(authSession);
-          token = session.tokens?.access_token;
+          // 优先使用id_token，因为API端使用id_token进行用户身份验证
+          token = session.tokens?.id_token || session.tokens?.access_token;
         } catch (error) {
           console.error('[CREDITS SERVICE] 解析认证会话失败:', error);
         }
