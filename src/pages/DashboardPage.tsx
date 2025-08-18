@@ -270,35 +270,6 @@ const DashboardPage: React.FC = () => {
             <p className="text-gray-600 mt-1">
               欢迎回来，{currentUser.displayName || '用户'}! 这里是您的所有作品。
             </p>
-            {/* 服务状态指示器 */}
-            {serviceStatus && (
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    serviceStatus.useMockService ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}></div>
-                  <span className="text-sm text-gray-500">
-                    {serviceStatus.useMockService ? '🎭 演示模式' : '☁️ 云端模式'}
-                  </span>
-                  {serviceStatus.cloudFunctionsAvailable === false && (
-                    <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
-                      Cloud Functions 不可用
-                    </span>
-                  )}
-                </div>
-                {serviceStatus.useMockService && (
-                  <div className="text-xs text-gray-500 bg-blue-50 px-3 py-2 rounded-lg border-l-2 border-blue-300">
-                    <span className="font-medium text-blue-700">💡 当前使用演示模式</span>
-                    <br />
-                    生成的视频为测试内容。如需真实AI生成，请
-                    <Link to="/api-config" className="text-blue-600 hover:text-blue-800 underline ml-1">
-                      配置您的API密钥
-                    </Link>
-                    。
-                  </div>
-                )}
-              </div>
-            )}
           </div>
           
           <div className="flex items-center space-x-4">

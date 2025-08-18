@@ -2,15 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 import { paymentSecurity } from '../../serverless/src/paymentSecurity.js';
 
-// Supabase 配置
-const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
+// Supabase 配置 - 生产环境强制要求环境变量
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') ||
-                   supabaseServiceKey.includes('demo') ||
-                   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
-                   !process.env.DASHSCOPE_API_KEY;
+// 验证必需的环境变量
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+}
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
@@ -20,13 +19,6 @@ const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`))
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    // 演示模式：直接接受任何 token
-    if (isDemoMode) {
-      console.log('[PAYMENT AUTH] 演示模式：跳过 JWT 验证，接受任何 token');
-      const userId = token.includes('test-token') ? 'demo-user' : `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
@@ -34,33 +26,12 @@ async function verifyToken(token) {
     return payload.sub;
   } catch (error) {
     console.error('[PAYMENT AUTH] Token 验证失败:', error);
-
-    // 演示模式：如果真实验证失败，也接受任何 token
-    if (isDemoMode) {
-      console.log('[PAYMENT AUTH] 演示模式：验证失败后仍接受 token');
-      const userId = token.includes('test-token') ? 'demo-user' : `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     return null;
   }
 }
 
 // 创建支付宝支付
-async function createAlipayPayment(orderId, amount, subject, userId) {
-  if (isDemoMode) {
-    // 演示模式：返回模拟支付信息
-    console.log(`[PAYMENT] 演示模式：创建支付宝支付 订单=${orderId} 金额=${amount}`);
-    
-    return {
-      success: true,
-      paymentMethod: 'ALIPAY',
-      paymentId: `alipay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      qrCode: `https://qr.alipay.com/mock_${orderId}`,
-      paymentUrl: `https://openapi.alipaydev.com/gateway.do?mock_order=${orderId}`,
-      expireTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30分钟后过期
-    };
-  } else {
+async function createAlipayPayment(orderId, amount, subject, userId) { else {
     // 生产模式：使用真实支付宝API
     try {
       const { AlipayService, AlipayConfigFactory, AlipayUtils } = await import('../../serverless/src/alipayService.js');
@@ -107,24 +78,7 @@ async function createAlipayPayment(orderId, amount, subject, userId) {
 }
 
 // 查询支付状态
-async function queryPaymentStatus(orderId, paymentId) {
-  if (isDemoMode) {
-    // 演示模式：模拟支付状态查询
-    console.log(`[PAYMENT] 演示模式：查询支付状态 订单=${orderId} 支付ID=${paymentId}`);
-    
-    // 模拟随机支付状态
-    const statuses = ['WAIT_BUYER_PAY', 'TRADE_SUCCESS', 'TRADE_CLOSED'];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-    
-    return {
-      success: true,
-      orderId,
-      paymentId,
-      status: randomStatus,
-      paidAmount: randomStatus === 'TRADE_SUCCESS' ? '9.99' : null,
-      paidTime: randomStatus === 'TRADE_SUCCESS' ? new Date().toISOString() : null,
-    };
-  } else {
+async function queryPaymentStatus(orderId, paymentId) { else {
     // 生产模式：查询真实支付状态
     try {
       const { AlipayService, AlipayConfigFactory } = await import('../../serverless/src/alipayService.js');

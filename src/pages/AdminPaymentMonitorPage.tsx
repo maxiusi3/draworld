@@ -78,7 +78,23 @@ const AdminPaymentMonitorPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const token = localStorage.getItem('auth_token') || 'demo-token';
+      // 从sessionStorage获取认证会话
+      const authSession = sessionStorage.getItem('auth_session');
+      let token = null;
+
+      if (authSession) {
+        try {
+          const session = JSON.parse(authSession);
+          token = session.tokens?.access_token;
+        } catch (error) {
+          console.error('解析认证会话失败:', error);
+        }
+      }
+
+      if (!token) {
+        throw new Error('用户未登录，请先登录');
+      }
+
       const response = await fetch('/api/admin/payment-monitor?action=stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -106,7 +122,23 @@ const AdminPaymentMonitorPage: React.FC = () => {
   const loadLogs = async () => {
     try {
       setLogsLoading(true);
-      const token = localStorage.getItem('auth_token') || 'demo-token';
+      // 从sessionStorage获取认证会话
+      const authSession = sessionStorage.getItem('auth_session');
+      let token = null;
+
+      if (authSession) {
+        try {
+          const session = JSON.parse(authSession);
+          token = session.tokens?.access_token;
+        } catch (error) {
+          console.error('解析认证会话失败:', error);
+        }
+      }
+
+      if (!token) {
+        throw new Error('用户未登录，请先登录');
+      }
+
       const response = await fetch(`/api/admin/payment-monitor?action=logs&type=${selectedLogType}&limit=20`, {
         headers: {
           'Authorization': `Bearer ${token}`,

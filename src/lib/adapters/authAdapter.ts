@@ -39,12 +39,33 @@ export class AuthingOIDCAdapter implements AuthAdapter {
     url.searchParams.set('redirect_uri', params.redirectUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', params.scope ?? this.cfg.defaultScope ?? 'openid profile phone');
-    if (params.state) url.searchParams.set('state', params.state);
+
+    // 强制手机号验证码登录的参数
+    url.searchParams.set('prompt', 'login'); // 强制重新登录
+    url.searchParams.set('login_hint', 'phone'); // 提示使用手机号登录
+
+    // 生成随机state防止CSRF攻击
+    if (!params.state) {
+      params.state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
+    url.searchParams.set('state', params.state);
+
     if (params.codeChallenge) {
       url.searchParams.set('code_challenge', params.codeChallenge);
       url.searchParams.set('code_challenge_method', 'S256');
     }
-    // Authing 支持手机号验证码登录，在授权页完成；这里仅负责跳转
+
+    console.log('[AUTH ADAPTER] 构建授权URL，强制手机号验证码登录');
+    console.log('[AUTH ADAPTER] 授权URL参数:', {
+      client_id: this.cfg.clientId,
+      redirect_uri: params.redirectUri,
+      response_type: 'code',
+      scope: params.scope ?? this.cfg.defaultScope ?? 'openid profile phone',
+      prompt: 'login',
+      login_hint: 'phone',
+      state: params.state
+    });
+
     return url.toString();
   }
 

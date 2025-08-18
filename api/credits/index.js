@@ -17,8 +17,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Authing OIDC 配置
 const OIDC_JWKS_URI = 'https://draworld.authing.cn/oidc/.well-known/jwks.json';
-const OIDC_ISSUER = 'https://draworld.authing.cn/oidc';
-const OIDC_AUDIENCE = '689adde75ecb97cd396860eb';
+const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
+const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '689adde75ecb97cd396860eb';
 
 // 创建 JWKS 客户端
 const jwks = createRemoteJWKSet(new URL(OIDC_JWKS_URI));
@@ -92,14 +92,37 @@ export default async function handler(req, res) {
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
+    console.log('[AUTH] 开始验证JWT token');
+    console.log('[AUTH] 期望的issuer:', OIDC_ISSUER);
+    console.log('[AUTH] 期望的audience:', OIDC_AUDIENCE);
+
+    // 先解析token看看内容（不验证签名）
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('[AUTH] Token payload:', {
+          iss: payload.iss,
+          aud: payload.aud,
+          sub: payload.sub,
+          exp: payload.exp,
+          iat: payload.iat
+        });
+      }
+    } catch (parseError) {
+      console.log('[AUTH] 无法解析token payload:', parseError.message);
+    }
+
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
     });
 
+    console.log('[AUTH] JWT 验证成功，用户ID:', payload.sub);
     return payload.sub;
   } catch (error) {
     console.error('[AUTH] JWT 验证失败:', error);
+    console.error('[AUTH] 错误详情:', error.message);
     return null;
   }
 }

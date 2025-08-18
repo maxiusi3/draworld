@@ -120,36 +120,8 @@ const CallbackPage: React.FC = () => {
         console.error('处理登录回调失败:', error);
         const errorMessage = error instanceof Error ? error.message : '未知错误';
 
-        // 检查是否是OIDC配置问题
-        if (errorMessage.includes('invalid_grant') || errorMessage.includes('授权码无效')) {
-          console.log('[CALLBACK] 检测到OIDC配置问题，尝试演示模式登录...');
-
-          // 演示模式：直接创建一个演示会话
-          try {
-            const demoSession = {
-              tokens: {
-                access_token: 'demo-token',
-                id_token: 'demo-id-token',
-                refresh_token: 'demo-refresh-token',
-                token_type: 'Bearer',
-                expires_in: 3600
-              },
-              expiresAt: Date.now() + 3600000
-            };
-
-            setSession(demoSession);
-            toast.success('演示模式登录成功！');
-            console.log('[CALLBACK] 演示模式登录成功，跳转到dashboard...');
-
-            setTimeout(() => {
-              navigate('/dashboard', { replace: true });
-            }, 1000);
-
-            return; // 成功处理，不显示错误
-          } catch (demoError) {
-            console.error('[CALLBACK] 演示模式登录也失败:', demoError);
-          }
-        }
+        // 生产环境：不允许演示模式回退，直接显示错误
+        console.error('[CALLBACK] 认证失败，生产环境不支持演示模式回退');
 
         setError(`登录失败: ${errorMessage}`);
         toast.error(`登录失败: ${errorMessage}`);

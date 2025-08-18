@@ -1,12 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// Supabase 配置
-const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
+// Supabase 配置 - 生产环境强制要求环境变量
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') || supabaseServiceKey.includes('demo') || !process.env.SUPABASE_SERVICE_ROLE_KEY;
+// 验证必需的环境变量
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+}
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';

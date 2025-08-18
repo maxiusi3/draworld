@@ -2,18 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// Supabase 配置
-const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
+// Supabase 配置 - 生产环境强制要求环境变量
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') || 
-                   supabaseServiceKey.includes('demo') || 
-                   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
-                   process.env.NODE_ENV === 'development';
+// 验证必需的环境变量
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+}
 
-// 演示模式：内存存储
-const demoUserArtworks = new Map();
+// 创建 Supabase 客户端
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
@@ -23,15 +22,6 @@ const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`))
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    // 演示模式：直接接受任何 token
-    if (isDemoMode) {
-      console.log('[USER ARTWORKS API] 演示模式：跳过 JWT 验证');
-      const userId = token.includes('new-user-token') ? 'new-user' : 
-                    token.includes('demo-token') ? 'demo-user' : 
-                    `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
@@ -39,16 +29,6 @@ async function verifyToken(token) {
     return payload.sub;
   } catch (error) {
     console.error('[USER ARTWORKS API] Token 验证失败:', error);
-    
-    // 演示模式：如果真实验证失败，也接受任何 token
-    if (isDemoMode) {
-      console.log('[USER ARTWORKS API] 演示模式：验证失败后仍接受 token');
-      const userId = token.includes('new-user-token') ? 'new-user' : 
-                    token.includes('demo-token') ? 'demo-user' : 
-                    `user-${token.slice(-8)}`;
-      return userId;
-    }
-    
     return null;
   }
 }

@@ -35,8 +35,22 @@ export class CreditsService {
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
     try {
-      const token = await authAdapter.getIdToken();
-      if (!token) throw new Error('无法获取认证令牌');
+      // 从sessionStorage获取认证会话，使用access_token
+      const authSession = sessionStorage.getItem('auth_session');
+      let token = null;
+
+      if (authSession) {
+        try {
+          const session = JSON.parse(authSession);
+          token = session.tokens?.access_token;
+        } catch (error) {
+          console.error('[CREDITS SERVICE] 解析认证会话失败:', error);
+        }
+      }
+
+      if (!token) {
+        throw new Error('用户未登录，请先登录');
+      }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',

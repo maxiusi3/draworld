@@ -139,14 +139,13 @@ export class OSSStorageService {
         }
       }
 
-      // 方法3：使用模拟 token（用于测试）
-      console.log('[STORAGE SERVICE] 未找到认证 token，使用模拟 token');
-      return 'mock-token-for-testing';
+      // 生产环境：如果没有找到token，抛出错误
+      console.error('[STORAGE SERVICE] 未找到认证 token');
+      throw new Error('用户未登录，请先登录');
 
     } catch (error) {
       console.error('[STORAGE SERVICE] 获取认证 token 失败:', error);
-      // 返回模拟 token 以确保功能可用
-      return 'mock-token-for-testing';
+      throw new Error('获取认证信息失败，请重新登录');
     }
   }
 }

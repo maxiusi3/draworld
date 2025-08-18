@@ -1,6 +1,5 @@
 // 社交奖励系统服务
 import { creditsService } from './creditsService';
-import { demoCreditsService } from './demoCreditsService';
 import { CreditTransactionReason } from '../types/credits';
 
 interface SocialRewardResult {
@@ -25,23 +24,22 @@ class SocialRewardService {
   private readonly DAILY_LIKE_REWARD_LIMIT = 5;  // 每日点赞奖励上限5积分
   private readonly MAX_DAILY_REWARDED_LIKES = 50; // 每日最多50个有效点赞
 
-  // 检查是否为演示模式
-  private isDemoMode(): boolean {
-    return true; // 目前总是使用演示模式
-  }
-
   // 获取当前用户ID
   private async getCurrentUserId(): Promise<string> {
-    if (this.isDemoMode()) {
-      let demoUserId = localStorage.getItem('demo_user_id');
-      if (!demoUserId) {
-        demoUserId = `demo-user-${Date.now()}`;
-        localStorage.setItem('demo_user_id', demoUserId);
+    // 从认证系统获取用户ID
+    const authSession = sessionStorage.getItem('auth_session');
+    if (authSession) {
+      try {
+        const session = JSON.parse(authSession);
+        // 从JWT token中解析用户ID
+        if (session.tokens?.id_token) {
+          const payload = JSON.parse(atob(session.tokens.id_token.split('.')[1]));
+          return payload.sub || 'user-unknown';
+        }
+      } catch (error) {
+        console.error('解析用户ID失败:', error);
       }
-      return demoUserId;
     }
-    
-    // 生产模式实现...
     return 'user-unknown';
   }
 
@@ -57,25 +55,8 @@ class SocialRewardService {
     try {
       const targetUserId = userId || await this.getCurrentUserId();
       
-      if (this.isDemoMode()) {
-        const userData = demoCreditsService.getUserData(targetUserId);
-        
-        // 检查是否需要重置每日数据
-        if (userData.credits.last_daily_reset && this.isNewDay(userData.credits.last_daily_reset)) {
-          userData.credits.daily_like_given = 0;
-          userData.credits.last_daily_reset = new Date().toISOString();
-          demoCreditsService.setUserData(targetUserId, userData);
-        }
-        
-        const dailyLikeGiven = userData.credits.daily_like_given || 0;
-        const remainingLikes = Math.max(0, this.MAX_DAILY_REWARDED_LIKES - dailyLikeGiven);
-        
-        return {
-          dailyLikeGiven,
-          remainingLikes,
-          canEarnReward: remainingLikes > 0,
-        };
-      }
+      // 生产模式：从Supabase获取用户积分数据
+      // TODO: 实现从Supabase获取每日点赞状态
 
       // 生产模式实现...
       return {
@@ -141,19 +122,8 @@ class SocialRewardService {
     // 1. 检查作品作者是否应该获得点赞奖励
     if (newLikeCount > 0 && newLikeCount % this.LIKES_PER_AUTHOR_REWARD === 0) {
       try {
-        // 为作品作者发放奖励
-        if (this.isDemoMode()) {
-          demoCreditsService.createTransaction(
-            authorId,
-            'EARN',
-            1,
-            CreditTransactionReason.LIKE_RECEIVED,
-            null,
-            `作品获得${newLikeCount}个点赞奖励`
-          );
-        } else {
-          // 生产模式实现...
-        }
+        // 生产模式：通过API发放奖励
+        // TODO: 实现通过Supabase API发放作者点赞奖励
 
         result.rewards.authorReward = 1;
         result.messages.push(`作品获得${this.LIKES_PER_AUTHOR_REWARD}个点赞，作者获得1积分奖励！`);
@@ -173,19 +143,8 @@ class SocialRewardService {
       const newDailyLikeCount = likeStatus.dailyLikeGiven + 1;
       if (newDailyLikeCount % this.LIKES_PER_LIKER_REWARD === 0) {
         try {
-          // 为点赞者发放奖励
-          if (this.isDemoMode()) {
-            demoCreditsService.createTransaction(
-              likerId,
-              'EARN',
-              1,
-              CreditTransactionReason.LIKE_GIVEN,
-              null,
-              `给他人点赞${newDailyLikeCount}次奖励`
-            );
-          } else {
-            // 生产模式实现...
-          }
+          // 生产模式：通过API发放奖励
+          // TODO: 实现通过Supabase API发放点赞者奖励
 
           result.rewards.likerReward = 1;
           result.messages.push(`今日点赞${this.LIKES_PER_LIKER_REWARD}次，获得1积分奖励！`);
@@ -208,21 +167,8 @@ class SocialRewardService {
 
   // 更新用户每日点赞数
   private async updateDailyLikeCount(userId: string): Promise<void> {
-    if (this.isDemoMode()) {
-      const userData = demoCreditsService.getUserData(userId);
-      
-      // 检查是否需要重置每日数据
-      if (userData.credits.last_daily_reset && this.isNewDay(userData.credits.last_daily_reset)) {
-        userData.credits.daily_like_given = 0;
-      }
-      
-      userData.credits.daily_like_given = (userData.credits.daily_like_given || 0) + 1;
-      userData.credits.last_daily_reset = new Date().toISOString();
-      
-      demoCreditsService.setUserData(userId, userData);
-    }
-
-    // 生产模式实现...
+    // 生产模式：通过Supabase API更新用户每日点赞数
+    // TODO: 实现通过Supabase API更新每日点赞计数
   }
 
   // 获取点赞奖励规则说明
