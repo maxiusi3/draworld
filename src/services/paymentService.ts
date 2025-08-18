@@ -57,89 +57,7 @@ export class PaymentService {
     return response.json();
   }
 
-  private async requestMock<T>(path: string, options?: RequestInit): Promise<T> {
-    // 临时模拟API响应用于测试
-    if (path === '/api/credits/packages' || path === '/api/orders?action=packages') {
-      return {
-        packages: [
-          {
-            id: 'basic',
-            name: '基础套餐',
-            credits: 300,
-            bonusCredits: 50,
-            priceYuan: 19.9,
-            originalPrice: 29.9,
-            isPopular: false,
-            isActive: true,
-            sortOrder: 1,
-            description: '适合轻度使用',
-          },
-          {
-            id: 'popular',
-            name: '热门套餐',
-            credits: 800,
-            bonusCredits: 200,
-            priceYuan: 49.9,
-            originalPrice: 69.9,
-            isPopular: true,
-            isActive: true,
-            sortOrder: 2,
-            description: '最受欢迎的选择',
-          },
-          {
-            id: 'premium',
-            name: '高级套餐',
-            credits: 2000,
-            bonusCredits: 600,
-            priceYuan: 99.9,
-            originalPrice: 139.9,
-            isPopular: false,
-            isActive: true,
-            sortOrder: 3,
-            description: '超值大容量',
-          },
-          {
-            id: 'ultimate',
-            name: '至尊套餐',
-            credits: 5000,
-            bonusCredits: 2000,
-            priceYuan: 199.9,
-            originalPrice: 299.9,
-            isPopular: false,
-            isActive: true,
-            sortOrder: 4,
-            description: '无限创作可能',
-          },
-        ],
-      } as T;
-    }
 
-    if (path === '/api/orders' && options?.method === 'POST') {
-      const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      return {
-        order: {
-          id: orderId,
-          userId: 'test-user',
-          packageId: 'test-package',
-          packageName: '测试套餐',
-          credits: 1000,
-          amount: 49.9,
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-          expiredAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30分钟后过期
-        },
-        paymentInfo: {
-          paymentId: `pay_${Date.now()}`,
-          paymentUrl: 'https://example.com/pay',
-          qrCode: 'mock-qr-code-data',
-          expiredAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        },
-      } as T;
-    }
-
-    // 如果没有匹配的模拟数据，返回空响应
-    return {} as T;
-  }
 
   // 实际的API请求方法
   private async requestReal<T>(path: string, options?: RequestInit): Promise<T> {
@@ -170,17 +88,10 @@ export class PaymentService {
 
   // 获取积分套餐列表
   async getCreditPackages(): Promise<CreditPackagesResponse> {
-    try {
-      // 尝试使用新的订单API
-      const result = await this.request<any>('/api/commerce?action=orders&subAction=packages');
-      return {
-        packages: result.packages || [],
-      };
-    } catch (error) {
-      console.error('获取积分套餐失败:', error);
-      // 回退到模拟数据
-      return this.requestMock<CreditPackagesResponse>('/api/credits/packages');
-    }
+    const result = await this.request<any>('/api/commerce?action=orders&subAction=packages');
+    return {
+      packages: result.packages || [],
+    };
   }
 
   // 创建订单
