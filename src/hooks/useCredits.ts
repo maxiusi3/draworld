@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { creditsService } from '../services/creditsService';
-import { useAuth } from './useAuth';
+import { useAuth } from './useAuthContext';
 import toast from 'react-hot-toast';
 
 // 积分余额 Hook

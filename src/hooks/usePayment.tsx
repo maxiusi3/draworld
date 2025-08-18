@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { paymentService, PaymentService } from '../services/paymentService';
 import { useCreditBalance } from './useCredits';
-import { useAuth } from './useAuth';
+import { useAuth } from './useAuthContext';
 import toast from 'react-hot-toast';
 import type {
   CreditPackage,

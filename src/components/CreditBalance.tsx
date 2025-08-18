@@ -1,11 +1,11 @@
 // 语言: TypeScript
 // 说明: 积分余额显示组件
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Coins, RefreshCw, Gift, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { creditsService } from '../services/creditsService';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuthContext';
 import toast from 'react-hot-toast';
 
 interface CreditBalanceProps {
@@ -24,7 +24,7 @@ export const CreditBalance: React.FC<CreditBalanceProps> = ({
   const [signingIn, setSigningIn] = useState(false);
 
   // 加载积分余额
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -37,7 +37,7 @@ export const CreditBalance: React.FC<CreditBalanceProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 监听积分变化以实时更新
   useEffect(() => {
@@ -51,7 +51,7 @@ export const CreditBalance: React.FC<CreditBalanceProps> = ({
     return () => {
       window.removeEventListener('creditsUpdated', handleCreditsUpdate);
     };
-  }, [user]);
+  }, [user, loadBalance]);
 
   // 每日签到
   const handleDailySignin = async () => {
@@ -86,7 +86,7 @@ export const CreditBalance: React.FC<CreditBalanceProps> = ({
   // 初始加载
   useEffect(() => {
     loadBalance();
-  }, [user]);
+  }, [user, loadBalance]);
 
   // 如果用户未登录，不显示组件
   if (!user) {

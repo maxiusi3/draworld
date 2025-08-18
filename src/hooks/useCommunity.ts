@@ -37,7 +37,7 @@ export const useArtworks = (
   const [total, setTotal] = useState(0);
   const { handleError, executeWithRetry } = useErrorHandler();
 
-  const loadArtworks = async (offset: number = 0, append: boolean = false) => {
+  const loadArtworks = useCallback(async (offset: number = 0, append: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -67,7 +67,7 @@ export const useArtworks = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [limit, sortBy, searchQuery, executeWithRetry, handleError]);
 
   const loadMore = () => {
     if (!loading && hasMore) {
@@ -75,9 +75,9 @@ export const useArtworks = (
     }
   };
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     loadArtworks(0, false);
-  };
+  }, [loadArtworks]);
 
   useEffect(() => {
     loadArtworks();
@@ -92,7 +92,7 @@ export const useArtworks = (
     return () => {
       window.removeEventListener('communityUpdated', handleCommunityUpdate);
     };
-  }, [limit, sortBy, searchQuery]);
+  }, [loadArtworks, refresh]);
 
   return {
     artworks,
@@ -111,13 +111,13 @@ export const useArtwork = (artworkId: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadArtwork = async () => {
+  const loadArtwork = useCallback(async () => {
     if (!artworkId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await communityService.getArtwork(artworkId);
       setArtwork(data);
     } catch (error: any) {
@@ -126,11 +126,11 @@ export const useArtwork = (artworkId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [artworkId]);
 
   useEffect(() => {
     loadArtwork();
-  }, [artworkId]);
+  }, [artworkId, loadArtwork]);
 
   return {
     artwork,
@@ -146,14 +146,14 @@ export const useLike = (artworkId: string) => {
   const [likeCount, setLikeCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const checkLikeStatus = async () => {
+  const checkLikeStatus = useCallback(async () => {
     try {
       const isLiked = await communityService.isLikedByUser(artworkId);
       setLiked(isLiked);
     } catch (error) {
       console.error('检查点赞状态失败:', error);
     }
-  };
+  }, [artworkId]);
 
   const toggleLike = async () => {
     try {
@@ -181,7 +181,7 @@ export const useLike = (artworkId: string) => {
     if (artworkId) {
       checkLikeStatus();
     }
-  }, [artworkId]);
+  }, [artworkId, checkLikeStatus]);
 
   return {
     liked,
@@ -198,13 +198,13 @@ export const useComments = (artworkId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     if (!artworkId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await communityService.getArtworkComments(artworkId);
       setComments(data);
     } catch (error: any) {
@@ -213,7 +213,7 @@ export const useComments = (artworkId: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [artworkId]);
 
   const addComment = async (content: string) => {
     try {
@@ -221,14 +221,9 @@ export const useComments = (artworkId: string) => {
       
       const newComment = await communityService.addComment(artworkId, content);
       
-      // 只有通过审核的评论才显示
-      // 假设评论默认已批准
-      if (true) {
-        setComments(prev => [...prev, newComment]);
-        toast.success('评论发表成功');
-      } else {
-        toast('评论已提交，正在审核中', { icon: 'ℹ️' });
-      }
+      // 评论默认已批准并显示
+      setComments(prev => [...prev, newComment]);
+      toast.success('评论发表成功');
       
       return true;
     } catch (error: any) {
@@ -242,7 +237,7 @@ export const useComments = (artworkId: string) => {
 
   useEffect(() => {
     loadComments();
-  }, [artworkId]);
+  }, [artworkId, loadComments]);
 
   return {
     comments,
@@ -475,7 +470,7 @@ export const useArtworkPagination = (
   const [totalPages, setTotalPages] = useState(0);
   const [total, setTotal] = useState(0);
 
-  const loadPage = async (page: number) => {
+  const loadPage = useCallback(async (page: number) => {
     try {
       setLoading(true);
       setError(null);
@@ -499,7 +494,7 @@ export const useArtworkPagination = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageSize, sortBy, searchQuery]);
 
   const goToPage = useCallback((page: number) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
@@ -517,11 +512,11 @@ export const useArtworkPagination = (
 
   const refresh = useCallback(() => {
     loadPage(currentPage);
-  }, [currentPage]);
+  }, [currentPage, loadPage]);
 
   useEffect(() => {
     loadPage(1);
-  }, [pageSize, sortBy, searchQuery]);
+  }, [pageSize, sortBy, searchQuery, loadPage]);
 
   return {
     // 数据

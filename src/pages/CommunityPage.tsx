@@ -331,12 +331,7 @@ const CommunityPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* 状态指示器 */}
-                              {false && (
-                                <span className="ml-4 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                  私密
-                                </span>
-                              )}
+                              {/* 状态指示器 - 暂时隐藏 */}
                             </div>
                           </div>
                         </div>

@@ -21,7 +21,7 @@ interface User {
   };
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   currentUser: User | null;
   session: AuthSession | null;
   setSession: (session: AuthSession) => void;
@@ -32,15 +32,7 @@ interface AuthContextType {
   delete?: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;

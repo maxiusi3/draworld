@@ -2,7 +2,7 @@ import React, { Component, ReactNode } from 'react';
 import { ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatErrorForBoundary } from '../utils/errorHandler';
 
-interface Props {
+export interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: any) => void;
@@ -140,21 +140,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// 高阶组件版本
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
-) {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-
-  return WrappedComponent;
-}
+// 高阶组件版本已移至 withErrorBoundary.tsx 文件
 
 // 页面级错误边界
 export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (

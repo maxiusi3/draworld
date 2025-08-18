@@ -7,7 +7,7 @@ import { DailySignin, SigninIndicator } from '../components/Credits/DailySignin'
 import { useCreditBalance, useDailySignin, useConsumeCredits } from '../hooks/useCredits';
 import { CREDIT_RULES } from '../types/credits';
 import { getVideoGenerationCost, getEnvironmentInfo } from '../config/production';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuthContext';
 
 const TestCreditsPage: React.FC = () => {
   const { currentUser } = useAuth();

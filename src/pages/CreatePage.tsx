@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuthContext';
 import { useConsumeCredits, useCreditCheck } from '../hooks/useCredits';
 import { useInvitation } from '../hooks/useInvitation';
 import { videoService, CreateVideoTaskParams } from '../services/videoService';
@@ -8,7 +8,8 @@ import { storageServiceOSS as storageService } from '../services/storageService.
 import ImageUploader from '../components/ImageUploader/ImageUploader';
 import ImageEditor from '../components/ImageEditor/ImageEditor';
 import { CreditBalance } from '../components/CreditBalance';
-import { useInsufficientCreditsCheck } from '../components/InsufficientCreditsDialog';
+import { useInsufficientCreditsCheck } from '../hooks/useInsufficientCreditsCheck';
+import { InsufficientCreditsDialog } from '../components/InsufficientCreditsDialog';
 import { CREDIT_RULES } from '../types/credits';
 import { getVideoGenerationCost, getEnvironmentInfo } from '../config/production';
 import {
@@ -34,7 +35,7 @@ interface Step {
 const CreatePage: React.FC = () => {
   const { currentUser } = useAuth();
   const { consumeCreditsForVideo, hasSufficientCredits, loading: creditsLoading } = useConsumeCredits();
-  const { checkCredits, InsufficientCreditsDialog } = useInsufficientCreditsCheck();
+  const { dialogOpen, dialogProps, checkCredits, closeDialog } = useInsufficientCreditsCheck();
   const { handleFirstVideoReward } = useInvitation();
   const { handleError } = useErrorHandler();
   const navigate = useNavigate();
@@ -533,7 +534,12 @@ const CreatePage: React.FC = () => {
       </div>
 
       {/* 积分不足提示对话框 */}
-      <InsufficientCreditsDialog />
+      <InsufficientCreditsDialog
+        open={dialogOpen}
+        onOpenChange={closeDialog}
+        requiredCredits={dialogProps.requiredCredits}
+        currentCredits={dialogProps.currentCredits}
+      />
     </div>
   );
 };

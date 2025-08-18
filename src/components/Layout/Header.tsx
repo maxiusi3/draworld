@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuthContext';
 import { PaintBrushIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { CreditBalance } from '../CreditBalance';
 import toast from 'react-hot-toast';

@@ -178,12 +178,8 @@ const ProfilePage: React.FC = () => {
                   <span className="text-sm text-gray-500">
                     {formatDate(comment.created_at)}
                   </span>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    true
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {'已发布'}
+                  <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+                    已发布
                   </span>
                 </div>
                 <p className="text-gray-900 mb-3 leading-relaxed">

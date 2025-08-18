@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { artworkService } from '../services/artworkService';
-import { useAuth } from './useAuth';
+import { useAuth } from './useAuthContext';
 import toast from 'react-hot-toast';
 import type {
   Artwork,

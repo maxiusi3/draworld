@@ -2,7 +2,7 @@
 // 说明: 认证测试页面，用于验证用户信息解析是否正确
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuthContext';
 import { parseJWTPayload } from '../utils/jwtUtils';
 import { creditsService } from '../services/creditsService';
 

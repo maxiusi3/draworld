@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authAdapter } from '../lib/adapters/authAdapter';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuthContext';
 import { oidcConfig } from '../lib/adapters/config';
 import { invitationService } from '../services/invitationService';
 import toast from 'react-hot-toast';
