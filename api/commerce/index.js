@@ -327,13 +327,26 @@ async function handleCreditBalance(req, res, userId) {
     const creditsService = new CreditsService(instanceName);
     console.log('[COMMERCE API] CreditsService实例创建成功');
 
-    const balance = await creditsService.getUserBalance(userId);
-    console.log('[COMMERCE API] 获取用户余额成功:', balance);
+    const userCredits = await creditsService.getUserCredits(userId);
+    console.log('[COMMERCE API] 获取用户积分信息成功:', userCredits);
+
+    // 如果用户不存在，创建新账户并给予注册奖励
+    if (!userCredits) {
+      console.log('[COMMERCE API] 新用户，创建账户并给予注册奖励');
+      await creditsService.grantRegistrationReward(userId);
+      const newUserCredits = await creditsService.getUserCredits(userId);
+
+      return res.status(200).json({
+        success: true,
+        balance: newUserCredits?.balance || 0,
+        lastUpdated: new Date().toISOString()
+      });
+    }
 
     return res.status(200).json({
       success: true,
-      balance: balance,
-      lastUpdated: new Date().toISOString()
+      balance: userCredits.balance || 0,
+      lastUpdated: userCredits.updatedAt || new Date().toISOString()
     });
   } catch (error) {
     console.error('[COMMERCE API] 获取积分余额失败:', error);
@@ -350,13 +363,66 @@ async function handleCreditTransaction(req, res, userId) {
 }
 
 async function handleCreditHistory(req, res, userId) {
-  // 实现积分历史
-  return res.status(200).json({ success: true, history: [] });
+  try {
+    console.log('[COMMERCE API] 处理积分历史查询，用户ID:', userId);
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+
+    // 从原 api/credits/index.js 导入实现
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
+
+    // 获取积分交易历史
+    const transactions = await creditsService.getTransactionHistory(userId, page, limit);
+    console.log('[COMMERCE API] 获取积分历史成功，记录数:', transactions?.length || 0);
+
+    return res.status(200).json({
+      success: true,
+      transactions: transactions || [],
+      pagination: {
+        page: page,
+        limit: limit,
+        total: transactions?.length || 0,
+        totalPages: Math.ceil((transactions?.length || 0) / limit),
+        hasNext: (transactions?.length || 0) === limit,
+        hasPrev: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('[COMMERCE API] 获取积分历史失败:', error);
+    return res.status(500).json({
+      error: 'Failed to get credit history',
+      message: error.message
+    });
+  }
 }
 
 async function handleDailySignin(req, res, userId) {
-  // 实现每日签到
-  return res.status(200).json({ success: true, message: 'Daily signin completed' });
+  try {
+    console.log('[COMMERCE API] 处理每日签到，用户ID:', userId);
+
+    // 从原 api/credits/index.js 导入实现
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
+
+    // 执行每日签到
+    const result = await creditsService.dailySignin(userId);
+    console.log('[COMMERCE API] 每日签到结果:', result);
+
+    return res.status(200).json({
+      success: result.success,
+      creditsEarned: result.creditsEarned,
+      alreadySignedToday: result.alreadySignedToday,
+      message: result.alreadySignedToday ? '今日已签到' : `签到成功，获得${result.creditsEarned}积分`
+    });
+  } catch (error) {
+    console.error('[COMMERCE API] 每日签到失败:', error);
+    return res.status(500).json({
+      error: 'Failed to process daily signin',
+      message: error.message
+    });
+  }
 }
 
 async function handleOrderPackages(req, res) {
