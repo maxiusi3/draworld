@@ -14,9 +14,9 @@ if (!instanceName || !accessKeyId || !accessKeySecret) {
 }
 
 // Authing OIDC 配置
-const OIDC_JWKS_URI = 'https://draworld.authing.cn/oidc/.well-known/jwks.json';
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
 const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '689adde75ecb97cd396860eb';
+const OIDC_JWKS_URI = `${OIDC_ISSUER}/.well-known/jwks.json`;
 
 // 创建 JWKS 客户端
 const jwks = createRemoteJWKSet(new URL(OIDC_JWKS_URI));
@@ -72,7 +72,19 @@ export default async function handler(req, res) {
     console.log('[COMMERCE API] Method:', req.method);
     console.log('[COMMERCE API] URL:', req.url);
     console.log('[COMMERCE API] Query:', req.query);
-    
+    console.log('[COMMERCE API] Headers:', JSON.stringify(req.headers, null, 2));
+
+    // 测试JWKS端点可访问性
+    try {
+      const jwksResponse = await fetch(OIDC_JWKS_URI);
+      console.log('[COMMERCE API] JWKS端点状态:', jwksResponse.status, jwksResponse.statusText);
+      if (!jwksResponse.ok) {
+        console.error('[COMMERCE API] JWKS端点不可访问');
+      }
+    } catch (jwksError) {
+      console.error('[COMMERCE API] JWKS端点测试失败:', jwksError.message);
+    }
+
     // 设置CORS头
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
@@ -259,16 +271,32 @@ async function handlePayment(req, res, userId) {
 // 这些函数将从原始文件中导入或重新实现
 
 async function handleCreditBalance(req, res, userId) {
-  // 从原 api/credits/index.js 导入实现
-  const { CreditsService } = await import('../../serverless/src/creditsService.js');
-  const creditsService = new CreditsService(instanceName);
-  
-  const balance = await creditsService.getUserBalance(userId);
-  
-  return res.status(200).json({
-    success: true,
-    balance: balance
-  });
+  try {
+    console.log('[COMMERCE API] 处理积分余额查询，用户ID:', userId);
+    console.log('[COMMERCE API] TableStore实例名:', instanceName);
+
+    // 从原 api/credits/index.js 导入实现
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    console.log('[COMMERCE API] CreditsService导入成功');
+
+    const creditsService = new CreditsService(instanceName);
+    console.log('[COMMERCE API] CreditsService实例创建成功');
+
+    const balance = await creditsService.getUserBalance(userId);
+    console.log('[COMMERCE API] 获取用户余额成功:', balance);
+
+    return res.status(200).json({
+      success: true,
+      balance: balance,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[COMMERCE API] 获取积分余额失败:', error);
+    return res.status(500).json({
+      error: 'Failed to get credit balance',
+      message: error.message
+    });
+  }
 }
 
 async function handleCreditTransaction(req, res, userId) {
