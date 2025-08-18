@@ -41,7 +41,7 @@ export class PaymentService {
     return response.json();
   }
 
-  private async requestMock<T>(path: string): Promise<T> {
+  private async requestMock<T>(path: string, options?: RequestInit): Promise<T> {
     // 临时模拟API响应用于测试
     if (path === '/api/credits/packages' || path === '/api/orders?action=packages') {
       return {
@@ -121,7 +121,12 @@ export class PaymentService {
       } as T;
     }
 
-    // 原始API调用逻辑（当后端准备好时使用）
+    // 如果没有匹配的模拟数据，返回空响应
+    return {} as T;
+  }
+
+  // 实际的API请求方法
+  private async requestReal<T>(path: string, options?: RequestInit): Promise<T> {
     const token = await authAdapter.getIdToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -203,10 +208,25 @@ export class PaymentService {
   }
 
   // 取消订单
-  async cancelOrder(orderId: string): Promise<void> {
-    await this.request<void>(`/api/orders/${orderId}/cancel`, {
-      method: 'POST',
-    });
+  async cancelOrder(orderId: string): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    try {
+      await this.request<void>(`/api/orders/${orderId}/cancel`, {
+        method: 'POST',
+      });
+      return {
+        success: true,
+        message: '订单已取消'
+      };
+    } catch (error) {
+      console.error('取消订单失败:', error);
+      return {
+        success: false,
+        message: '取消订单失败，请稍后重试'
+      };
+    }
   }
 
   // 获取用户订单列表
@@ -424,11 +444,7 @@ export class PaymentService {
     return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
   }
 
-  // 格式化折扣显示
-  static formatDiscount(originalPrice: number, currentPrice: number): string {
-    const discount = this.calculateDiscountPercentage(originalPrice, currentPrice);
-    return discount > 0 ? `${discount}% OFF` : '';
-  }
+
 }
 
 export const paymentService = new PaymentService();

@@ -7,6 +7,7 @@ import { oidcConfig } from './config';
 export interface AuthAdapter {
   getDiscovery(): Promise<OIDCDiscovery>;
   buildAuthorizeUrl(params: { redirectUri: string; state?: string; scope?: string; codeChallenge?: string; }): Promise<string>;
+  buildAuthUrl(params: { redirectUri: string; state?: string; scope?: string; codeChallenge?: string; }): Promise<string>; // 别名方法
   exchangeCode(params: { code: string; redirectUri: string; codeVerifier?: string; }): Promise<OIDCTokens>;
   getSession(): AuthSession | null;
   setSession(tokens: OIDCTokens): void;
@@ -45,6 +46,11 @@ export class AuthingOIDCAdapter implements AuthAdapter {
     }
     // Authing 支持手机号验证码登录，在授权页完成；这里仅负责跳转
     return url.toString();
+  }
+
+  // 别名方法，用于向后兼容
+  async buildAuthUrl(params: { redirectUri: string; state?: string; scope?: string; codeChallenge?: string; }): Promise<string> {
+    return this.buildAuthorizeUrl(params);
   }
 
   async exchangeCode(params: { code: string; redirectUri: string; codeVerifier?: string; }): Promise<OIDCTokens> {

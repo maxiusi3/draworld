@@ -233,11 +233,11 @@ const GalleryPage: React.FC = () => {
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center">
                       <EyeIcon className="w-4 h-4 mr-1" />
-                      {(artwork.views || artwork.viewsCount || 0).toLocaleString()}
+                      {(artwork.viewsCount || 0).toLocaleString()}
                     </div>
                     <div className="flex items-center">
                       <ChatBubbleLeftIcon className="w-4 h-4 mr-1" />
-                      {artwork.comments || artwork.commentsCount || 0}
+                      {artwork.commentsCount || 0}
                     </div>
                   </div>
 

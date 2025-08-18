@@ -6,7 +6,7 @@
 
 import https from 'https';
 
-const PRODUCTION_URL = 'https://whimsy-brush.vercel.app';
+const PRODUCTION_URL = 'https://draworld-opal.vercel.app';
 
 function makeRequest(url) {
     return new Promise((resolve, reject) => {

@@ -273,6 +273,32 @@ class CommunityService {
     return response.data;
   }
 
+  // 更新作品可见性
+  async updateArtworkVisibility(artworkId: string, isPublic: boolean): Promise<void> {
+    if (this.isDemoMode()) {
+      const userId = await this.getCurrentUserId();
+      // 使用现有的API端点
+      const response = await this.request<{ success: boolean; data: any }>(`/api/community/${artworkId}/toggle-visibility`, {
+        method: 'POST',
+        body: JSON.stringify({ isPublic }),
+      });
+
+      if (!response.success) {
+        throw new Error('更新作品可见性失败');
+      }
+      return;
+    }
+
+    const response = await this.request<{ success: boolean; data: any }>(`/api/community/${artworkId}/toggle-visibility`, {
+      method: 'POST',
+      body: JSON.stringify({ isPublic }),
+    });
+
+    if (!response.success) {
+      throw new Error('更新作品可见性失败');
+    }
+  }
+
   // 获取用户作品列表
   async getUserArtworks(): Promise<Artwork[]> {
     if (this.isDemoMode()) {
