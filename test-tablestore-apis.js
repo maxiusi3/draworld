@@ -7,7 +7,7 @@
 
 import fetch from 'node-fetch';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'https://draworld-1vknj9jdw-fangzero-3350s-projects.vercel.app';
+const BASE_URL = process.env.TEST_BASE_URL || 'https://draworld-5rwgeejku-fangzero-3350s-projects.vercel.app';
 const TEST_TOKEN = 'demo-token';
 
 console.log('🧪 测试 TableStore API 修正结果...\n');
