@@ -105,7 +105,7 @@ class CommunityService {
       params.set('category', category);
     }
 
-    const response = await this.request<ArtworksResponse>(`/api/artworks?${params.toString()}`);
+    const response = await this.request<ArtworksResponse>(`/api/content?action=artworks&${params.toString()}`);
     if (!response.success) throw new Error('获取作品列表失败');
     return response;
   }
@@ -114,7 +114,7 @@ class CommunityService {
     const response = await this.request<{
       success: boolean;
       data: Artwork;
-    }>(`/api/artworks?id=${artworkId}`);
+    }>(`/api/content?action=artworks&id=${artworkId}`);
 
     if (!response.success) throw new Error('获取作品详情失败');
     return response.data;
@@ -202,7 +202,7 @@ class CommunityService {
       limit: limit.toString()
     });
 
-    const response = await this.request<ArtworksResponse>(`/api/artworks?${params.toString()}`);
+    const response = await this.request<ArtworksResponse>(`/api/content?action=artworks&${params.toString()}`);
     if (!response.success) throw new Error('搜索作品失败');
     return response;
   }
@@ -244,7 +244,7 @@ class CommunityService {
   }
 
   async createArtwork(artwork: any): Promise<Artwork> {
-    const response = await this.request<{ success: boolean; data: Artwork }>('/api/artworks', {
+    const response = await this.request<{ success: boolean; data: Artwork }>('/api/content?action=artworks', {
       method: 'POST',
       body: JSON.stringify(artwork)
     });
@@ -254,7 +254,7 @@ class CommunityService {
   }
 
   async updateArtworkVisibility(artworkId: string, isPublic: boolean): Promise<void> {
-    await this.request('/api/artworks', {
+    await this.request('/api/content?action=artworks', {
       method: 'PUT',
       body: JSON.stringify({ id: artworkId, is_public: isPublic })
     });

@@ -185,17 +185,17 @@ export class ArtworkService {
     if (request.filter?.userId) params.append('userId', request.filter.userId);
     if (request.filter?.timeRange) params.append('timeRange', request.filter.timeRange);
 
-    return this.request<ArtworkListResponse>(`/api/artworks?${params.toString()}`);
+    return this.request<ArtworkListResponse>(`/api/content?action=artworks&${params.toString()}`);
   }
 
   // 获取作品详情
   async getArtworkDetail(artworkId: string): Promise<ArtworkDetailResponse> {
-    return this.request<ArtworkDetailResponse>(`/api/artworks/${artworkId}`);
+    return this.request<ArtworkDetailResponse>(`/api/content?action=artworks&id=${artworkId}`);
   }
 
   // 更新作品
   async updateArtwork(artworkId: string, request: UpdateArtworkRequest): Promise<Artwork> {
-    return this.request<Artwork>(`/api/artworks/${artworkId}`, {
+    return this.request<Artwork>(`/api/content?action=artworks&id=${artworkId}`, {
       method: 'PUT',
       body: JSON.stringify(request),
     });
@@ -203,14 +203,14 @@ export class ArtworkService {
 
   // 删除作品
   async deleteArtwork(artworkId: string): Promise<void> {
-    await this.request<void>(`/api/artworks/${artworkId}`, {
+    await this.request<void>(`/api/content?action=artworks&id=${artworkId}`, {
       method: 'DELETE',
     });
   }
 
   // 点赞/取消点赞作品
   async toggleLikeArtwork(artworkId: string): Promise<LikeArtworkResponse> {
-    return this.request<LikeArtworkResponse>(`/api/artworks/${artworkId}/like`, {
+    return this.request<LikeArtworkResponse>(`/api/social?action=community&subAction=like&artworkId=${artworkId}`, {
       method: 'POST',
     });
   }
@@ -282,7 +282,7 @@ export class ArtworkService {
   // 记录作品浏览
   async recordArtworkView(artworkId: string): Promise<void> {
     try {
-      await this.request<void>(`/api/artworks/${artworkId}/view`, {
+      await this.request<void>(`/api/content?action=artworks&subAction=view&id=${artworkId}`, {
         method: 'POST',
       });
     } catch (error) {
@@ -298,34 +298,34 @@ export class ArtworkService {
     limit: number = 20
   ): Promise<ArtworkListResponse> {
     return this.request<ArtworkListResponse>(
-      `/api/artworks/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
+      `/api/content?action=artworks&search=${encodeURIComponent(query)}&page=${page}&limit=${limit}`
     );
   }
 
   // 获取用户的作品（我的作品）
   async getMyArtworks(page: number = 1, limit: number = 20): Promise<ArtworkListResponse> {
     return this.request<ArtworkListResponse>(
-      `/api/users/me/artworks?page=${page}&limit=${limit}`
+      `/api/user?action=artworks&page=${page}&limit=${limit}`
     );
   }
 
   // 获取用户点赞的作品
   async getMyLikedArtworks(page: number = 1, limit: number = 20): Promise<ArtworkListResponse> {
     return this.request<ArtworkListResponse>(
-      `/api/users/me/liked-artworks?page=${page}&limit=${limit}`
+      `/api/user?action=liked-artworks&page=${page}&limit=${limit}`
     );
   }
 
   // 获取用户评论的作品
   async getMyCommentedArtworks(page: number = 1, limit: number = 20): Promise<ArtworkListResponse> {
     return this.request<ArtworkListResponse>(
-      `/api/users/me/commented-artworks?page=${page}&limit=${limit}`
+      `/api/user?action=commented-artworks&page=${page}&limit=${limit}`
     );
   }
 
   // 批量操作作品（管理员功能）
   async batchUpdateArtworks(artworkIds: string[], updates: Partial<Artwork>): Promise<void> {
-    await this.request<void>('/api/artworks/batch', {
+    await this.request<void>('/api/content?action=artworks&subAction=batch', {
       method: 'PUT',
       body: JSON.stringify({ artworkIds, updates }),
     });
