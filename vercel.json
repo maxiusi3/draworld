@@ -1,6 +1,8 @@
 {
   "version": 2,
-  "name": "whimsy-brush",
+  "name": "draworld",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 30

@@ -61,13 +61,19 @@ jobs:
       env:
         NODE_ENV: production
 
+    - name: Verify build output
+      run: |
+        echo "Checking build output directory..."
+        ls -la dist/
+        echo "Build output verified successfully"
+
     - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
+      uses: amondnet/vercel-action@v41.1.4
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod'
+        vercel-args: '--prod --confirm'
         working-directory: ./
 
     - name: Comment deployment URL on PR
