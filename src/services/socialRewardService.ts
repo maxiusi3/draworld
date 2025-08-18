@@ -27,7 +27,7 @@ class SocialRewardService {
   // 获取当前用户ID
   private async getCurrentUserId(): Promise<string> {
     // 从认证系统获取用户ID
-    const authSession = sessionStorage.getItem('auth_session');
+    const authSession = localStorage.getItem('auth_session');
     if (authSession) {
       try {
         const session = JSON.parse(authSession);

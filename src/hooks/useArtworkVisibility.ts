@@ -16,7 +16,7 @@ export function useArtworkVisibility() {
     
     try {
       // 从sessionStorage获取认证会话
-      const authSession = sessionStorage.getItem('auth_session');
+      const authSession = localStorage.getItem('auth_session');
       let token = null;
 
       if (authSession) {

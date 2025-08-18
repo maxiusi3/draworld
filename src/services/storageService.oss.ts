@@ -119,7 +119,7 @@ export class OSSStorageService {
       }
 
       // 方法2：尝试从 sessionStorage 获取（authAdapter 可能使用 sessionStorage）
-      const sessionAuthSession = sessionStorage.getItem('auth_session');
+      const sessionAuthSession = localStorage.getItem('auth_session');
       if (sessionAuthSession) {
         try {
           const session = JSON.parse(sessionAuthSession);

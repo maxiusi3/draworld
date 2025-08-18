@@ -35,8 +35,8 @@ export class CreditsService {
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
     try {
-      // 从sessionStorage获取认证会话，优先使用id_token进行身份验证
-      const authSession = sessionStorage.getItem('auth_session');
+      // 从localStorage获取认证会话，优先使用id_token进行身份验证
+      const authSession = localStorage.getItem('auth_session');
       let token = null;
 
       if (authSession) {
@@ -44,6 +44,7 @@ export class CreditsService {
           const session = JSON.parse(authSession);
           // 优先使用id_token，因为API端使用id_token进行用户身份验证
           token = session.tokens?.id_token || session.tokens?.access_token;
+          console.log('[CREDITS SERVICE] 使用token:', token ? token.substring(0, 20) + '...' : 'null');
         } catch (error) {
           console.error('[CREDITS SERVICE] 解析认证会话失败:', error);
         }

@@ -23,8 +23,8 @@ export class PaymentService {
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    // 从sessionStorage获取认证会话
-    const authSession = sessionStorage.getItem('auth_session');
+    // 从localStorage获取认证会话
+    const authSession = localStorage.getItem('auth_session');
     let token = null;
 
     if (authSession) {

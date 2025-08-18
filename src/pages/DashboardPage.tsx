@@ -21,7 +21,7 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fixingTasks, setFixingTasks] = useState(false);
-  const [creatingTest, setCreatingTest] = useState(false);
+  // creatingTest state removed - 测试功能已移除
   const [serviceStatus, setServiceStatus] = useState<any>(null);
 
   const loadTasks = useCallback(async () => {
@@ -85,34 +85,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // 创建测试任务的函数
-  const createTestTask = async () => {
-    setCreatingTest(true);
-
-    try {
-      toast.loading('正在创建测试任务...', { id: 'creating' });
-
-      const taskId = await videoService.createVideoTask({
-        imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        prompt: '测试任务 - 小狮子在草原上奔跑',
-        musicStyle: 'Joyful',
-        aspectRatio: '16:9'
-      });
-
-      toast.success('测试任务创建成功！', { id: 'creating' });
-
-      // 2秒后刷新任务列表
-      setTimeout(() => {
-        loadTasks();
-      }, 2000);
-
-    } catch (error) {
-      console.error('创建测试任务失败:', error);
-      toast.error('创建测试任务失败', { id: 'creating' });
-    } finally {
-      setCreatingTest(false);
-    }
-  };
+  // 测试任务功能已移除 - 生产环境不需要
 
   useEffect(() => {
     if (currentUser) {
@@ -350,16 +323,7 @@ console.log('\\n✅ 分析完成！');
               </>
             )}
 
-            {/* 创建测试任务按钮 */}
-            <button
-              onClick={createTestTask}
-              disabled={creatingTest}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
-              title="创建测试任务"
-            >
-              <PlusIcon className="w-4 h-4" />
-              <span>{creatingTest ? '创建中...' : '测试任务'}</span>
-            </button>
+            {/* 测试任务按钮已移除 - 生产环境不需要 */}
 
             <button
               onClick={loadTasks}

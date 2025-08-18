@@ -30,7 +30,7 @@ export class AuthDebugger {
         debugAuth: localStorage.getItem('debug_auth'),
       },
       sessionStorage: {
-        authSession: sessionStorage.getItem('auth_session'),
+        authSession: localStorage.getItem('auth_session'),
       },
       environment: {
         isDevelopment: (import.meta as any).env?.DEV,

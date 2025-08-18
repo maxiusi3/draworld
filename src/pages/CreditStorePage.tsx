@@ -222,13 +222,13 @@ const CreditStorePage: React.FC = () => {
                   {/* 价格 */}
                   <div className="mb-4">
                     <div className="flex items-center justify-center space-x-2">
-                      {hasDiscount && (
+                      {hasDiscount && pkg.originalPrice && (
                         <span className="text-gray-400 line-through text-lg">
-                          ¥{pkg.originalPrice!.toFixed(2)}
+                          ¥{pkg.originalPrice.toFixed(2)}
                         </span>
                       )}
                       <span className="text-2xl font-bold text-gray-900">
-                        ¥{pkg.priceYuan.toFixed(2)}
+                        ¥{(pkg.priceYuan || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="text-sm text-gray-500">
@@ -384,7 +384,7 @@ const CreditStorePage: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span>金额:</span>
-                <span className="font-medium text-lg">¥{selectedPackage.priceYuan.toFixed(2)}</span>
+                <span className="font-medium text-lg">¥{(selectedPackage.priceYuan || 0).toFixed(2)}</span>
               </div>
             </div>
 
