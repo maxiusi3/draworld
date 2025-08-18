@@ -24,13 +24,44 @@ const jwks = createRemoteJWKSet(new URL(OIDC_JWKS_URI));
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
+    console.log('[COMMERCE API] 开始验证JWT token');
+    console.log('[COMMERCE API] Token长度:', token.length);
+    console.log('[COMMERCE API] Token预览:', token.substring(0, 50) + '...');
+    console.log('[COMMERCE API] 期望的issuer:', OIDC_ISSUER);
+    console.log('[COMMERCE API] 期望的audience:', OIDC_AUDIENCE);
+    console.log('[COMMERCE API] JWKS URI:', OIDC_JWKS_URI);
+
+    // 先解析token看看内容（不验证签名）
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        console.log('[COMMERCE API] Token payload:', {
+          iss: payload.iss,
+          aud: payload.aud,
+          sub: payload.sub,
+          exp: payload.exp,
+          iat: payload.iat,
+          phone_number: payload.phone_number
+        });
+        console.log('[COMMERCE API] Token是否过期:', Date.now() > payload.exp * 1000);
+      }
+    } catch (parseError) {
+      console.log('[COMMERCE API] 无法解析token payload:', parseError.message);
+    }
+
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
     });
+
+    console.log('[COMMERCE API] JWT验证成功，用户ID:', payload.sub);
     return payload.sub;
   } catch (error) {
     console.error('[COMMERCE API] Token 验证失败:', error);
+    console.error('[COMMERCE API] 错误详情:', error.message);
+    console.error('[COMMERCE API] 错误代码:', error.code);
+    console.error('[COMMERCE API] 错误声明:', error.claim);
     return null;
   }
 }
@@ -54,21 +85,34 @@ export default async function handler(req, res) {
 
     // 验证Authorization头（除了某些公开接口）
     const action = req.query.action || req.body?.action;
+    const subAction = req.query.subAction || req.body?.subAction;
     const publicActions = ['packages']; // 套餐列表是公开的
-    
+
+    console.log('[COMMERCE API] Action:', action, 'SubAction:', subAction);
+    console.log('[COMMERCE API] 是否为公开接口:', publicActions.includes(action));
+
     let userId = null;
     if (!publicActions.includes(action)) {
       const authHeader = req.headers.authorization;
+      console.log('[COMMERCE API] Authorization header存在:', !!authHeader);
+      console.log('[COMMERCE API] Authorization header预览:', authHeader ? authHeader.substring(0, 20) + '...' : 'null');
+
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('[COMMERCE API] 错误：缺少或无效的Authorization头');
         return res.status(401).json({ error: 'Missing or invalid authorization header' });
       }
 
       const token = authHeader.substring(7);
+      console.log('[COMMERCE API] 提取的token长度:', token.length);
+
       userId = await verifyToken(token);
 
       if (!userId) {
+        console.log('[COMMERCE API] 错误：token验证失败');
         return res.status(401).json({ error: 'Invalid token' });
       }
+
+      console.log('[COMMERCE API] 认证成功，用户ID:', userId);
     }
 
     console.log('[COMMERCE API] Action:', action, 'UserId:', userId);
