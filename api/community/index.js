@@ -1,24 +1,21 @@
 // 社区API - 纯生产环境版本
 // 处理社区相关功能：作品展示、点赞、评论、举报等
 
-import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// 生产环境配置
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// TableStore 配置检查
+const instanceName = process.env.TABLESTORE_INSTANCE;
+const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+if (!instanceName || !accessKeyId || !accessKeySecret) {
+  throw new Error('Missing required environment variables: TABLESTORE_INSTANCE, ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET');
 }
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
 const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '689adde75ecb97cd396860eb';
 const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`));
-
-// 创建 Supabase 客户端
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(req, res) {
   try {

@@ -128,6 +128,12 @@ function App() {
                 <TestCreditsPage />
               </ProtectedRoute>
             } />
+            <Route path="community" element={
+              <ProtectedRoute>
+                <CommunityPage />
+              </ProtectedRoute>
+            } />
+            {/* 保持向后兼容性 */}
             <Route path="gallery" element={
               <ProtectedRoute>
                 <GalleryPage />
@@ -151,11 +157,6 @@ function App() {
             <Route path="invitation" element={
               <ProtectedRoute>
                 <InvitationPage />
-              </ProtectedRoute>
-            } />
-            <Route path="community" element={
-              <ProtectedRoute>
-                <CommunityPage />
               </ProtectedRoute>
             } />
             <Route path="community/artwork/:id" element={

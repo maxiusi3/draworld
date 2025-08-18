@@ -37,7 +37,7 @@ const Header: React.FC = () => {
             {currentUser ? (
               <>
                 <Link
-                  to="/gallery"
+                  to="/community"
                   className="text-gray-600 hover:text-blue-600 font-medium transition-colors duration-200"
                 >
                   创意广场

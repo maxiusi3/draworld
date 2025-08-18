@@ -1,19 +1,16 @@
 // 作品API - 纯生产环境版本
 // 处理创意广场的作品列表、详情、搜索等功能
 
-import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// 生产环境配置 - 无演示模式
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// TableStore 配置检查
+const instanceName = process.env.TABLESTORE_INSTANCE;
+const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+if (!instanceName || !accessKeyId || !accessKeySecret) {
+  throw new Error('Missing required environment variables: TABLESTORE_INSTANCE, ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET');
 }
-
-// 创建 Supabase 客户端
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
@@ -93,79 +90,74 @@ async function getArtworksList(req, res) {
     const tags = req.query.tags || '';
     const category = req.query.category || '';
 
-    // 构建查询
-    let query = supabase
-      .from('artworks')
-      .select(`
-        id,
-        title,
-        description,
-        thumbnail_url,
-        video_url,
-        tags,
-        category,
-        likes_count,
-        views_count,
-        created_at,
-        user_id,
-        users:user_id (
-          id,
-          username,
-          avatar_url
-        )
-      `, { count: 'exact' })
-      .eq('status', 'published'); // 只显示已发布的作品
+    // 使用 TableStore CommunityRepository
+    const { CommunityRepository } = await import('../../serverless/src/communityRepo.js');
+    const communityRepo = new CommunityRepository(instanceName);
+
+    // 从 TableStore 获取公开作品列表
+    const artworks = await communityRepo.getPublicArtworks(limit * 2); // 获取更多数据以支持过滤和排序
+
+    // 转换为API响应格式
+    let formattedArtworks = artworks.map(artwork => ({
+      id: artwork.artworkId,
+      title: artwork.title,
+      description: artwork.description,
+      thumbnail_url: artwork.thumbnailUrl,
+      video_url: artwork.videoUrl,
+      tags: artwork.tags || [],
+      category: artwork.tags?.[0] || 'general', // 使用第一个标签作为分类
+      likes_count: artwork.likeCount || 0,
+      views_count: artwork.viewCount || 0,
+      created_at: new Date(artwork.createdAt).toISOString(),
+      user_id: artwork.userId
+    }));
 
     // 添加分类过滤
     if (category) {
-      query = query.eq('category', category);
+      formattedArtworks = formattedArtworks.filter(artwork => artwork.category === category);
     }
 
     // 添加标签过滤
     if (tags) {
       const tagArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
       if (tagArray.length > 0) {
-        query = query.overlaps('tags', tagArray);
+        formattedArtworks = formattedArtworks.filter(artwork =>
+          tagArray.some(tag => artwork.tags.includes(tag))
+        );
       }
     }
 
     // 添加排序
     switch (sortBy) {
       case 'LATEST':
-        query = query.order('created_at', { ascending: false });
+        formattedArtworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         break;
       case 'POPULAR':
-        query = query.order('likes_count', { ascending: false });
+        formattedArtworks.sort((a, b) => b.likes_count - a.likes_count);
         break;
       case 'VIEWS':
-        query = query.order('views_count', { ascending: false });
+        formattedArtworks.sort((a, b) => b.views_count - a.views_count);
         break;
       default:
-        query = query.order('created_at', { ascending: false });
+        formattedArtworks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
     // 添加分页
     const startIndex = (page - 1) * limit;
-    query = query.range(startIndex, startIndex + limit - 1);
+    const paginatedArtworks = formattedArtworks.slice(startIndex, startIndex + limit);
+    const totalCount = formattedArtworks.length;
 
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error('[ARTWORKS] 查询作品列表失败:', error);
-      throw error;
-    }
-
-    console.log(`[ARTWORKS] 成功获取 ${data?.length || 0} 个作品`);
+    console.log(`[ARTWORKS] 成功获取 ${paginatedArtworks.length} 个作品`);
 
     return res.status(200).json({
       success: true,
-      data: data || [],
+      data: paginatedArtworks,
       pagination: {
         page: page,
         limit: limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-        hasNext: startIndex + limit < (count || 0),
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasNext: startIndex + limit < totalCount,
         hasPrev: page > 1
       },
       filters: {
@@ -191,14 +183,7 @@ async function getArtworkById(req, res, artworkId) {
 
     const { data, error } = await supabase
       .from('artworks')
-      .select(`
-        *,
-        users:user_id (
-          id,
-          username,
-          avatar_url
-        )
-      `)
+      .select('*')
       .eq('id', artworkId)
       .eq('status', 'published')
       .single();
@@ -245,41 +230,46 @@ async function searchArtworks(req, res) {
 
     const startIndex = (page - 1) * limit;
 
-    const { data, error, count } = await supabase
-      .from('artworks')
-      .select(`
-        id,
-        title,
-        description,
-        thumbnail_url,
-        video_url,
-        tags,
-        category,
-        likes_count,
-        views_count,
-        created_at,
-        user_id,
-        users:user_id (
-          id,
-          username,
-          avatar_url
-        )
-      `, { count: 'exact' })
-      .eq('status', 'published')
-      .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-      .order('created_at', { ascending: false })
-      .range(startIndex, startIndex + limit - 1);
+    // 使用 TableStore CommunityRepository
+    const { CommunityRepository } = await import('../../serverless/src/communityRepo.js');
+    const communityRepo = new CommunityRepository(instanceName);
 
-    if (error) throw error;
+    // 从 TableStore 获取所有公开作品，然后进行搜索过滤
+    const allArtworks = await communityRepo.getPublicArtworks(100); // 获取更多数据用于搜索
+
+    // 转换为API响应格式并进行搜索过滤
+    const searchResults = allArtworks
+      .map(artwork => ({
+        id: artwork.artworkId,
+        title: artwork.title,
+        description: artwork.description,
+        thumbnail_url: artwork.thumbnailUrl,
+        video_url: artwork.videoUrl,
+        tags: artwork.tags || [],
+        category: artwork.tags?.[0] || 'general',
+        likes_count: artwork.likeCount || 0,
+        views_count: artwork.viewCount || 0,
+        created_at: new Date(artwork.createdAt).toISOString(),
+        user_id: artwork.userId
+      }))
+      .filter(artwork =>
+        artwork.title.toLowerCase().includes(query.toLowerCase()) ||
+        artwork.description.toLowerCase().includes(query.toLowerCase())
+      )
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // 分页处理
+    const paginatedResults = searchResults.slice(startIndex, startIndex + limit);
+    const totalCount = searchResults.length;
 
     return res.status(200).json({
       success: true,
-      data: data || [],
+      data: paginatedResults,
       pagination: {
         page: page,
         limit: limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
       },
       query: query
     });

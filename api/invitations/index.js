@@ -1,13 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// Supabase 配置 - 生产环境强制要求环境变量
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// TableStore 配置检查
+const instanceName = process.env.TABLESTORE_INSTANCE;
+const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
 
 // 验证必需的环境变量
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+if (!instanceName || !accessKeyId || !accessKeySecret) {
+  throw new Error('Missing required environment variables: TABLESTORE_INSTANCE, ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET');
 }
 
 // 风控：频率限制存储
@@ -27,8 +27,7 @@ const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing
 const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '676a0e3c6c9a2b2d8e9c4c5e';
 const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`));
 
-// 创建 Supabase 客户端
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// TableStore 已在各个函数中按需导入
 
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {

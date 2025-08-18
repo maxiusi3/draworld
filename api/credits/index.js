@@ -1,19 +1,16 @@
 // 合并的Credits API - 处理积分相关的所有操作
 // 支持: balance (查询余额), transaction (创建交易), history (查询历史), daily-signin (每日签到)
 
-import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// 生产环境配置
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// TableStore 配置检查
+const instanceName = process.env.TABLESTORE_INSTANCE;
+const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
+const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+if (!instanceName || !accessKeyId || !accessKeySecret) {
+  throw new Error('Missing required environment variables: TABLESTORE_INSTANCE, ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET');
 }
-
-// 创建 Supabase 客户端
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Authing OIDC 配置
 const OIDC_JWKS_URI = 'https://draworld.authing.cn/oidc/.well-known/jwks.json';
@@ -132,47 +129,24 @@ async function handleBalance(req, res, userId) {
   try {
     console.log('[BALANCE] 查询用户积分余额，用户ID:', userId);
 
-    // 从Supabase查询
-    const { data, error } = await supabase
-      .from('user_credits')
-      .select('balance, last_updated')
-      .eq('user_id', userId)
-      .single();
+    // 使用 TableStore CreditsService
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
 
-    if (error && error.code !== 'PGRST116') {
-      throw error;
-    }
+    // 从 TableStore 查询用户积分余额
+    const balance = await creditsService.getUserBalance(userId);
 
-    if (!data) {
-      // 用户不存在，创建新记录
-      const { data: newData, error: insertError } = await supabase
-        .from('user_credits')
-        .insert({
-          user_id: userId,
-          balance: 100,
-          last_updated: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      return res.status(200).json({
-        success: true,
-        balance: newData.balance,
-        lastUpdated: newData.last_updated
-      });
-    }
+    console.log('[BALANCE] 用户积分余额:', balance);
 
     return res.status(200).json({
       success: true,
-      balance: data.balance,
-      lastUpdated: data.last_updated
+      balance: balance,
+      lastUpdated: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('[BALANCE] 查询余额失败:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to get balance',
       message: error.message
     });
@@ -198,20 +172,31 @@ async function handleTransaction(req, res, userId) {
       return res.status(400).json({ error: 'Missing reason' });
     }
 
-    // 使用Supabase事务
-    const { data, error } = await supabase.rpc('create_credit_transaction', {
-      p_user_id: userId,
-      p_amount: amount,
-      p_reason: reason,
-      p_description: description || ''
-    });
+    // 使用 TableStore CreditsService
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
 
-    if (error) throw error;
+    // 创建积分交易
+    const transaction = await creditsService.addCredits(userId, amount, reason, description || '');
+
+    if (!transaction) {
+      throw new Error('Failed to create credit transaction');
+    }
+
+    // 获取更新后的余额
+    const newBalance = await creditsService.getUserBalance(userId);
 
     return res.status(200).json({
       success: true,
-      transaction: data,
-      newBalance: data.balance_after
+      transaction: {
+        id: transaction.transactionId,
+        user_id: userId,
+        amount: amount,
+        reason: reason,
+        description: description || '',
+        created_at: new Date().toISOString()
+      },
+      newBalance: newBalance
     });
 
   } catch (error) {
@@ -231,24 +216,32 @@ async function handleHistory(req, res, userId) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
 
-    // 从Supabase查询
-    const { data, error, count } = await supabase
-      .from('credit_transactions')
-      .select('*', { count: 'exact' })
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
+    // 使用 TableStore CreditsService
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
 
-    if (error) throw error;
+    // 从 TableStore 查询积分历史
+    const transactions = await creditsService.getUserTransactions(userId, limit);
+
+    // 转换为API响应格式
+    const formattedTransactions = transactions.map(tx => ({
+      id: tx.transactionId,
+      user_id: tx.userId,
+      amount: tx.amount,
+      reason: tx.reason,
+      description: tx.description || '',
+      created_at: new Date(tx.createdAt).toISOString(),
+      balance_after: tx.balanceAfter
+    }));
 
     return res.status(200).json({
       success: true,
-      transactions: data,
+      transactions: formattedTransactions,
       pagination: {
         page: page,
         limit: limit,
-        total: count,
-        totalPages: Math.ceil(count / limit)
+        total: formattedTransactions.length,
+        totalPages: Math.ceil(formattedTransactions.length / limit)
       }
     });
 
@@ -273,28 +266,26 @@ async function handleDailySignin(req, res, userId) {
     const today = new Date().toDateString();
     const signinReward = 5; // 每日签到奖励5积分
 
-    // 使用Supabase
-    const { data, error } = await supabase.rpc('daily_signin', {
-      p_user_id: userId,
-      p_reward: signinReward
-    });
+    // 使用 TableStore CreditsService
+    const { CreditsService } = await import('../../serverless/src/creditsService.js');
+    const creditsService = new CreditsService(instanceName);
 
-    if (error) {
-      if (error.message.includes('already signed in')) {
-        return res.status(400).json({ 
-          error: 'Already signed in today',
-          message: '今天已经签到过了'
-        });
-      }
-      throw error;
+    // 执行每日签到
+    const result = await creditsService.dailySignin(userId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Already signed in today',
+        message: '今天已经签到过了'
+      });
     }
 
     return res.status(200).json({
       success: true,
       message: '签到成功',
       reward: signinReward,
-      newBalance: data.new_balance,
-      consecutiveDays: data.consecutive_days
+      newBalance: result.newBalance,
+      consecutiveDays: 1 // 简化实现，暂时返回1
     });
 
   } catch (error) {
