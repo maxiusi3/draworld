@@ -14,7 +14,7 @@ const {
   OSS_REGION = 'cn-hangzhou',
   OSS_BUCKET_UPLOAD = 'draworld2025',
   OSS_BUCKET_STATIC = 'draworld2',
-  TABESTORE_INSTANCE = 'i01wvvv53p0q',
+  TABLESTORE_INSTANCE = 'i01wvvv53p0q',
   OIDC_ISSUER = 'https://draworld.authing.cn/oidc',
   OIDC_JWKS = 'https://draworld.authing.cn/oidc/.well-known/jwks.json',
   OIDC_AUD = '689adde75ecb97cd396860eb',
@@ -92,8 +92,8 @@ function createOTS() {
   return new TableStore.Client({
     accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID,
     accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
-    endpoint: `https://${TABESTORE_INSTANCE}.${OSS_REGION}.ots.aliyuncs.com`,
-    instancename: TABESTORE_INSTANCE
+    endpoint: `https://${TABLESTORE_INSTANCE}.${OSS_REGION}.ots.aliyuncs.com`,
+    instancename: TABLESTORE_INSTANCE
   });
 }
 // OTS helpers: 表 videos 的基本操作（简化）

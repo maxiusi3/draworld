@@ -212,14 +212,14 @@ async function handleUpload(req, res) {
 // 这些函数将从原始文件中导入或重新实现
 
 async function getArtworksList(req, res) {
-  // 从原 api/artworks/index.js 导入实现
-  const { ArtworksRepository } = await import('../../serverless/src/artworksRepo.js');
-  const artworksRepo = new ArtworksRepository(instanceName);
+  // 从 communityRepo 导入实现
+  const { CommunityRepository } = await import('../../serverless/src/communityRepo.js');
+  const communityRepo = new CommunityRepository(instanceName);
   
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   
-  const artworks = await artworksRepo.getArtworksList(page, limit);
+  const artworks = await communityRepo.getPublicArtworks(limit);
   
   return res.status(200).json({
     success: true,

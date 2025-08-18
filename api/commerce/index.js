@@ -341,6 +341,14 @@ async function handleCreditBalance(req, res, userId) {
     const { CreditsService } = await import('../../serverless/src/creditsService.js');
     console.log('[COMMERCE API] CreditsService导入成功');
 
+    // 详细的TableStore配置调试
+    console.log('[COMMERCE API] TableStore配置详情:');
+    console.log('[COMMERCE API] - 实例名:', instanceName);
+    console.log('[COMMERCE API] - 区域: cn-hangzhou');
+    console.log('[COMMERCE API] - 端点: https://' + instanceName + '.cn-hangzhou.ots.aliyuncs.com');
+    console.log('[COMMERCE API] - Access Key ID:', accessKeyId);
+    console.log('[COMMERCE API] - Access Key Secret长度:', accessKeySecret ? accessKeySecret.length : 0);
+
     const creditsService = new CreditsService(instanceName);
     console.log('[COMMERCE API] CreditsService实例创建成功');
 

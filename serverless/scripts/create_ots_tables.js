@@ -5,7 +5,7 @@
 const TableStore = require('tablestore');
 
 const REGION = process.env.OTS_REGION || process.env.OSS_REGION || 'cn-hangzhou';
-const INSTANCE = process.env.TABESTORE_INSTANCE || process.env.OTS_INSTANCE || 'i01wvvv53p0q';
+const INSTANCE = process.env.TABLESTORE_INSTANCE || process.env.OTS_INSTANCE || 'i01wvvv53p0q';
 
 function client() {
   return new TableStore.Client({
