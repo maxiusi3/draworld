@@ -111,7 +111,7 @@ class VideoService {
   async getUserVideoTasks(_userId: string, limitCount = 20, _offset = 0): Promise<VideoTask[]> {
     try {
       // 始终使用当前域名，避免跨域问题
-      const apiUrl = `${window.location.origin}/api/video?action=list&limit=${limitCount}`;
+      const apiUrl = `${window.location.origin}/api/content?action=video&subAction=list&limit=${limitCount}`;
       console.log('[VIDEO SERVICE] API调用URL:', apiUrl);
       console.log('[VIDEO SERVICE] 当前域名:', window.location.origin);
 
@@ -139,7 +139,7 @@ class VideoService {
       while (!cancelled) {
         try {
           // 始终使用当前域名，避免跨域问题
-          const apiUrl = `${window.location.origin}/api/video?action=list&limit=${limitCount}`;
+          const apiUrl = `${window.location.origin}/api/content?action=video&subAction=list&limit=${limitCount}`;
           console.log('[VIDEO SERVICE POLL] API调用URL:', apiUrl);
 
           const resp = await fetch(apiUrl, {

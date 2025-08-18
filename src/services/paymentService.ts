@@ -172,7 +172,7 @@ export class PaymentService {
   async getCreditPackages(): Promise<CreditPackagesResponse> {
     try {
       // 尝试使用新的订单API
-      const result = await this.request<any>('/api/orders?action=packages');
+      const result = await this.request<any>('/api/commerce?action=orders&subAction=packages');
       return {
         packages: result.packages || [],
       };
@@ -186,7 +186,7 @@ export class PaymentService {
   // 创建订单
   async createOrder(request: CreateOrderRequest): Promise<CreateOrderResponse> {
     try {
-      const result = await this.request<any>('/api/orders?action=create', {
+      const result = await this.request<any>('/api/commerce?action=orders&subAction=create', {
         method: 'POST',
         body: JSON.stringify({ packageId: request.packageId }),
       });
@@ -214,7 +214,7 @@ export class PaymentService {
   // 获取用户订单列表
   async getOrders(page: number = 1, limit: number = 20): Promise<OrderListResponse> {
     return this.request<OrderListResponse>(
-      `/api/orders?page=${page}&limit=${limit}`
+      `/api/commerce?action=orders&subAction=list&page=${page}&limit=${limit}`
     );
   }
 

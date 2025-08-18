@@ -87,7 +87,7 @@ export class CreditsService {
       success: boolean;
       balance: number;
       lastUpdated: string;
-    }>('/api/credits?action=balance');
+    }>('/api/commerce?action=credits&subAction=balance');
 
     if (!response.success) throw new Error('获取积分余额失败');
     return { balance: response.balance, lastUpdated: response.lastUpdated };
@@ -102,7 +102,7 @@ export class CreditsService {
       success: boolean;
       transaction: CreditTransaction;
       newBalance: number;
-    }>('/api/credits?action=transaction', {
+    }>('/api/commerce?action=credits&subAction=transaction', {
       method: 'POST',
       body: JSON.stringify({ amount, reason, description: description || '' })
     });
@@ -122,7 +122,7 @@ export class CreditsService {
       success: boolean;
       transactions: CreditTransaction[];
       pagination: { page: number; limit: number; total: number; totalPages: number; };
-    }>(`/api/credits?action=history&page=${page}&limit=${limit}`);
+    }>(`/api/commerce?action=credits&subAction=history&page=${page}&limit=${limit}`);
 
     if (!response.success) throw new Error('获取积分历史失败');
     return { transactions: response.transactions, pagination: response.pagination };
@@ -141,7 +141,7 @@ export class CreditsService {
       reward: number;
       newBalance: number;
       consecutiveDays: number;
-    }>('/api/credits?action=daily-signin', { method: 'POST' });
+    }>('/api/commerce?action=credits&subAction=daily-signin', { method: 'POST' });
 
     if (!response.success) throw new Error('每日签到失败');
     return response;
