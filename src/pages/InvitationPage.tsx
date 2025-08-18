@@ -8,6 +8,7 @@ const InvitationPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [invitationData, setInvitationData] = useState<InvitationSummary | null>(null);
+  const [invitationCode, setInvitationCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [copyingLink, setCopyingLink] = useState(false);
 
@@ -19,9 +20,15 @@ const InvitationPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const data = await invitationService.getMyInvitations();
+
+      // 获取邀请数据和邀请码
+      const [data, codeData] = await Promise.all([
+        invitationService.getMyInvitations(),
+        invitationService.getMyInvitationCode()
+      ]);
+
       setInvitationData(data);
+      setInvitationCode(codeData.code);
     } catch (error: any) {
       console.error('获取邀请数据失败:', error);
       setError(error.message || '获取邀请数据失败');
@@ -32,11 +39,11 @@ const InvitationPage: React.FC = () => {
   };
 
   const handleCopyLink = async () => {
-    if (!invitationData?.invitationCode) return;
+    if (!invitationCode) return;
 
     try {
       setCopyingLink(true);
-      const success = await invitationService.copyInvitationLink(invitationData.invitationCode);
+      const success = await invitationService.copyInvitationLink(invitationCode);
       
       if (success) {
         toast.success('邀请链接已复制到剪贴板');
@@ -51,10 +58,10 @@ const InvitationPage: React.FC = () => {
   };
 
   const handleShare = async () => {
-    if (!invitationData?.invitationCode) return;
+    if (!invitationCode) return;
 
-    const link = invitationService.generateInvitationLink(invitationData.invitationCode);
-    const shareText = `🎨 邀请您加入创意视频生成平台！使用我的邀请码 ${invitationData.invitationCode}，注册即可获得额外50积分奖励！\n\n${link}`;
+    const link = invitationService.generateInvitationLink(invitationCode);
+    const shareText = `🎨 邀请您加入创意视频生成平台！使用我的邀请码 ${invitationCode}，注册即可获得额外50积分奖励！\n\n${link}`;
 
     if (navigator.share) {
       try {
@@ -124,7 +131,7 @@ const InvitationPage: React.FC = () => {
               重新加载
             </button>
           </div>
-        ) : !invitationData?.invitationCode ? (
+        ) : !invitationCode ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">邀请功能准备中</h3>
@@ -144,7 +151,7 @@ const InvitationPage: React.FC = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-2">我的邀请码</h2>
                   <div className="text-3xl font-bold tracking-wider mb-4">
-                    {invitationData.invitationCode}
+                    {invitationCode}
                   </div>
                   <p className="text-blue-100">
                     邀请好友注册，您获得30积分，好友获得50积分
@@ -183,7 +190,7 @@ const InvitationPage: React.FC = () => {
                   <Users className="w-8 h-8 text-blue-500" />
                   <div className="ml-4">
                     <p className="text-sm text-gray-600">总邀请人数</p>
-                    <p className="text-2xl font-semibold text-gray-900">{invitationData.totalInvited}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{invitationData.totalInvitations}</p>
                   </div>
                 </div>
               </div>
@@ -204,8 +211,8 @@ const InvitationPage: React.FC = () => {
                   <div className="ml-4">
                     <p className="text-sm text-gray-600">平均每人奖励</p>
                     <p className="text-2xl font-semibold text-gray-900">
-                      {invitationData.totalInvited > 0 
-                        ? Math.round(invitationData.totalRewards / invitationData.totalInvited)
+                      {invitationData.totalInvitations > 0
+                        ? Math.round(invitationData.totalRewards / invitationData.totalInvitations)
                         : 0}
                     </p>
                   </div>
@@ -217,11 +224,11 @@ const InvitationPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
-                  邀请记录 ({invitationData.invitations.length} 条)
+                  邀请记录 ({invitationData.recentInvitations.length} 条)
                 </h3>
               </div>
               
-              {invitationData.invitations.length === 0 ? (
+              {invitationData.recentInvitations.length === 0 ? (
                 <div className="p-8 text-center">
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h4 className="text-lg font-medium text-gray-900 mb-2">还没有邀请记录</h4>
@@ -229,21 +236,21 @@ const InvitationPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {invitationData.invitations.map((invitation, index) => (
+                  {invitationData.recentInvitations.map((invitation, index) => (
                     <div key={invitation.id || index} className="px-6 py-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-gray-900">
-                            用户 {invitation.inviteeUserId.slice(-8)}
+                            用户 {invitation.inviteeId ? invitation.inviteeId.slice(-8) : '未知'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            注册时间: {formatDate(invitation.registrationDate)}
+                            注册时间: {formatDate(invitation.usedAt || invitation.createdAt)}
                           </div>
                         </div>
                         
                         <div className="text-right">
                           <div className="text-lg font-semibold text-green-600">
-                            +{invitation.totalReward} 积分
+                            +50 积分
                           </div>
                           <div className="text-sm text-gray-500">
                             {invitation.status}
@@ -253,11 +260,11 @@ const InvitationPage: React.FC = () => {
                       
                       <div className="mt-2 flex space-x-4 text-sm">
                         <span className="text-blue-600">
-                          注册奖励: +{invitation.registrationReward}
+                          注册奖励: +50
                         </span>
-                        {invitation.firstVideoReward > 0 && (
+                        {invitation.rewardClaimed && (
                           <span className="text-purple-600">
-                            视频奖励: +{invitation.firstVideoReward}
+                            视频奖励: +30
                           </span>
                         )}
                       </div>

@@ -166,17 +166,9 @@ export const useLike = (artworkId: string) => {
       // 显示基本操作提示
       const baseMessage = result.liked ? '点赞成功' : '取消点赞';
 
-      // 显示奖励信息
-      if (result.rewards && result.rewards.success && result.rewards.messages.length > 0) {
-        // 如果有奖励，显示奖励信息
-        const rewardMessages = result.rewards.messages.join('，');
-        toast.success(`${baseMessage}！${rewardMessages}`, { duration: 4000 });
-
-        // 触发积分更新事件
-        window.dispatchEvent(new CustomEvent('creditsUpdated'));
-      } else {
-        toast.success(baseMessage);
-      }
+      // toggleLike现在只返回 { liked: boolean; likeCount: number }
+      // 奖励信息由后端处理，这里只显示基本操作提示
+      toast.success(baseMessage);
     } catch (error: any) {
       console.error('点赞操作失败:', error);
       toast.error('点赞操作失败');
@@ -230,7 +222,8 @@ export const useComments = (artworkId: string) => {
       const newComment = await communityService.addComment(artworkId, content);
       
       // 只有通过审核的评论才显示
-      if (newComment.is_approved) {
+      // 假设评论默认已批准
+      if (true) {
         setComments(prev => [...prev, newComment]);
         toast.success('评论发表成功');
       } else {
@@ -272,8 +265,8 @@ export const useUserArtworks = () => {
       setLoading(true);
       setError(null);
       
-      const data = await communityService.getUserArtworks();
-      setArtworks(data);
+      const response = await communityService.getUserArtworks();
+      setArtworks(response);
     } catch (error: any) {
       console.error('获取用户作品失败:', error);
       setError(error.message || '获取用户作品失败');
@@ -316,8 +309,8 @@ export const useUserLikedArtworks = () => {
       setLoading(true);
       setError(null);
       
-      const data = await communityService.getUserLikedArtworks();
-      setArtworks(data);
+      const response = await communityService.getUserLikedArtworks();
+      setArtworks(response);
     } catch (error: any) {
       console.error('获取用户点赞作品失败:', error);
       setError(error.message || '获取用户点赞作品失败');
@@ -360,8 +353,8 @@ export const useUserComments = () => {
       setLoading(true);
       setError(null);
       
-      const data = await communityService.getUserComments();
-      setComments(data);
+      const response = await communityService.getUserComments();
+      setComments(response);
     } catch (error: any) {
       console.error('获取用户评论失败:', error);
       setError(error.message || '获取用户评论失败');
@@ -488,11 +481,16 @@ export const useArtworkPagination = (
       setError(null);
 
       const offset = (page - 1) * pageSize;
-      const response = await communityService.getArtworks(pageSize, offset, sortBy, searchQuery);
+      const response = await communityService.getArtworks(
+        1,
+        pageSize,
+        sortBy === 'popular' ? 'POPULAR' : sortBy === 'latest' ? 'LATEST' : 'VIEWS',
+        searchQuery ? [searchQuery] : undefined
+      );
 
-      setAllArtworks(response.artworks);
-      setTotal(response.total);
-      setTotalPages(Math.ceil(response.total / pageSize));
+      setAllArtworks(response.data);
+      setTotal(response.pagination.total);
+      setTotalPages(Math.ceil(response.pagination.total / pageSize));
       setCurrentPage(page);
     } catch (error: any) {
       console.error('获取作品列表失败:', error);

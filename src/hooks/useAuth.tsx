@@ -72,19 +72,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const handleInvitationRewards = async () => {
     try {
       const result = await invitationService.handleInvitationFromUrl();
-      if (result.hasInvitation && result.result) {
-        if (result.result.success && result.result.rewards) {
-          // 邀请者与被邀请者奖励均由后端代发，前端仅显示提示
-          if (result.result.rewards.invitee > 0) {
-            toast.success(`欢迎加入！您获得了${result.result.rewards.invitee}积分奖励！`);
-            // 刷新余额（后端已入账）
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('creditsUpdated'));
-            }
+      if (result.success && result.reward) {
+        // 邀请者与被邀请者奖励均由后端代发，前端仅显示提示
+        if (result.reward > 0) {
+          toast.success(`欢迎加入！您获得了${result.reward}积分奖励！`);
+          // 刷新余额（后端已入账）
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('creditsUpdated'));
           }
-        } else if (result.result && !result.result.success) {
-          console.log('[AUTH] 邀请码处理失败:', result.result.message);
         }
+      } else if (!result.success) {
+        console.log('[AUTH] 邀请码处理失败:', result.message);
       }
     } catch (error) {
       console.error('[AUTH] 处理邀请奖励失败:', error);

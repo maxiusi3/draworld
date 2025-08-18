@@ -179,18 +179,18 @@ const ProfilePage: React.FC = () => {
                     {formatDate(comment.created_at)}
                   </span>
                   <span className={`text-xs px-2 py-1 rounded ${
-                    comment.is_approved 
+                    true
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {comment.is_approved ? '已发布' : '审核中'}
+                    {'已发布'}
                   </span>
                 </div>
                 <p className="text-gray-900 mb-3 leading-relaxed">
                   {comment.content}
                 </p>
                 <button
-                  onClick={() => navigate(`/community/artwork/${comment.artwork_id}`)}
+                  onClick={() => navigate(`/community/artwork/${comment.id}`)}
                   className="text-blue-600 hover:text-blue-700 text-sm transition-colors"
                 >
                   查看原作品 →

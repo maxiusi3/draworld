@@ -195,19 +195,19 @@ const ArtworkDetailPage: React.FC = () => {
                       <Heart 
                         className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} 
                       />
-                      <span>{formatCount(likeCount || artwork.like_count)}</span>
+                      <span>{formatCount(likeCount || artwork.likes_count)}</span>
                     </button>
                     
                     {/* 评论 */}
                     <div className="flex items-center space-x-2 text-gray-500">
                       <MessageCircle className="w-5 h-5" />
-                      <span>{formatCount(artwork.comment_count)}</span>
+                      <span>{formatCount(comments.length)}</span>
                     </div>
                     
                     {/* 浏览 */}
                     <div className="flex items-center space-x-2 text-gray-500">
                       <Eye className="w-5 h-5" />
-                      <span>{formatCount(artwork.view_count)}</span>
+                      <span>{formatCount(artwork.views_count)}</span>
                     </div>
                   </div>
                 </div>

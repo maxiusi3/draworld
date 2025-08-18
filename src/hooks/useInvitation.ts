@@ -30,10 +30,10 @@ export const useInvitation = () => {
     try {
       const result = await invitationService.registerWithInvitationCode(invitationCode);
 
-      if (result.success && result.rewards) {
+      if (result.success && result.reward) {
         // 邀请者与被邀请者奖励均由后端代发，前端仅显示提示
-        if (result.rewards.invitee > 0) {
-          toast.success(`注册成功！您获得了${result.rewards.invitee}积分奖励！`);
+        if (result.reward > 0) {
+          toast.success(`注册成功！您获得了${result.reward}积分奖励！`);
           // 通知余额刷新（后端已入账）
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('creditsUpdated'));
@@ -56,7 +56,7 @@ export const useInvitation = () => {
     try {
       const result = await invitationService.triggerFirstVideoReward();
 
-      if (result.success && result.reward && result.inviterUserId) {
+      if (result.success && result.reward) {
         // 邀请者的首次视频奖励由后端代发；前端不再入账
         toast.success(`您的邀请者获得了${result.reward}积分奖励！`);
         return true;
@@ -86,12 +86,12 @@ export const useInvitation = () => {
   };
 
   // 检查URL中的邀请码并处理
-  const handleUrlInvitation = async (): Promise<{ hasInvitation: boolean; result?: InvitationRegistrationResult }> => {
+  const handleUrlInvitation = async (): Promise<InvitationRegistrationResult> => {
     try {
       return await invitationService.handleInvitationFromUrl();
     } catch (error: any) {
       console.error('处理URL邀请码失败:', error);
-      return { hasInvitation: false };
+      return { success: false, message: '处理邀请码失败' };
     }
   };
 
@@ -99,7 +99,7 @@ export const useInvitation = () => {
   const getInvitationCode = async (): Promise<string | null> => {
     try {
       const codeData = await invitationService.getMyInvitationCode();
-      return codeData.invitation_code;
+      return codeData.code;
     } catch (error: any) {
       console.error('获取邀请码失败:', error);
       return null;

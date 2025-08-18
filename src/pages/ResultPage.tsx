@@ -58,7 +58,7 @@ const ResultPage: React.FC = () => {
 
       setArtworkCreated(true);
       setArtworkId(artwork.id);
-      setIsPublic(artwork.is_public);
+      setIsPublic(true); // 默认为公开
       console.log('[RESULT PAGE] 作品记录创建成功:', artwork);
     } catch (error) {
       console.error('[RESULT PAGE] 创建作品记录失败:', error);

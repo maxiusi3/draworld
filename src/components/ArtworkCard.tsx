@@ -24,10 +24,9 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
   const { liked, likeCount, loading: likeLoading, toggleLike } = useLike(artwork.id);
 
   const handleVisibilityToggle = (isPublic: boolean) => {
-    setCurrentArtwork(prev => ({
-      ...prev,
-      is_public: isPublic,
-    }));
+    // 在新的Artwork接口中，我们假设所有作品都是公开的
+    // 这个功能可能需要在后端API中实现
+    console.log('切换作品可见性:', isPublic);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

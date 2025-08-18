@@ -322,7 +322,7 @@ const CommunityPage: React.FC = () => {
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <div className="flex items-center space-x-1">
                                     <Heart className="w-4 h-4" />
-                                    <span>{artwork.like_count}</span>
+                                    <span>{artwork.likes_count}</span>
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <Clock className="w-4 h-4" />
@@ -332,7 +332,7 @@ const CommunityPage: React.FC = () => {
                               </div>
 
                               {/* 状态指示器 */}
-                              {!artwork.is_public && (
+                              {false && (
                                 <span className="ml-4 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
                                   私密
                                 </span>

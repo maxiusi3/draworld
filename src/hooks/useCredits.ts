@@ -71,30 +71,24 @@ export const useConsumeCredits = () => {
       const result = await creditsService.consumeCredits({
         amount,
         reason: reason as any,
-        referenceId,
         description,
       });
 
       console.log('[CONSUME CREDITS] creditsService 返回结果:', result);
 
-      if (result.success) {
-        console.log('[CONSUME CREDITS] 积分消费成功');
-        toast.success(`成功消费 ${amount} 积分`);
+      // 积分消费成功，result是CreditTransaction对象
+      console.log('[CONSUME CREDITS] 积分消费成功');
+      toast.success(`成功消费 ${amount} 积分`);
 
-        // 立即更新本地余额状态，而不是等待 API 刷新
-        if (result.newBalance !== undefined) {
-          console.log('[CONSUME CREDITS] 立即更新本地余额:', result.newBalance);
-          setBalance(result.newBalance);
-        } else {
-          // 如果没有返回新余额，则刷新
-          await refreshBalance();
-        }
-        return true;
+      // 更新本地余额为交易后余额
+      if (result.balanceAfter !== undefined) {
+        console.log('[CONSUME CREDITS] 更新本地余额:', result.balanceAfter);
+        setBalance(result.balanceAfter);
       } else {
-        console.log('[CONSUME CREDITS] 积分消费失败:', result.error);
-        toast.error(result.error || '积分消费失败');
-        return false;
+        // 如果没有返回余额，则刷新
+        await refreshBalance();
       }
+      return true;
     } catch (error: any) {
       console.error('[CONSUME CREDITS] 消费积分异常:', error);
       toast.error(error.message || '积分消费失败');
@@ -186,7 +180,7 @@ export const useCreditHistory = (limit: number = 20) => {
       setError(null);
       
       const currentOffset = reset ? 0 : offset;
-      const result = await creditsService.getCreditHistory(limit, currentOffset);
+      const result = await creditsService.getCreditHistory({ limit, offset: currentOffset });
       
       if (reset) {
         setTransactions(result.transactions || []);
@@ -196,7 +190,7 @@ export const useCreditHistory = (limit: number = 20) => {
         setOffset(prev => prev + limit);
       }
       
-      setHasMore(result.pagination?.hasMore || false);
+      setHasMore(result.pagination.page < result.pagination.totalPages);
     } catch (err: any) {
       console.error('获取积分历史失败:', err);
       setError(err.message || '获取积分历史失败');
