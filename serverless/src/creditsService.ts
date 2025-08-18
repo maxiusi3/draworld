@@ -393,7 +393,7 @@ export class CreditsService {
       let lastDailyReset = userCredits.lastDailyReset || now;
 
       // 检查是否需要重置每日数据
-      if (this.isNewDay(lastDailyReset)) {
+      if (this.isNewDay(Number(lastDailyReset))) {
         dailyLikeGiven = 0;
         lastDailyReset = now;
       }
@@ -448,6 +448,8 @@ export class CreditsService {
     const result = {
       success: true,
       messages: [] as string[],
+      authorReward: undefined as number | undefined,
+      likerReward: undefined as number | undefined,
     };
 
     try {

@@ -357,14 +357,14 @@ export class OrdersRepository {
       };
 
       // 添加可选字段
-      if (log.paymentMethod) params.attributeColumns.push({ 'paymentMethod': log.paymentMethod });
-      if (log.paymentId) params.attributeColumns.push({ 'paymentId': log.paymentId });
-      if (log.requestData) params.attributeColumns.push({ 'requestData': log.requestData });
-      if (log.responseData) params.attributeColumns.push({ 'responseData': log.responseData });
-      if (log.errorCode) params.attributeColumns.push({ 'errorCode': log.errorCode });
-      if (log.errorMessage) params.attributeColumns.push({ 'errorMessage': log.errorMessage });
-      if (log.ipAddress) params.attributeColumns.push({ 'ipAddress': log.ipAddress });
-      if (log.userAgent) params.attributeColumns.push({ 'userAgent': log.userAgent });
+      if (log.paymentMethod) params.attributeColumns.push({ paymentMethod: log.paymentMethod });
+      if (log.paymentId) params.attributeColumns.push({ paymentId: log.paymentId });
+      if (log.requestData) params.attributeColumns.push({ requestData: log.requestData });
+      if (log.responseData) params.attributeColumns.push({ responseData: log.responseData });
+      if (log.errorCode) params.attributeColumns.push({ errorCode: log.errorCode });
+      if (log.errorMessage) params.attributeColumns.push({ errorMessage: log.errorMessage });
+      if (log.ipAddress) params.attributeColumns.push({ ipAddress: log.ipAddress });
+      if (log.userAgent) params.attributeColumns.push({ userAgent: log.userAgent });
 
       await this.client.putRow(params);
       return true;

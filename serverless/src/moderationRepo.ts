@@ -122,10 +122,10 @@ export class ModerationRepository {
       };
 
       // 添加可选字段
-      if (record.reason) params.attributeColumns.push({ 'reason': record.reason });
-      if (record.reportReasons) params.attributeColumns.push({ 'reportReasons': JSON.stringify(record.reportReasons) });
-      if (record.ipAddress) params.attributeColumns.push({ 'ipAddress': record.ipAddress });
-      if (record.userAgent) params.attributeColumns.push({ 'userAgent': record.userAgent });
+      if (record.reason) params.attributeColumns.push({ reason: record.reason });
+      if (record.reportReasons) params.attributeColumns.push({ reportReasons: JSON.stringify(record.reportReasons) });
+      if (record.ipAddress) params.attributeColumns.push({ ipAddress: record.ipAddress });
+      if (record.userAgent) params.attributeColumns.push({ userAgent: record.userAgent });
 
       await this.client.putRow(params);
       return true;
@@ -161,8 +161,8 @@ export class ModerationRepository {
       };
 
       // 添加可选字段
-      if (report.ipAddress) params.attributeColumns.push({ 'ipAddress': report.ipAddress });
-      if (report.userAgent) params.attributeColumns.push({ 'userAgent': report.userAgent });
+      if (report.ipAddress) params.attributeColumns.push({ ipAddress: report.ipAddress });
+      if (report.userAgent) params.attributeColumns.push({ userAgent: report.userAgent });
 
       await this.client.putRow(params);
       return reportId;
@@ -324,7 +324,7 @@ export class ModerationRepository {
       };
 
       if (reason) {
-        params.attributeColumns.push({ 'moderationReason': reason });
+        params.attributeColumns.push({ moderationReason: reason });
       }
 
       await this.client.updateRow(params);
