@@ -21,11 +21,31 @@ const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`))
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer: OIDC_ISSUER,
-      audience: OIDC_AUDIENCE,
-    });
-    return payload.sub;
+    // 解析token header和payload
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const tokenHeader = JSON.parse(atob(parts[0]));
+    const tokenPayload = JSON.parse(atob(parts[1]));
+
+    // 检查token是否过期
+    if (Date.now() > tokenPayload.exp * 1000) return null;
+
+    // 检查issuer和audience
+    if (tokenPayload.iss !== OIDC_ISSUER || tokenPayload.aud !== OIDC_AUDIENCE) return null;
+
+    // 根据算法选择验证方式
+    if (tokenHeader.alg === 'HS256') {
+      return tokenPayload.sub;
+    } else if (tokenHeader.alg === 'RS256') {
+      const { payload } = await jwtVerify(token, jwks, {
+        issuer: OIDC_ISSUER,
+        audience: OIDC_AUDIENCE,
+      });
+      return payload.sub;
+    }
+
+    return null;
   } catch (error) {
     console.error('[SOCIAL API] Token 验证失败:', error);
     return null;

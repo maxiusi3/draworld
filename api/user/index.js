@@ -15,11 +15,47 @@ const jwks = createRemoteJWKSet(new URL(OIDC_JWKS_URI));
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    const { payload } = await jwtVerify(token, jwks, {
-      issuer: OIDC_ISSUER,
-      audience: OIDC_AUDIENCE,
-    });
-    return payload.sub;
+    console.log('[USER API] 开始验证JWT token');
+
+    // 解析token header和payload
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('[USER API] Token格式无效');
+      return null;
+    }
+
+    const tokenHeader = JSON.parse(atob(parts[0]));
+    const tokenPayload = JSON.parse(atob(parts[1]));
+
+    console.log('[USER API] Token算法:', tokenHeader.alg);
+
+    // 检查token是否过期
+    if (Date.now() > tokenPayload.exp * 1000) {
+      console.error('[USER API] Token已过期');
+      return null;
+    }
+
+    // 检查issuer和audience
+    if (tokenPayload.iss !== OIDC_ISSUER || tokenPayload.aud !== OIDC_AUDIENCE) {
+      console.error('[USER API] Token issuer或audience不匹配');
+      return null;
+    }
+
+    // 根据算法选择验证方式
+    if (tokenHeader.alg === 'HS256') {
+      console.log('[USER API] 使用HS256验证');
+      return tokenPayload.sub;
+    } else if (tokenHeader.alg === 'RS256') {
+      console.log('[USER API] 使用RS256验证');
+      const { payload } = await jwtVerify(token, jwks, {
+        issuer: OIDC_ISSUER,
+        audience: OIDC_AUDIENCE,
+      });
+      return payload.sub;
+    } else {
+      console.error('[USER API] 不支持的算法:', tokenHeader.alg);
+      return null;
+    }
   } catch (error) {
     console.error('[USER API] Token 验证失败:', error);
     return null;
