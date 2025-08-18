@@ -247,7 +247,7 @@ export default async function handler(req, res) {
   // 原有的支付处理逻辑
   try {
     console.log('[PAYMENT] 请求:', req.method, req.url);
-    console.log('[PAYMENT] 演示模式状态:', isDemoMode);
+    console.log('[PAYMENT] 生产模式运行');
 
     const { action } = req.query;
 

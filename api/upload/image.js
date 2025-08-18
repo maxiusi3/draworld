@@ -89,54 +89,44 @@ export default async function handler(req, res) {
     console.log('[IMAGE UPLOAD API] 文件名:', fileName);
     console.log('[IMAGE UPLOAD API] 内容类型:', contentType);
     console.log('[IMAGE UPLOAD API] 数据大小:', imageData.length, 'bytes');
-    console.log('[IMAGE UPLOAD API] 演示模式:', isDemoMode);
-
     let imageUrl;
 
-    if (isDemoMode) {
-      // 演示模式：使用 base64 内联图片
-      console.log('[IMAGE UPLOAD API] 演示模式：使用 base64 内联图片');
-      imageUrl = `data:${contentType};base64,${imageData}`;
-    } else {
-      // 生产模式：上传到OSS
-      console.log('[IMAGE UPLOAD API] 生产模式：上传到OSS');
-      try {
-        // 导入OSS配置
-        const OSS = require('ali-oss');
+    // 生产模式：上传到OSS
+    console.log('[IMAGE UPLOAD API] 生产模式：上传到OSS');
+    try {
+      // 导入OSS配置
+      const OSS = require('ali-oss');
 
-        const client = new OSS({
-          region: process.env.OSS_REGION || 'oss-cn-hangzhou',
-          accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID,
-          accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
-          bucket: process.env.OSS_BUCKET || 'whimsy-brush-assets'
-        });
+      const client = new OSS({
+        region: process.env.OSS_REGION || 'oss-cn-hangzhou',
+        accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID,
+        accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
+        bucket: process.env.OSS_BUCKET || 'whimsy-brush-assets'
+      });
 
-        // 生成唯一文件名
-        const timestamp = Date.now();
-        const randomStr = Math.random().toString(36).substring(2, 15);
-        const fileExtension = fileName.split('.').pop() || 'jpg';
-        const ossFileName = `uploads/${userId}/${timestamp}-${randomStr}.${fileExtension}`;
+      // 生成唯一文件名
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 15);
+      const fileExtension = fileName.split('.').pop() || 'jpg';
+      const ossFileName = `uploads/${userId}/${timestamp}-${randomStr}.${fileExtension}`;
 
-        // 将base64转换为Buffer
-        const buffer = Buffer.from(imageData, 'base64');
+      // 将base64转换为Buffer
+      const buffer = Buffer.from(imageData, 'base64');
 
-        // 上传到OSS
-        const result = await client.put(ossFileName, buffer, {
-          headers: {
-            'Content-Type': contentType || 'image/jpeg',
-            'Cache-Control': 'public, max-age=31536000' // 1年缓存
-          }
-        });
+      // 上传到OSS
+      const result = await client.put(ossFileName, buffer, {
+        headers: {
+          'Content-Type': contentType || 'image/jpeg',
+          'Cache-Control': 'public, max-age=31536000' // 1年缓存
+        }
+      });
 
-        imageUrl = result.url;
-        console.log('[IMAGE UPLOAD API] OSS上传成功:', imageUrl);
+      imageUrl = result.url;
+      console.log('[IMAGE UPLOAD API] OSS上传成功:', imageUrl);
 
-      } catch (error) {
-        console.error('[IMAGE UPLOAD API] OSS上传失败:', error);
-        // 回退到base64模式
-        console.log('[IMAGE UPLOAD API] 回退到base64模式');
-        imageUrl = `data:${contentType};base64,${imageData}`;
-      }
+    } catch (error) {
+      console.error('[IMAGE UPLOAD API] OSS上传失败:', error);
+      throw new Error(`图片上传失败: ${error.message}`);
     }
 
     console.log('[IMAGE UPLOAD API] 图片上传成功');
@@ -145,7 +135,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       url: imageUrl,
-      message: isDemoMode ? '图片上传成功（使用 base64 内联）' : '图片上传成功（已保存到OSS）'
+      message: '图片上传成功（已保存到OSS）'
     });
     
   } catch (error) {
@@ -158,5 +148,4 @@ export default async function handler(req, res) {
   }
 }
 
-// 注意：这个版本使用 base64 内联图片，适合演示和测试环境
-// 在生产环境中，建议使用真正的图片存储服务
+// 生产环境图片上传服务 - 使用阿里云OSS存储

@@ -19,8 +19,8 @@ const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing
 const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '689adde75ecb97cd396860eb';
 const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`));
 
-// 管理员用户ID列表（演示模式）
-const DEMO_ADMIN_USERS = ['demo-user', 'admin-user'];
+// 管理员用户ID列表（生产模式需要从数据库或配置中获取）
+const ADMIN_USERS = process.env.ADMIN_USER_IDS ? process.env.ADMIN_USER_IDS.split(',') : [];
 
 // 创建 Supabase 客户端
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -101,12 +101,8 @@ async function verifyToken(token) {
 
 // 检查管理员权限
 function checkAdminPermission(userId) {
-  if (isDemoMode) {
-    return DEMO_ADMIN_USERS.includes(userId) || userId.startsWith('user-');
-  }
-  
   // 生产模式：检查真实的管理员权限
-  return false;
+  return ADMIN_USERS.includes(userId);
 }
 
 // 处理内容审核
@@ -165,34 +161,7 @@ async function handlePaymentMonitor(req, res, userId) {
 
 // 获取审核列表
 async function getModerationList(req, res) {
-  if (isDemoMode) {
-    const mockData = [
-      {
-        id: 'content-1',
-        type: 'video',
-        userId: 'user-123',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        content: '用户上传的视频内容'
-      },
-      {
-        id: 'content-2',
-        type: 'image',
-        userId: 'user-456',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        content: '用户上传的图片内容'
-      }
-    ];
-
-    return res.status(200).json({
-      success: true,
-      data: mockData,
-      total: mockData.length
-    });
-  }
-
-  // 真实模式：从数据库查询
+  // 生产模式：从数据库查询
   const { data, error } = await supabase
     .from('content_moderation')
     .select('*')
@@ -203,8 +172,8 @@ async function getModerationList(req, res) {
 
   return res.status(200).json({
     success: true,
-    data: data,
-    total: data.length
+    data: data || [],
+    total: data?.length || 0
   });
 }
 
@@ -216,15 +185,7 @@ async function approveContent(req, res) {
     return res.status(400).json({ error: 'Content ID is required' });
   }
 
-  if (isDemoMode) {
-    return res.status(200).json({
-      success: true,
-      message: '内容已批准（演示模式）',
-      contentId: contentId
-    });
-  }
-
-  // 真实模式：更新数据库
+  // 生产模式：更新数据库
   const { data, error } = await supabase
     .from('content_moderation')
     .update({ status: 'approved', reviewed_at: new Date().toISOString() })
@@ -236,7 +197,7 @@ async function approveContent(req, res) {
   return res.status(200).json({
     success: true,
     message: '内容已批准',
-    data: data[0]
+    data: data?.[0]
   });
 }
 
@@ -248,22 +209,13 @@ async function rejectContent(req, res) {
     return res.status(400).json({ error: 'Content ID is required' });
   }
 
-  if (isDemoMode) {
-    return res.status(200).json({
-      success: true,
-      message: '内容已拒绝（演示模式）',
-      contentId: contentId,
-      reason: reason
-    });
-  }
-
-  // 真实模式：更新数据库
+  // 生产模式：更新数据库
   const { data, error } = await supabase
     .from('content_moderation')
-    .update({ 
-      status: 'rejected', 
+    .update({
+      status: 'rejected',
       rejection_reason: reason,
-      reviewed_at: new Date().toISOString() 
+      reviewed_at: new Date().toISOString()
     })
     .eq('id', contentId)
     .select();
@@ -273,40 +225,25 @@ async function rejectContent(req, res) {
   return res.status(200).json({
     success: true,
     message: '内容已拒绝',
-    data: data[0]
+    data: data?.[0]
   });
 }
 
 // 获取支付统计
 async function getPaymentStats(req, res) {
-  if (isDemoMode) {
-    const mockStats = {
-      totalRevenue: 12580.50,
-      todayRevenue: 458.30,
-      totalTransactions: 1247,
-      todayTransactions: 23,
-      successRate: 98.5,
-      averageAmount: 10.09
-    };
+  // 支付功能保留演示逻辑（按用户要求）
+  const mockStats = {
+    totalRevenue: 12580.50,
+    todayRevenue: 458.30,
+    totalTransactions: 1247,
+    todayTransactions: 23,
+    successRate: 98.5,
+    averageAmount: 10.09
+  };
 
-    return res.status(200).json({
-      success: true,
-      stats: mockStats
-    });
-  }
-
-  // 真实模式：从数据库查询统计数据
-  // 这里需要实现真实的统计查询逻辑
   return res.status(200).json({
     success: true,
-    stats: {
-      totalRevenue: 0,
-      todayRevenue: 0,
-      totalTransactions: 0,
-      todayTransactions: 0,
-      successRate: 0,
-      averageAmount: 0
-    }
+    stats: mockStats
   });
 }
 
@@ -315,73 +252,53 @@ async function getPaymentTransactions(req, res) {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
 
-  if (isDemoMode) {
-    const mockTransactions = [
-      {
-        id: 'tx-1',
-        orderId: 'order-123',
-        amount: 9.99,
-        status: 'success',
-        paymentMethod: 'alipay',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'tx-2',
-        orderId: 'order-124',
-        amount: 19.99,
-        status: 'success',
-        paymentMethod: 'wechat',
-        createdAt: new Date().toISOString()
-      }
-    ];
+  // 支付功能保留演示逻辑（按用户要求）
+  const mockTransactions = [
+    {
+      id: 'tx-1',
+      orderId: 'order-123',
+      amount: 9.99,
+      status: 'success',
+      paymentMethod: 'alipay',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'tx-2',
+      orderId: 'order-124',
+      amount: 19.99,
+      status: 'success',
+      paymentMethod: 'wechat',
+      createdAt: new Date().toISOString()
+    }
+  ];
 
-    return res.status(200).json({
-      success: true,
-      transactions: mockTransactions,
-      pagination: {
-        page: page,
-        limit: limit,
-        total: mockTransactions.length,
-        totalPages: 1
-      }
-    });
-  }
-
-  // 真实模式：从数据库查询交易记录
   return res.status(200).json({
     success: true,
-    transactions: [],
+    transactions: mockTransactions,
     pagination: {
       page: page,
       limit: limit,
-      total: 0,
-      totalPages: 0
+      total: mockTransactions.length,
+      totalPages: 1
     }
   });
 }
 
 // 获取支付警报
 async function getPaymentAlerts(req, res) {
-  if (isDemoMode) {
-    const mockAlerts = [
-      {
-        id: 'alert-1',
-        type: 'high_failure_rate',
-        message: '支付失败率过高',
-        severity: 'warning',
-        createdAt: new Date().toISOString()
-      }
-    ];
+  // 支付功能保留演示逻辑（按用户要求）
+  const mockAlerts = [
+    {
+      id: 'alert-1',
+      type: 'high_failure_rate',
+      message: '支付失败率过高',
+      severity: 'warning',
+      createdAt: new Date().toISOString()
+    }
+  ];
 
-    return res.status(200).json({
-      success: true,
-      alerts: mockAlerts
-    });
-  }
-
-  // 真实模式：从数据库查询警报
   return res.status(200).json({
     success: true,
-    alerts: []
+    alerts: mockAlerts
   });
 }

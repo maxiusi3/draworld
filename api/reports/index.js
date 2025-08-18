@@ -18,13 +18,6 @@ const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`))
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    // 演示模式：直接接受任何 token
-    if (isDemoMode) {
-      console.log('[REPORTS AUTH] 演示模式：跳过 JWT 验证，接受任何 token');
-      const userId = token.includes('test-token') ? 'demo-user' : `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
@@ -32,14 +25,6 @@ async function verifyToken(token) {
     return payload.sub;
   } catch (error) {
     console.error('[REPORTS AUTH] Token 验证失败:', error);
-
-    // 演示模式：如果真实验证失败，也接受任何 token
-    if (isDemoMode) {
-      console.log('[REPORTS AUTH] 演示模式：验证失败后仍接受 token');
-      const userId = token.includes('test-token') ? 'demo-user' : `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     return null;
   }
 }
@@ -73,46 +58,33 @@ async function createReport(reportData, userId) {
       return { success: false, message: '无效的举报原因' };
     }
 
-    if (isDemoMode) {
-      // 演示模式：模拟创建举报
-      console.log(`[REPORTS] 演示模式：用户 ${userId} 举报 ${contentType} ${contentId}，原因：${reason}`);
-      
-      const reportId = `demo_report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+    // 生产模式：创建真实举报
+    const { ModerationRepository } = await import('../../serverless/src/moderationRepo.js');
+    const instanceName = process.env.TABESTORE_INSTANCE || 'i01wvvv53p0q';
+    const moderationRepo = new ModerationRepository(instanceName);
+
+    const reportId = await moderationRepo.createContentReport({
+      contentType: CONTENT_TYPES[contentType],
+      contentId,
+      reporterId: userId,
+      reporterName: `用户${userId.slice(-8)}`,
+      reason: REPORT_REASONS[reason],
+      description,
+      ipAddress: reportData.ipAddress,
+      userAgent: reportData.userAgent,
+    });
+
+    if (reportId) {
       return {
         success: true,
         reportId,
         message: '举报已提交，我们会尽快处理',
       };
     } else {
-      // 生产模式：创建真实举报
-      const { ModerationRepository } = await import('../../serverless/src/moderationRepo.js');
-      const instanceName = process.env.TABESTORE_INSTANCE || 'i01wvvv53p0q';
-      const moderationRepo = new ModerationRepository(instanceName);
-
-      const reportId = await moderationRepo.createContentReport({
-        contentType: CONTENT_TYPES[contentType],
-        contentId,
-        reporterId: userId,
-        reporterName: `用户${userId.slice(-8)}`,
-        reason: REPORT_REASONS[reason],
-        description,
-        ipAddress: reportData.ipAddress,
-        userAgent: reportData.userAgent,
-      });
-
-      if (reportId) {
-        return {
-          success: true,
-          reportId,
-          message: '举报已提交，我们会尽快处理',
-        };
-      } else {
-        return {
-          success: false,
-          message: '举报提交失败，请稍后重试',
-        };
-      }
+      return {
+        success: false,
+        message: '举报提交失败，请稍后重试',
+      };
     }
   } catch (error) {
     console.error('[REPORTS] 创建举报失败:', error);
@@ -126,49 +98,14 @@ async function createReport(reportData, userId) {
 // 获取用户的举报历史
 async function getUserReports(userId, limit = 20, offset = 0) {
   try {
-    if (isDemoMode) {
-      // 演示模式：返回模拟数据
-      const mockReports = [
-        {
-          id: 'demo_report_1',
-          contentType: 'artwork',
-          contentId: 'artwork_123',
-          reason: 'INAPPROPRIATE',
-          description: '内容不当',
-          status: 'PENDING',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'demo_report_2',
-          contentType: 'comment',
-          contentId: 'comment_456',
-          reason: 'SPAM',
-          description: '垃圾评论',
-          status: 'REVIEWED',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          reviewedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        },
-      ];
-
-      const total = mockReports.length;
-      const paginatedReports = mockReports.slice(offset, offset + limit);
-
-      return {
-        success: true,
-        reports: paginatedReports,
-        total,
-        hasMore: offset + limit < total,
-      };
-    } else {
-      // 生产模式：查询用户举报历史
-      // 这里需要实现查询逻辑
-      return {
-        success: true,
-        reports: [],
-        total: 0,
-        hasMore: false,
-      };
-    }
+    // 生产模式：查询用户举报历史
+    // TODO: 实现从 TableStore 查询用户举报历史的逻辑
+    return {
+      success: true,
+      reports: [],
+      total: 0,
+      hasMore: false,
+    };
   } catch (error) {
     console.error('[REPORTS] 获取用户举报历史失败:', error);
     return {
@@ -206,7 +143,6 @@ function checkRateLimit(userId) {
 export default async function handler(req, res) {
   try {
     console.log('[REPORTS] 请求:', req.method, req.url);
-    console.log('[REPORTS] 演示模式状态:', isDemoMode);
 
     // 验证用户身份
     const authHeader = req.headers.authorization;

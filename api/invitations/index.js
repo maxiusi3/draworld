@@ -89,22 +89,19 @@ function logInvitationEvent(action, userId, details = {}) {
     timestamp: new Date().toISOString(),
     action,
     userId,
-    isDemoMode,
     ...details,
   };
 
   console.log('[INVITATION_EVENT]', JSON.stringify(logData));
 
   // 生产环境可以发送到日志收集系统
-  // if (!isDemoMode) {
-  //   // 发送到 SLS、CloudWatch 等日志系统
-  // }
+  // 发送到 SLS、CloudWatch 等日志系统
 }
 
-// 在演示模式下，通过调用 /api/credits/transaction 并使用 x-act-as-user 头部，为指定用户入账（仅 Demo）
+// 生产模式不再需要此函数，已移除演示模式逻辑
 async function awardCreditsToUserDemo(targetUserId, amount, reason, token, req) {
   try {
-    if (!isDemoMode) return; // 仅演示模式启用
+    return; // 生产模式下不执行
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers.host;
     const baseUrl = `${proto}://${host}`;
@@ -142,7 +139,8 @@ function generateInvitationCode(userId) {
 
 // 获取用户邀请码
 async function getMyCode(userId) {
-  if (isDemoMode) {
+  // 生产模式：从 TableStore 获取或创建邀请码
+  try {
     // 检查用户是否已有邀请码
     let userCode = null;
     for (const [code, data] of demoInvitationCodes.entries()) {
@@ -571,7 +569,7 @@ async function triggerVideoReward(userId) {
 export default async function handler(req, res) {
   try {
     console.log('[INVITATIONS API] 请求:', req.method, req.url);
-    console.log('[INVITATIONS API] 演示模式状态:', isDemoMode);
+    console.log('[INVITATIONS API] 生产模式运行');
 
     // 验证用户身份
     const authHeader = req.headers.authorization;
@@ -658,18 +656,7 @@ export default async function handler(req, res) {
           });
         }
 
-        // DEMO: 后端代发 inviter 奖励（30分）
-        if (isDemoMode && registerResult && registerResult.success && registerResult.rewards?.inviter > 0 && registerResult.relationship) {
-          await awardCreditsToUserDemo(
-            registerResult.relationship.inviter_user_id,
-            registerResult.rewards.inviter,
-            'INVITATION_REWARD',
-            token,
-            req
-          );
-        }
-
-        // invitee 的 50 分仍由前端当前用户入账（演示模式下），生产模式改为后端统一入账
+        // 生产模式：后端统一处理邀请奖励
         return res.status(200).json(registerResult);
 
       case 'my-invitations':

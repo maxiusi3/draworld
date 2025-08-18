@@ -58,47 +58,52 @@ npm run dev
 2. **立即使用**
 - 访问 http://localhost:5173
 - 注册/登录账户
-- 开始使用演示模式创建视频
+- 开始创建AI视频
 
-### 🎭 两种使用模式
+### 🎯 生产环境特性
 
-#### 演示模式（免费，推荐新用户）
-- ✅ **完全免费，无需配置**
-- ✅ **立即可用，体验完整功能**
-- ⚠️ 生成预设测试视频
-
-#### 真实模式（需要API密钥）
 - ✅ **真实AI生成，个性化内容**
 - ✅ **通义万相2.2 i2v flash模型**
-- ⚠️ 需要通义万相API密钥
-- ⚠️ 消耗API配额（约0.5-1元/视频）
+- ✅ **完整的用户认证和数据持久化**
+- ✅ **阿里云 TableStore 数据存储**
+- ✅ **OSS 图片和视频存储**
 
-### 🚀 启用真实视频生成
+### 🚀 环境配置
 
-#### 快速配置（推荐）
+#### 必需的环境变量
+
+```bash
+# 通义万相API配置
+DASHSCOPE_API_KEY=sk-your-api-key-here
+
+# 数据库配置
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-key
+
+# 阿里云配置
+ALIBABA_CLOUD_ACCESS_KEY_ID=your-access-key
+ALIBABA_CLOUD_ACCESS_KEY_SECRET=your-secret-key
+TABLESTORE_INSTANCE=your-instance-name
+OSS_BUCKET=your-bucket-name
+
+# 认证配置
+AUTHING_OIDC_ISSUER=https://your-domain.authing.cn/oidc
+AUTHING_OIDC_AUDIENCE=your-audience-id
+```
+
+#### 快速配置
 
 ```bash
 # 1. 安装依赖
 npm install
 
-# 2. 运行配置脚本
-npm run setup:video
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入真实配置
 
-# 3. 测试配置
-npm run test:video
-
-# 4. 启动应用
+# 3. 启动应用
 npm run dev
 ```
-
-#### 手动配置
-
-1. 获取 [阿里云通义万相API密钥](https://bailian.console.aliyun.com/)
-2. 创建 `.env` 文件并添加：
-   ```
-   DASHSCOPE_API_KEY=sk-your-api-key-here
-   ```
-3. 重启开发服务器
 
 详细配置指南请参考：[REAL_VIDEO_SETUP.md](./REAL_VIDEO_SETUP.md)
 

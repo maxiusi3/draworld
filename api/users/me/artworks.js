@@ -35,31 +35,6 @@ async function verifyToken(token) {
 
 // 获取用户作品列表
 async function getUserArtworks(userId, page = 1, limit = 20) {
-  if (isDemoMode) {
-    console.log('[USER ARTWORKS API] 演示模式：从内存获取用户作品');
-    
-    // 从内存存储获取用户作品
-    const userArtworks = demoUserArtworks.get(userId) || [];
-    
-    // 按创建时间排序（最新的在前）
-    const sortedArtworks = userArtworks.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-    
-    // 分页
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedArtworks = sortedArtworks.slice(startIndex, endIndex);
-    
-    return {
-      artworks: paginatedArtworks,
-      total: userArtworks.length,
-      page,
-      limit,
-      hasMore: endIndex < userArtworks.length
-    };
-  }
-
   // 生产模式：从 TableStore 获取
   try {
     const { CommunityRepository } = await import('../../serverless/src/communityRepo.js');
@@ -67,7 +42,7 @@ async function getUserArtworks(userId, page = 1, limit = 20) {
     const repo = new CommunityRepository(instanceName);
 
     const artworks = await repo.getUserArtworks(userId, limit, (page - 1) * limit);
-    
+
     return {
       artworks: artworks || [],
       total: artworks ? artworks.length : 0,
@@ -76,27 +51,12 @@ async function getUserArtworks(userId, page = 1, limit = 20) {
       hasMore: artworks && artworks.length === limit
     };
   } catch (error) {
-    console.error('[USER ARTWORKS API] 生产模式获取用户作品失败:', error);
+    console.error('[USER ARTWORKS API] 获取用户作品失败:', error);
     throw error;
   }
 }
 
-// 添加作品到用户作品列表（演示模式）
-function addArtworkToUser(userId, artwork) {
-  if (!isDemoMode) return;
-  
-  if (!demoUserArtworks.has(userId)) {
-    demoUserArtworks.set(userId, []);
-  }
-  
-  const userArtworks = demoUserArtworks.get(userId);
-  userArtworks.unshift(artwork); // 添加到开头（最新的）
-  
-  console.log(`[USER ARTWORKS API] 为用户 ${userId} 添加作品: ${artwork.title}`);
-}
-
-// 导出函数供其他模块使用
-export { addArtworkToUser };
+// 生产模式不需要此函数，已移除演示模式逻辑
 
 export default async function handler(req, res) {
   try {
