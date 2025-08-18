@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { PaintBrushIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { CreditBalance } from '../CreditBalance';
-import UserSwitcher from '../UserSwitcher';
 import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
@@ -83,9 +82,6 @@ const Header: React.FC = () => {
           {/* Credits and User Menu */}
           {currentUser && (
             <div className="flex items-center space-x-4">
-              {/* User Switcher (Demo Mode) */}
-              <UserSwitcher />
-
               {/* Credit Balance */}
               <CreditBalance
                 showSigninButton={true}

@@ -31,8 +31,8 @@ async function verifyToken(token) {
 }
 
 // 创建支付宝支付
-async function createAlipayPayment(orderId, amount, subject, userId) { else {
-    // 生产模式：使用真实支付宝API
+async function createAlipayPayment(orderId, amount, subject, userId) {
+  // 生产模式：使用真实支付宝API
     try {
       const { AlipayService, AlipayConfigFactory, AlipayUtils } = await import('../../serverless/src/alipayService.js');
       

@@ -139,40 +139,6 @@ function generateInvitationCode(userId) {
 
 // 获取用户邀请码
 async function getMyCode(userId) {
-  // 生产模式：从 TableStore 获取或创建邀请码
-  try {
-    // 检查用户是否已有邀请码
-    let userCode = null;
-    for (const [code, data] of demoInvitationCodes.entries()) {
-      if (data.user_id === userId) {
-        userCode = { invitation_code: code, ...data };
-        break;
-      }
-    }
-
-    if (!userCode) {
-      // 生成新的邀请码
-      let invitationCode = generateInvitationCode(userId);
-
-      // 确保邀请码唯一性
-      while (demoInvitationCodes.has(invitationCode)) {
-        invitationCode = generateInvitationCode(userId);
-      }
-
-      userCode = {
-        id: `demo-code-${Date.now()}`,
-        user_id: userId,
-        invitation_code: invitationCode,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-
-      demoInvitationCodes.set(invitationCode, userCode);
-    }
-
-    return userCode;
-  }
-
   // 生产模式实现：使用 TableStore
   try {
     const { InvitationsRepository } = await import('../../serverless/src/invitationsRepo.js');

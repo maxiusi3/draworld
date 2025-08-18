@@ -2,9 +2,7 @@ import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
-export default defineConfig(({ command }) => {
-  const isDev = command === 'serve';
-
+export default defineConfig(() => {
   // 动态导入开发环境中间件
   const plugins = [
     react({
@@ -15,15 +13,7 @@ export default defineConfig(({ command }) => {
     })
   ];
 
-  // 只在开发环境中添加API中间件
-  if (isDev) {
-    try {
-      const { devApiMiddleware } = require("./dev-api-middleware.js");
-      plugins.push(devApiMiddleware());
-    } catch (error) {
-      console.warn('Dev API middleware not available:', (error as Error).message);
-    }
-  }
+  // 生产模式不需要开发API中间件
 
   return {
     base: '',
@@ -45,7 +35,7 @@ export default defineConfig(({ command }) => {
     build: {
       sourcemap: false, // 生产环境关闭sourcemap以减小文件大小
       target: 'es2015', // 更兼容的目标
-      minify: 'esbuild',
+      minify: 'esbuild' as const,
       rollupOptions: {
         output: {
           manualChunks: {
