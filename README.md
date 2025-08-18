@@ -389,8 +389,15 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 📧 **联系邮箱**: developer@smartalk.app
 🏢 **组织**: SmarTalk Technology
 🔗 **GitHub仓库**: [maxiusi3/draworld](https://github.com/maxiusi3/draworld)
-🌐 **在线访问**: [https://draworld-6898f.web.app](https://draworld-6898f.web.app)
+🌐 **在线访问**: [https://draworld-opal.vercel.app](https://draworld-opal.vercel.app)
+
+## 🚀 部署状态
+
+- **开发环境**: http://localhost:3000
+- **生产环境**: https://draworld-opal.vercel.app
+- **CI/CD状态**: ✅ GitHub Actions已配置
+- **最后部署**: 2025-01-18 - Vercel自动部署已启用
 
 ---
 
-*最后更新: 2025-08-05 | 版本: v1.0.0 | 状态: 生产环境运行中 🟢*
+*最后更新: 2025-01-18 | 版本: v1.0.1 | 状态: CI/CD流程测试中 🔄*
