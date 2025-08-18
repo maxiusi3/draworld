@@ -10,11 +10,14 @@ const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.c
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
 
 // 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') || supabaseServiceKey.includes('demo') || !process.env.SUPABASE_SERVICE_ROLE_KEY;
+const isDemoMode = supabaseUrl.includes('demo-project') ||
+                   supabaseServiceKey.includes('demo') ||
+                   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+                   !process.env.DASHSCOPE_API_KEY;
 
 // Authing.cn JWT 验证配置
 const OIDC_ISSUER = process.env.AUTHING_OIDC_ISSUER || 'https://draworld.authing.cn/oidc';
-const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '676a0e3c6c9a2b2d8e9c4c5e';
+const OIDC_AUDIENCE = process.env.AUTHING_OIDC_AUDIENCE || '689adde75ecb97cd396860eb';
 const jwks = createRemoteJWKSet(new URL(`${OIDC_ISSUER}/.well-known/jwks.json`));
 
 // 管理员用户ID列表（演示模式）

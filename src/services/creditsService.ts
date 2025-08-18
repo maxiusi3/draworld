@@ -28,8 +28,28 @@ export class CreditsService {
 
   // 检查是否为演示模式
   private isDemoMode(): boolean {
-    // 在演示模式下，我们使用前端状态管理来避免 Vercel 无服务器环境的内存共享问题
-    return true; // 目前总是使用演示模式
+    // 检查环境变量和配置来判断是否为演示模式
+    const isLocalhost = typeof window !== 'undefined' &&
+                       (window.location.hostname === 'localhost' ||
+                        window.location.hostname === '127.0.0.1');
+
+    const hasProductionKeys = !!(
+      (import.meta as any).env?.VITE_SUPABASE_URL &&
+      !(import.meta as any).env?.VITE_SUPABASE_URL.includes('demo') &&
+      (import.meta as any).env?.VITE_DASHSCOPE_API_KEY
+    );
+
+    // 如果是本地开发或者没有生产环境密钥，使用演示模式
+    const demoMode = isLocalhost || !hasProductionKeys;
+
+    console.log('[CREDITS SERVICE] 演示模式检测:', {
+      isLocalhost,
+      hasProductionKeys,
+      demoMode,
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server'
+    });
+
+    return demoMode;
   }
 
   // 获取当前用户ID

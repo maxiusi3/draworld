@@ -5,11 +5,14 @@ import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
 // Supabase 配置
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-service-role-key';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
 
 // 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') || supabaseServiceKey.includes('demo') || !process.env.SUPABASE_SERVICE_ROLE_KEY;
+const isDemoMode = supabaseUrl.includes('demo-project') ||
+                   supabaseServiceKey.includes('demo') ||
+                   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+                   !process.env.DASHSCOPE_API_KEY;
 
 // 演示模式：内存存储
 const demoUserCredits = new Map();
