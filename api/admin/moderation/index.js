@@ -455,8 +455,8 @@ export default async function handler(req, res) {
           return res.status(405).json({ error: 'Method not allowed' });
         }
 
-        const { contentType, contentId, reason, description } = req.body;
-        if (!contentType || !contentId || !reason) {
+        const { contentType, contentId, reason: reportReason, description } = req.body;
+        if (!contentType || !contentId || !reportReason) {
           return res.status(400).json({ error: 'Missing required parameters' });
         }
 
@@ -464,7 +464,7 @@ export default async function handler(req, res) {
           {
             contentType,
             contentId,
-            reason,
+            reason: reportReason,
             description,
             ipAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
             userAgent: req.headers['user-agent'],

@@ -1,6 +1,6 @@
 // Vercel API路由：查询视频生成任务状态
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   try {
     console.log('[VIDEO STATUS API] 视频任务状态查询请求');
     console.log('[VIDEO STATUS API] Method:', req.method);

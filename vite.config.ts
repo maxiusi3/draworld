@@ -1,14 +1,13 @@
 import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
+// @ts-ignore - 开发环境中间件，无类型声明
 import { devApiMiddleware } from "./dev-api-middleware.js"
 
 export default defineConfig({
   base: '',
   plugins: [
     react({
-      // 禁用快速刷新以避免兼容性问题
-      fastRefresh: false,
       jsxRuntime: 'automatic',
       // 添加babel配置
       babel: {

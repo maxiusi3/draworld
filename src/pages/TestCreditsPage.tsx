@@ -6,6 +6,7 @@ import { CreditBalance, SimpleCreditBalance, InsufficientCreditsAlert } from '..
 import { DailySignin, SigninIndicator } from '../components/Credits/DailySignin';
 import { useCreditBalance, useDailySignin, useConsumeCredits } from '../hooks/useCredits';
 import { CREDIT_RULES } from '../types/credits';
+import { getVideoGenerationCost, getDemoEnvironmentInfo } from '../config/demo';
 import { useAuth } from '../hooks/useAuth';
 
 const TestCreditsPage: React.FC = () => {
@@ -137,7 +138,6 @@ const TestCreditsPage: React.FC = () => {
                 >
                   {consumeLoading ? '消费中...' : `测试消费 ${(() => {
                     try {
-                      const { getVideoGenerationCost } = require('../config/demo');
                       return getVideoGenerationCost();
                     } catch {
                       return CREDIT_RULES.VIDEO_GENERATION_COST;
@@ -174,7 +174,6 @@ const TestCreditsPage: React.FC = () => {
                 <span className="font-medium">
                   {(() => {
                     try {
-                      const { getVideoGenerationCost } = require('../config/demo');
                       return getVideoGenerationCost();
                     } catch {
                       return CREDIT_RULES.VIDEO_GENERATION_COST;
@@ -182,7 +181,6 @@ const TestCreditsPage: React.FC = () => {
                   })()} 积分
                   {(() => {
                     try {
-                      const { getDemoEnvironmentInfo } = require('../config/demo');
                       return getDemoEnvironmentInfo() ? ' (演示环境)' : '';
                     } catch {
                       return '';

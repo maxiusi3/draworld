@@ -109,17 +109,17 @@ export class InvitationsRepository {
       do {
         code = this.generateInvitationCode(userId);
         attempts++;
-        
+
         // 检查邀请码是否已存在
         const existingCode = await this.getInviteCodeByCode(code);
         if (!existingCode) {
           break;
         }
-        
+
         if (attempts >= maxAttempts) {
           throw new Error('无法生成唯一邀请码');
         }
-      } while (true);
+      } while (attempts < maxAttempts);
 
       const inviteCode: InviteCode = {
         tenantId: this.tenantId,

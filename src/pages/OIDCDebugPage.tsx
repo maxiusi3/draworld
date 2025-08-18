@@ -62,16 +62,16 @@ const OIDCDebugPage: React.FC = () => {
     
     // 测试3: 授权URL生成
     try {
-      const authUrl = authAdapter.buildAuthUrl({
+      const authUrl = await authAdapter.buildAuthUrl({
         redirectUri: oidcConfig.getCallbackUrl(),
         state: 'test-state'
       });
-      
+
       const url = new URL(authUrl);
-      const hasRequiredParams = url.searchParams.has('client_id') && 
-                               url.searchParams.has('redirect_uri') && 
+      const hasRequiredParams = url.searchParams.has('client_id') &&
+                               url.searchParams.has('redirect_uri') &&
                                url.searchParams.has('response_type');
-      
+
       results.authUrlGeneration = {
         success: hasRequiredParams,
         url: authUrl,
@@ -103,13 +103,13 @@ const OIDCDebugPage: React.FC = () => {
     }
   };
 
-  const generateAuthUrl = () => {
+  const generateAuthUrl = async () => {
     try {
-      const authUrl = authAdapter.buildAuthUrl({
+      const authUrl = await authAdapter.buildAuthUrl({
         redirectUri: oidcConfig.getCallbackUrl(),
         state: 'debug-test-' + Date.now()
       });
-      
+
       window.open(authUrl, '_blank');
     } catch (error) {
       alert(`生成授权URL失败: ${error instanceof Error ? error.message : '未知错误'}`);

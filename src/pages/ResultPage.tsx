@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { videoService, VideoTask } from '../services/videoService';
@@ -42,7 +42,7 @@ const ResultPage: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 自动创建作品记录
-  const createArtworkRecord = async (task: VideoTask) => {
+  const createArtworkRecord = useCallback(async (task: VideoTask) => {
     console.log('[RESULT PAGE] 尝试创建作品记录:', { videoUrl: task.videoUrl, artworkCreated });
     if (!task.videoUrl || artworkCreated) return;
 
@@ -64,7 +64,7 @@ const ResultPage: React.FC = () => {
       console.error('[RESULT PAGE] 创建作品记录失败:', error);
       // 不影响用户体验，静默处理错误
     }
-  };
+  }, [artworkCreated]);
 
   useEffect(() => {
     if (!taskId) {
@@ -97,7 +97,7 @@ const ResultPage: React.FC = () => {
     });
 
     return unsubscribe;
-  }, [taskId, navigate]);
+  }, [taskId, navigate, createArtworkRecord]);
 
   // 监听全屏状态变化
   useEffect(() => {

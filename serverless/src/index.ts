@@ -271,7 +271,10 @@ exports.handler = async function (req: any, res: any, context: any) {
               }
             }
           }
-        } catch {}
+        } catch (error) {
+          // 忽略OTS更新错误，不影响主流程
+          console.warn('OTS更新失败:', error);
+        }
       }
       return res.status(200).set(corsHeaders()).send(JSON.stringify({
         taskId,
