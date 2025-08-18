@@ -1,7 +1,7 @@
 import path from "path"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
-// @ts-ignore - 开发环境中间件，无类型声明
+// @ts-expect-error - 开发环境中间件，无类型声明
 import { devApiMiddleware } from "./dev-api-middleware.js"
 
 export default defineConfig({

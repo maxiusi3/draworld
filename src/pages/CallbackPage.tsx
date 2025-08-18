@@ -168,7 +168,7 @@ const CallbackPage: React.FC = () => {
     };
 
     handleCallback();
-  }, [location, navigate, setSession]);
+  }, [location, navigate, setSession, processed]);
 
   if (loading) {
     return (

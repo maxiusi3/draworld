@@ -80,8 +80,8 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `🚀 **Vercel部署成功！**
-            
-            生产环境地址: https://whimsy-brush.vercel.app
+
+            生产环境地址: https://draworld-opal.vercel.app
             
             构建时间: ${new Date().toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'})}`
           })
@@ -91,7 +91,7 @@ jobs:
       run: |
         echo "🎉 Vercel部署完成！"
         echo "✅ 生产环境已更新"
-        echo "🌐 访问地址: https://whimsy-brush.vercel.app"
+        echo "🌐 访问地址: https://draworld-opal.vercel.app"
         echo ""
         echo "📋 部署后验证清单:"
         echo "  □ 确认使用60积分的生产配置"
