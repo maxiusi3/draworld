@@ -455,8 +455,63 @@ async function handleDailySignin(req, res, userId) {
 }
 
 async function handleOrderPackages(req, res) {
-  // 实现套餐列表
-  return res.status(200).json({ success: true, packages: [] });
+  // 积分套餐配置
+  const packages = [
+    {
+      id: 'basic',
+      name: '基础套餐',
+      credits: 100,
+      bonusCredits: 0,
+      priceYuan: 1.99,
+      originalPrice: 2.99,
+      isPopular: false,
+      isActive: true,
+      sortOrder: 1,
+      description: '适合轻度使用'
+    },
+    {
+      id: 'popular',
+      name: '热门套餐',
+      credits: 500,
+      bonusCredits: 50,
+      priceYuan: 9.99,
+      originalPrice: 14.99,
+      isPopular: true,
+      isActive: true,
+      sortOrder: 2,
+      description: '最受欢迎的选择'
+    },
+    {
+      id: 'premium',
+      name: '高级套餐',
+      credits: 2500,
+      bonusCredits: 400,
+      priceYuan: 49.99,
+      originalPrice: 69.99,
+      isPopular: false,
+      isActive: true,
+      sortOrder: 3,
+      description: '超值大容量'
+    },
+    {
+      id: 'ultimate',
+      name: '至尊套餐',
+      credits: 5000,
+      bonusCredits: 1000,
+      priceYuan: 99.99,
+      originalPrice: 149.99,
+      isPopular: false,
+      isActive: true,
+      sortOrder: 4,
+      description: '无限创作可能'
+    }
+  ];
+
+  console.log('[COMMERCE API] 返回积分套餐列表，共', packages.length, '个套餐');
+  return res.status(200).json({
+    success: true,
+    packages: packages
+  });
 }
 
 async function handleOrderCreate(req, res, userId) {
