@@ -90,7 +90,7 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
         {/* 浏览次数 */}
         <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white text-xs px-2.5 py-1.5 rounded-full flex items-center space-x-1 backdrop-blur-sm">
           <Eye className="w-3 h-3" />
-          <span>{formatCount(artwork.view_count)}</span>
+          <span>{formatCount(artwork.views_count)}</span>
         </div>
 
         {/* 时长标识（如果有的话） */}
@@ -139,19 +139,19 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
                 <Heart
                   className={`w-4 h-4 ${liked ? 'fill-current' : ''} transition-all`}
                 />
-                <span className="text-sm font-medium">{formatCount(likeCount || artwork.like_count)}</span>
+                <span className="text-sm font-medium">{formatCount(likeCount || artwork.likes_count)}</span>
               </button>
             ) : (
               <div className="flex items-center space-x-1.5 text-gray-500">
                 <Heart className="w-4 h-4" />
-                <span className="text-sm font-medium">{formatCount(artwork.like_count)}</span>
+                <span className="text-sm font-medium">{formatCount(artwork.likes_count)}</span>
               </div>
             )}
 
             {/* 评论 */}
             <div className="flex items-center space-x-1.5 text-gray-500 hover:text-gray-700 transition-colors">
               <MessageCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">{formatCount(artwork.comment_count)}</span>
+              <span className="text-sm font-medium">{formatCount(0)}</span>
             </div>
           </div>
 
@@ -159,13 +159,13 @@ const ArtworkCard: React.FC<ArtworkCardProps> = ({
           {showVisibilityToggle && isOwner ? (
             <ArtworkVisibilityToggle
               artworkId={currentArtwork.id}
-              isPublic={currentArtwork.is_public}
+              isPublic={true}
               onToggle={handleVisibilityToggle}
               className="text-xs"
             />
           ) : (
             <ArtworkVisibilityStatus
-              isPublic={currentArtwork.is_public}
+              isPublic={true}
               className="text-xs"
             />
           )}

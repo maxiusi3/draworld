@@ -54,12 +54,32 @@ const CreditHistoryPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response: CreditHistoryResponse = await creditsService.getHistory({
+      const response = await creditsService.getCreditHistory({
         limit: 50,
         offset: 0,
       });
+
+      // 转换为兼容格式
+      const creditHistoryResponse: CreditHistoryResponse = {
+        transactions: response.transactions.map(t => ({
+          id: t.id,
+          user_id: '', // 当前用户
+          amount: t.amount,
+          reason: t.reason,
+          description: t.description,
+          transaction_type: t.amount > 0 ? 'EARN' : 'SPEND',
+          balance_after: t.balanceAfter,
+          created_at: t.createdAt
+        })),
+        pagination: {
+          limit: response.pagination.limit,
+          offset: (response.pagination.page - 1) * response.pagination.limit,
+          total: response.pagination.total,
+          hasMore: response.pagination.page < response.pagination.totalPages
+        }
+      };
       
-      setTransactions(response.transactions || []);
+      setTransactions(creditHistoryResponse.transactions || []);
     } catch (error: any) {
       console.error('获取积分历史失败:', error);
       setError(error.message || '获取积分历史失败');

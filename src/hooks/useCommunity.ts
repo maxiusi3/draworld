@@ -1,6 +1,9 @@
 // 社区功能相关的 React Hooks
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { communityService, Artwork, ArtworkComment, ArtworksResponse } from '../services/communityService';
+import { communityService, Artwork, Comment, ArtworksResponse } from '../services/communityService';
+
+// 向后兼容的类型别名
+type ArtworkComment = Comment;
 import { toast } from 'react-hot-toast';
 import { useErrorHandler } from '../utils/errorHandler';
 
@@ -40,7 +43,7 @@ export const useArtworks = (
       setError(null);
 
       const response = await executeWithRetry(
-        () => communityService.getArtworks(limit, offset, sortBy, searchQuery),
+        () => communityService.getArtworks(1, limit, sortBy === 'popular' ? 'POPULAR' : sortBy === 'latest' ? 'LATEST' : 'VIEWS', searchQuery ? [searchQuery] : undefined),
         {
           maxAttempts: 2,
           onRetry: (attempt) => {
@@ -50,13 +53,13 @@ export const useArtworks = (
       );
 
       if (append) {
-        setArtworks(prev => [...prev, ...response.artworks]);
+        setArtworks(prev => [...prev, ...response.data]);
       } else {
-        setArtworks(response.artworks);
+        setArtworks(response.data);
       }
 
-      setHasMore(response.hasMore);
-      setTotal(response.total);
+      setHasMore(response.pagination.hasNext);
+      setTotal(response.pagination.total);
     } catch (error: any) {
       console.error('获取作品列表失败:', error);
       const errorInfo = handleError(error, '获取作品列表失败');

@@ -10,7 +10,7 @@ import ImageEditor from '../components/ImageEditor/ImageEditor';
 import { CreditBalance } from '../components/CreditBalance';
 import { useInsufficientCreditsCheck } from '../components/InsufficientCreditsDialog';
 import { CREDIT_RULES } from '../types/credits';
-import { getVideoGenerationCost, getDemoEnvironmentInfo } from '../config/demo';
+import { getVideoGenerationCost, getEnvironmentInfo } from '../config/production';
 import {
   SparklesIcon,
   PencilSquareIcon,
@@ -153,10 +153,10 @@ const CreatePage: React.FC = () => {
       return; // checkCredits 会显示不足提示对话框
     }
 
-    // 显示演示环境信息
-    const demoInfo = getDemoEnvironmentInfo();
-    if (demoInfo) {
-      console.log(`[CREATE PAGE] ${demoInfo.message}`);
+    // 显示环境信息
+    const envInfo = getEnvironmentInfo();
+    if (envInfo) {
+      console.log(`[CREATE PAGE] ${envInfo.message}`);
     }
 
     setUploading(true);
@@ -384,7 +384,7 @@ const CreatePage: React.FC = () => {
                       </h3>
                       <p className="text-sm text-blue-600">
                         每个视频需要消费 {getVideoGenerationCost()} 积分
-                        {getDemoEnvironmentInfo() && (
+                        {getEnvironmentInfo() && !getEnvironmentInfo().isProduction && (
                           <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                             演示环境优惠
                           </span>
@@ -489,7 +489,7 @@ const CreatePage: React.FC = () => {
                 <div className="mb-3">
                   <p className="text-sm text-gray-600">
                     生成视频需要 <span className="font-semibold text-blue-600">{getVideoGenerationCost()}</span> 积分
-                    {getDemoEnvironmentInfo() && (
+                    {getEnvironmentInfo() && !getEnvironmentInfo().isProduction && (
                       <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                         演示环境优惠
                       </span>

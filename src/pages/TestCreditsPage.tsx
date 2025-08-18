@@ -6,7 +6,7 @@ import { CreditBalance, SimpleCreditBalance, InsufficientCreditsAlert } from '..
 import { DailySignin, SigninIndicator } from '../components/Credits/DailySignin';
 import { useCreditBalance, useDailySignin, useConsumeCredits } from '../hooks/useCredits';
 import { CREDIT_RULES } from '../types/credits';
-import { getVideoGenerationCost, getDemoEnvironmentInfo } from '../config/demo';
+import { getVideoGenerationCost, getEnvironmentInfo } from '../config/production';
 import { useAuth } from '../hooks/useAuth';
 
 const TestCreditsPage: React.FC = () => {
@@ -181,7 +181,8 @@ const TestCreditsPage: React.FC = () => {
                   })()} 积分
                   {(() => {
                     try {
-                      return getDemoEnvironmentInfo() ? ' (演示环境)' : '';
+                      const envInfo = getEnvironmentInfo();
+                      return envInfo && !envInfo.isProduction ? ` (${envInfo.environment})` : '';
                     } catch {
                       return '';
                     }

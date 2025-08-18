@@ -4,23 +4,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-// Supabase 配置
-const supabaseUrl = process.env.SUPABASE_URL || 'https://demo-project.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'demo-service-key';
+// 生产环境配置
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// 检查是否为演示模式
-const isDemoMode = supabaseUrl.includes('demo-project') ||
-                   supabaseServiceKey.includes('demo') ||
-                   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
-                   !process.env.DASHSCOPE_API_KEY;
-
-// 演示模式：内存存储
-const demoUserCredits = new Map();
-const demoTransactions = new Map();
-const demoSigninRecords = new Map();
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+}
 
 // 创建 Supabase 客户端
-const supabase = isDemoMode ? null : createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Authing OIDC 配置
 const OIDC_JWKS_URI = 'https://draworld.authing.cn/oidc/.well-known/jwks.json';
@@ -99,13 +92,6 @@ export default async function handler(req, res) {
 // 验证 JWT Token 并提取用户ID
 async function verifyToken(token) {
   try {
-    // 演示模式：直接接受任何 token
-    if (isDemoMode) {
-      console.log('[AUTH] 演示模式：跳过 JWT 验证');
-      const userId = token.includes('test-token') ? 'demo-user' : `user-${token.slice(-8)}`;
-      return userId;
-    }
-
     const { payload } = await jwtVerify(token, jwks, {
       issuer: OIDC_ISSUER,
       audience: OIDC_AUDIENCE,
@@ -123,24 +109,7 @@ async function handleBalance(req, res, userId) {
   try {
     console.log('[BALANCE] 查询用户积分余额，用户ID:', userId);
 
-    if (isDemoMode) {
-      // 演示模式：从内存获取或初始化
-      if (!demoUserCredits.has(userId)) {
-        demoUserCredits.set(userId, {
-          balance: 100, // 新用户默认100积分
-          lastUpdated: new Date().toISOString()
-        });
-      }
-
-      const userCredits = demoUserCredits.get(userId);
-      return res.status(200).json({
-        success: true,
-        balance: userCredits.balance,
-        lastUpdated: userCredits.lastUpdated
-      });
-    }
-
-    // 真实模式：从Supabase查询
+    // 从Supabase查询
     const { data, error } = await supabase
       .from('user_credits')
       .select('balance, last_updated')
@@ -206,48 +175,7 @@ async function handleTransaction(req, res, userId) {
       return res.status(400).json({ error: 'Missing reason' });
     }
 
-    if (isDemoMode) {
-      // 演示模式处理
-      if (!demoUserCredits.has(userId)) {
-        demoUserCredits.set(userId, { balance: 100, lastUpdated: new Date().toISOString() });
-      }
-
-      const userCredits = demoUserCredits.get(userId);
-      const newBalance = userCredits.balance + amount;
-
-      if (newBalance < 0) {
-        return res.status(400).json({ error: 'Insufficient balance' });
-      }
-
-      // 更新余额
-      userCredits.balance = newBalance;
-      userCredits.lastUpdated = new Date().toISOString();
-
-      // 记录交易
-      const transactionId = `demo-tx-${Date.now()}`;
-      const transaction = {
-        id: transactionId,
-        user_id: userId,
-        amount: amount,
-        reason: reason,
-        description: description || '',
-        balance_after: newBalance,
-        created_at: new Date().toISOString()
-      };
-
-      if (!demoTransactions.has(userId)) {
-        demoTransactions.set(userId, []);
-      }
-      demoTransactions.get(userId).push(transaction);
-
-      return res.status(200).json({
-        success: true,
-        transaction: transaction,
-        newBalance: newBalance
-      });
-    }
-
-    // 真实模式：使用Supabase事务
+    // 使用Supabase事务
     const { data, error } = await supabase.rpc('create_credit_transaction', {
       p_user_id: userId,
       p_amount: amount,
@@ -280,27 +208,7 @@ async function handleHistory(req, res, userId) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
 
-    if (isDemoMode) {
-      const userTransactions = demoTransactions.get(userId) || [];
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedTransactions = userTransactions
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(startIndex, endIndex);
-
-      return res.status(200).json({
-        success: true,
-        transactions: paginatedTransactions,
-        pagination: {
-          page: page,
-          limit: limit,
-          total: userTransactions.length,
-          totalPages: Math.ceil(userTransactions.length / limit)
-        }
-      });
-    }
-
-    // 真实模式：从Supabase查询
+    // 从Supabase查询
     const { data, error, count } = await supabase
       .from('credit_transactions')
       .select('*', { count: 'exact' })
@@ -342,63 +250,7 @@ async function handleDailySignin(req, res, userId) {
     const today = new Date().toDateString();
     const signinReward = 5; // 每日签到奖励5积分
 
-    if (isDemoMode) {
-      // 检查今天是否已签到
-      const userSignins = demoSigninRecords.get(userId) || [];
-      const todaySignin = userSignins.find(record => 
-        new Date(record.date).toDateString() === today
-      );
-
-      if (todaySignin) {
-        return res.status(400).json({ 
-          error: 'Already signed in today',
-          message: '今天已经签到过了'
-        });
-      }
-
-      // 执行签到
-      if (!demoUserCredits.has(userId)) {
-        demoUserCredits.set(userId, { balance: 100, lastUpdated: new Date().toISOString() });
-      }
-
-      const userCredits = demoUserCredits.get(userId);
-      userCredits.balance += signinReward;
-      userCredits.lastUpdated = new Date().toISOString();
-
-      // 记录签到
-      userSignins.push({
-        date: new Date().toISOString(),
-        reward: signinReward
-      });
-      demoSigninRecords.set(userId, userSignins);
-
-      // 记录交易
-      const transactionId = `demo-signin-${Date.now()}`;
-      const transaction = {
-        id: transactionId,
-        user_id: userId,
-        amount: signinReward,
-        reason: 'DAILY_SIGNIN',
-        description: '每日签到奖励',
-        balance_after: userCredits.balance,
-        created_at: new Date().toISOString()
-      };
-
-      if (!demoTransactions.has(userId)) {
-        demoTransactions.set(userId, []);
-      }
-      demoTransactions.get(userId).push(transaction);
-
-      return res.status(200).json({
-        success: true,
-        message: '签到成功',
-        reward: signinReward,
-        newBalance: userCredits.balance,
-        consecutiveDays: userSignins.length
-      });
-    }
-
-    // 真实模式：使用Supabase
+    // 使用Supabase
     const { data, error } = await supabase.rpc('daily_signin', {
       p_user_id: userId,
       p_reward: signinReward

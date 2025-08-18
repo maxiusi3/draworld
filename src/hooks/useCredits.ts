@@ -106,7 +106,7 @@ export const useConsumeCredits = () => {
 
   const consumeCreditsForVideo = useCallback(async (videoId: string) => {
     // 动态获取视频生成积分要求（演示环境1积分，生产环境60积分）
-    const { getVideoGenerationCost } = await import('../config/demo');
+    const { getVideoGenerationCost } = await import('../config/production');
     const requiredCredits = getVideoGenerationCost();
 
     return consumeCredits(requiredCredits, 'VIDEO_GENERATION', videoId, '视频生成消费');

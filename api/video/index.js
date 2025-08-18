@@ -96,16 +96,11 @@ async function handleVideoStart(req, res) {
     const apiKey = process.env.DASHSCOPE_API_KEY;
 
     if (!apiKey) {
-      console.log('[VIDEO START] 未配置API密钥，使用演示模式');
-      const taskId = `mock-task-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-      const result = {
-        taskId: taskId,
-        status: 'pending',
-        message: '视频生成任务已创建（演示模式）'
-      };
-
-      return res.status(200).json(result);
+      console.error('[VIDEO START] 未配置DASHSCOPE_API_KEY环境变量');
+      return res.status(500).json({
+        error: 'Video generation service not configured',
+        message: 'DASHSCOPE_API_KEY environment variable is required'
+      });
     }
 
     // 真实模式：调用通义万相2.2 API
@@ -209,18 +204,11 @@ async function handleVideoStatus(req, res) {
     const apiKey = process.env.DASHSCOPE_API_KEY;
 
     if (!apiKey) {
-      console.log('[VIDEO STATUS] 未配置API密钥，使用演示模式');
-
-      // 模拟任务状态
-      const mockStatus = {
-        taskId: taskId,
-        status: 'completed',
-        resultVideoUrl: `https://example.com/video-${taskId}.mp4`,
-        progress: 100,
-        message: '视频生成完成（演示模式）'
-      };
-
-      return res.status(200).json(mockStatus);
+      console.error('[VIDEO STATUS] 未配置DASHSCOPE_API_KEY环境变量');
+      return res.status(500).json({
+        error: 'Video generation service not configured',
+        message: 'DASHSCOPE_API_KEY environment variable is required'
+      });
     }
 
     // 真实模式：查询通义万相API
