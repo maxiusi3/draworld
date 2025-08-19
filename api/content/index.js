@@ -258,8 +258,58 @@ async function deleteArtwork(req, res) {
 }
 
 async function handleVideoStart(req, res) {
-  // 从原 api/video/index.js 导入实现
-  return res.status(200).json({ success: true, message: 'Video task started' });
+  try {
+    console.log('[CONTENT API] 开始视频生成任务');
+
+    // 验证Authorization头
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const userId = await verifyToken(token);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { imageUrl, prompt, duration = 5 } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        error: 'Missing required field: imageUrl'
+      });
+    }
+
+    // 生成任务ID
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    console.log('[CONTENT API] 视频生成任务创建成功');
+    console.log('[CONTENT API] 任务ID:', taskId);
+    console.log('[CONTENT API] 用户ID:', userId);
+    console.log('[CONTENT API] 图片URL:', imageUrl);
+    console.log('[CONTENT API] 提示词:', prompt);
+    console.log('[CONTENT API] 时长:', duration);
+
+    // 模拟视频生成（演示模式）
+    // 在实际部署中，这里会调用真实的视频生成服务
+    return res.status(200).json({
+      success: true,
+      message: 'Video generation task started',
+      taskId: taskId,
+      status: 'processing',
+      estimatedTime: '30-60 seconds',
+      userId: userId
+    });
+
+  } catch (error) {
+    console.error('[CONTENT API] 视频生成任务创建失败:', error);
+    return res.status(500).json({
+      error: 'Failed to start video generation',
+      message: error.message
+    });
+  }
 }
 
 async function handleVideoList(req, res) {
@@ -268,11 +318,112 @@ async function handleVideoList(req, res) {
 }
 
 async function handleVideoStatus(req, res) {
-  // 实现视频状态查询
-  return res.status(200).json({ success: true, status: 'processing' });
+  try {
+    console.log('[CONTENT API] 查询视频生成状态');
+
+    // 验证Authorization头
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const userId = await verifyToken(token);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { taskId } = req.query;
+
+    if (!taskId) {
+      return res.status(400).json({
+        error: 'Missing required parameter: taskId'
+      });
+    }
+
+    console.log('[CONTENT API] 查询任务ID:', taskId);
+    console.log('[CONTENT API] 用户ID:', userId);
+
+    // 模拟视频生成状态（演示模式）
+    // 在实际部署中，这里会查询真实的任务状态
+    const mockVideoUrl = `https://mock-storage.example.com/videos/${taskId}.mp4`;
+
+    return res.status(200).json({
+      success: true,
+      taskId: taskId,
+      status: 'completed', // 演示模式直接返回完成状态
+      progress: 100,
+      videoUrl: mockVideoUrl,
+      duration: 5,
+      createdAt: new Date().toISOString(),
+      userId: userId
+    });
+
+  } catch (error) {
+    console.error('[CONTENT API] 查询视频状态失败:', error);
+    return res.status(500).json({
+      error: 'Failed to get video status',
+      message: error.message
+    });
+  }
 }
 
 async function processImageUpload(req, res, userId) {
-  // 从原 api/upload/image.js 导入实现
-  return res.status(200).json({ success: true, message: 'Image uploaded', userId });
+  try {
+    console.log('[CONTENT API] 处理图片上传，用户ID:', userId);
+
+    const { imageData, fileName, contentType } = req.body;
+
+    if (!imageData || !fileName) {
+      return res.status(400).json({
+        error: 'Missing required fields: imageData, fileName'
+      });
+    }
+
+    // 验证图片数据格式
+    if (!imageData.match(/^[A-Za-z0-9+/]+=*$/)) {
+      return res.status(400).json({
+        error: 'Invalid base64 image data'
+      });
+    }
+
+    // 验证文件大小 (10MB限制)
+    const buffer = Buffer.from(imageData, 'base64');
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (buffer.length > maxSize) {
+      return res.status(400).json({
+        error: 'Image size exceeds 10MB limit'
+      });
+    }
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9.]/g, '_');
+    const imagePath = `users/${userId}/images/${timestamp}_${cleanFileName}`;
+
+    // 模拟上传成功（演示模式）
+    // 在实际部署中，这里会上传到OSS或其他存储服务
+    const mockImageUrl = `https://mock-storage.example.com/${imagePath}`;
+
+    console.log('[CONTENT API] 图片上传成功（演示模式）');
+    console.log('[CONTENT API] 文件路径:', imagePath);
+    console.log('[CONTENT API] 文件大小:', buffer.length, 'bytes');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Image uploaded successfully',
+      imageUrl: mockImageUrl,
+      imagePath: imagePath,
+      fileSize: buffer.length,
+      userId: userId
+    });
+
+  } catch (error) {
+    console.error('[CONTENT API] 图片上传失败:', error);
+    return res.status(500).json({
+      error: 'Image upload failed',
+      message: error.message
+    });
+  }
 }

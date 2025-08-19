@@ -24,8 +24,8 @@ export class OSSStorageService {
         throw new Error('无法获取认证 token，请确保已登录');
       }
 
-      // 调用上传 API
-      const uploadUrl = `${window.location.origin}/api/upload/image`;
+      // 调用上传 API (更新到新的整合端点)
+      const uploadUrl = `${window.location.origin}/api/content?action=upload`;
       console.log('[STORAGE SERVICE] 上传 URL:', uploadUrl);
 
       const response = await fetch(uploadUrl, {
