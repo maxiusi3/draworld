@@ -9,10 +9,6 @@ const instanceName = process.env.TABLESTORE_INSTANCE;
 const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
 const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
 
-// 临时强制启用演示模式来绕过TableStore权限问题
-// 这是因为当前TableStore实例的ACL策略拒绝了Vercel的访问请求
-process.env.FORCE_DEMO_MODE = 'true';
-
 // 调试环境变量
 console.log('[COMMERCE API] 环境变量检查:');
 console.log('[COMMERCE API] TABLESTORE_INSTANCE:', instanceName);
@@ -32,6 +28,33 @@ if (!instanceName || !accessKeyId || !accessKeySecret) {
   ));
 
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
+
+// TableStore连接测试函数
+async function testTableStoreConnection() {
+  try {
+    console.log('[COMMERCE API] 测试TableStore连接...');
+    const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
+    const ordersRepo = new OrdersRepository(instanceName);
+
+    // 尝试一个简单的查询操作来测试连接
+    // 这里我们尝试查询一个不存在的订单，主要是为了测试权限
+    await ordersRepo.getOrder('test_connection_' + Date.now());
+    console.log('[COMMERCE API] TableStore连接测试成功 - 权限正常');
+    return true;
+  } catch (error) {
+    console.error('[COMMERCE API] TableStore连接测试失败:', error.message);
+    if (error.message.includes('OTSAuthFailed') || error.code === 403) {
+      console.error('[COMMERCE API] TableStore权限问题，将使用演示模式');
+      return false;
+    }
+    // 其他错误（如订单不存在）实际上表示连接正常
+    if (error.message.includes('not found') || error.message.includes('does not exist')) {
+      console.log('[COMMERCE API] TableStore连接测试成功 - 权限正常（预期的not found错误）');
+      return true;
+    }
+    return false;
+  }
 }
 
 // Authing OIDC 配置
@@ -596,10 +619,9 @@ async function handleOrderCreate(req, res, userId) {
 
     console.log('[COMMERCE API] 选择的套餐:', selectedPackage);
 
-    // 检查是否启用演示模式（当TableStore权限不足时）
-    // 强制启用演示模式来绕过TableStore权限问题
+    // 检查是否启用演示模式
+    // 仅在明确设置DEMO_MODE或环境变量缺失时启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' ||
-                      process.env.FORCE_DEMO_MODE === 'true' ||
                       !instanceName || !accessKeyId || !accessKeySecret;
 
     let order;
@@ -735,17 +757,17 @@ async function handleOrderList(req, res, userId) {
     const { limit = 20, status } = req.query;
 
     // 检查是否启用演示模式
-    // 强制启用演示模式来绕过TableStore权限问题
+    // 仅在明确设置DEMO_MODE或环境变量缺失时启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' ||
-                      process.env.FORCE_DEMO_MODE === 'true' ||
                       !instanceName || !accessKeyId || !accessKeySecret;
 
-    console.log('[COMMERCE API] 订单列表演示模式检测:', {
+    console.log('[COMMERCE API] 订单列表模式检测:', {
       DEMO_MODE: process.env.DEMO_MODE,
       instanceName: instanceName ? 'exists' : 'missing',
       accessKeyId: accessKeyId ? 'exists' : 'missing',
       accessKeySecret: accessKeySecret ? 'exists' : 'missing',
-      isDemoMode
+      isDemoMode,
+      mode: isDemoMode ? 'Demo Mode' : 'TableStore Mode'
     });
 
     let orders = [];
@@ -850,19 +872,19 @@ async function handleOrderStatus(req, res, userId) {
     }
 
     // 检查是否启用演示模式
-    // 强制启用演示模式来绕过TableStore权限问题
+    // 仅在明确设置DEMO_MODE或环境变量缺失时启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' ||
-                      process.env.FORCE_DEMO_MODE === 'true' ||
                       !instanceName || !accessKeyId || !accessKeySecret;
 
     console.log('[COMMERCE API] 演示模式检测:', {
       DEMO_MODE: process.env.DEMO_MODE,
-      FORCE_DEMO_MODE: process.env.FORCE_DEMO_MODE,
       instanceName: instanceName ? 'exists' : 'missing',
       accessKeyId: accessKeyId ? 'exists' : 'missing',
       accessKeySecret: accessKeySecret ? 'exists' : 'missing',
       isDemoMode,
-      reason: isDemoMode ? 'TableStore权限问题，使用演示模式' : '正常模式'
+      reason: isDemoMode ?
+        (process.env.DEMO_MODE === 'true' ? '明确启用演示模式' : '环境变量缺失，使用演示模式') :
+        'TableStore正常模式'
     });
 
     let order = null;
@@ -1075,9 +1097,8 @@ async function handleOrderCancel(req, res, userId) {
     }
 
     // 检查是否启用演示模式
-    // 强制启用演示模式来绕过TableStore权限问题
+    // 仅在明确设置DEMO_MODE或环境变量缺失时启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' ||
-                      process.env.FORCE_DEMO_MODE === 'true' ||
                       !instanceName || !accessKeyId || !accessKeySecret;
 
     if (isDemoMode) {
