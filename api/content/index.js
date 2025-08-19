@@ -4,6 +4,9 @@
 
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
+// 在Vercel环境中，fetch是全局可用的，但为了兼容性，我们可以添加条件导入
+const fetch = globalThis.fetch || (await import('node-fetch')).default;
+
 // TableStore 配置检查
 const instanceName = process.env.TABLESTORE_INSTANCE;
 const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
@@ -314,26 +317,89 @@ async function handleVideoStart(req, res) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    const { imageUrl, prompt, duration = 5 } = req.body;
+    // 支持两种请求格式：旧格式和新格式
+    const { imageUrl, inputImageUrl, prompt, params, duration = 5 } = req.body;
+    const finalImageUrl = inputImageUrl || imageUrl;
+    const finalPrompt = params?.prompt || prompt;
 
-    if (!imageUrl) {
+    if (!finalImageUrl) {
       return res.status(400).json({
-        error: 'Missing required field: imageUrl'
+        error: 'Missing required field: imageUrl or inputImageUrl'
       });
     }
 
-    // 生成任务ID
-    const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    if (!finalPrompt) {
+      return res.status(400).json({
+        error: 'Missing required field: prompt or params.prompt'
+      });
+    }
 
-    console.log('[CONTENT API] 视频生成任务创建成功');
-    console.log('[CONTENT API] 任务ID:', taskId);
+    console.log('[CONTENT API] 开始调用通义万相API...');
     console.log('[CONTENT API] 用户ID:', userId);
-    console.log('[CONTENT API] 图片URL:', imageUrl);
-    console.log('[CONTENT API] 提示词:', prompt);
-    console.log('[CONTENT API] 时长:', duration);
+    console.log('[CONTENT API] 图片URL:', finalImageUrl);
+    console.log('[CONTENT API] 提示词:', finalPrompt);
 
-    // 模拟视频生成（演示模式）
-    // 在实际部署中，这里会调用真实的视频生成服务
+    // 检查API Key
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey) {
+      console.error('[CONTENT API] 缺少DASHSCOPE_API_KEY环境变量');
+      return res.status(500).json({
+        error: 'API configuration error',
+        message: 'Missing DASHSCOPE_API_KEY'
+      });
+    }
+
+    // 调用通义万相2.2 API
+    const requestBody = {
+      model: 'wan2.2-i2v-flash',
+      input: {
+        prompt: finalPrompt,
+        img_url: finalImageUrl
+      },
+      parameters: {
+        resolution: '720P',
+        prompt_extend: true,
+        watermark: false
+      }
+    };
+
+    console.log('[CONTENT API] 发送请求到通义万相API:', JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'X-DashScope-Async': 'enable'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const responseData = await response.json();
+    console.log('[CONTENT API] 通义万相API响应:', JSON.stringify(responseData, null, 2));
+
+    if (!response.ok) {
+      console.error('[CONTENT API] 通义万相API调用失败:', response.status, responseData);
+      return res.status(500).json({
+        error: 'Video generation API failed',
+        message: responseData.message || `HTTP ${response.status} 错误`,
+        details: responseData
+      });
+    }
+
+    // 提取任务ID
+    const taskId = responseData.output?.task_id;
+    if (!taskId) {
+      console.error('[CONTENT API] API响应中缺少task_id:', responseData);
+      return res.status(500).json({
+        error: 'Invalid API response',
+        message: 'Missing task_id in response'
+      });
+    }
+
+    console.log('[CONTENT API] 视频生成任务创建成功，任务ID:', taskId);
+
+    // 返回前端期望的格式
     return res.status(200).json({
       success: true,
       message: 'Video generation task started',
