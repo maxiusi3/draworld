@@ -537,18 +537,21 @@ async function handleCreditTransaction(req, res, userId) {
       console.log('[COMMERCE API] 交易金额:', amount);
       console.log('[COMMERCE API] 交易后余额:', newBalance);
 
-      return res.status(200).json({
-        success: true,
-        message: 'Credit transaction processed successfully',
-        transactionId: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: userId,
+      // 构造前端期望的CreditTransaction对象
+      const transaction = {
+        id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount: -Math.abs(amount), // 消费为负数
         reason: reason,
-        referenceId: referenceId,
-        description: description,
-        balanceBefore: currentBalance,
+        description: description || '',
         balanceAfter: newBalance, // 前端期望的字段
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      return res.status(200).json({
+        success: true,
+        transaction: transaction, // 前端期望的字段
+        newBalance: newBalance,
+        message: 'Credit transaction processed successfully',
         mode: 'demo'
       });
     } else {
@@ -575,18 +578,21 @@ async function handleCreditTransaction(req, res, userId) {
 
       console.log('[COMMERCE API] TableStore积分交易成功');
 
-      return res.status(200).json({
-        success: true,
-        message: 'Credit transaction processed successfully',
-        transactionId: result.transactionId,
-        userId: userId,
+      // 构造前端期望的CreditTransaction对象
+      const transaction = {
+        id: result.transactionId || `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         amount: -Math.abs(amount),
         reason: reason,
-        referenceId: referenceId,
-        description: description,
-        balanceBefore: result.newBalance + Math.abs(amount), // 推算交易前余额
+        description: description || '',
         balanceAfter: result.newBalance, // 前端期望的字段
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      return res.status(200).json({
+        success: true,
+        transaction: transaction, // 前端期望的字段
+        newBalance: result.newBalance,
+        message: 'Credit transaction processed successfully',
         mode: 'tablestore'
       });
     }
