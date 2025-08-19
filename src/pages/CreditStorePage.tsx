@@ -453,7 +453,7 @@ const CreditStorePage: React.FC = () => {
                 取消
               </button>
               <button
-                onClick={handleConfirmPurchase}
+                onClick={() => selectedPackage && handlePurchase(selectedPackage)}
                 disabled={orderLoading}
                 className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
               >

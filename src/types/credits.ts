@@ -134,6 +134,7 @@ export interface CreditPackage {
 
 export interface Order {
   id: string;
+  orderId: string; // 订单ID，与id保持一致或作为别名
   userId: string;
   packageId: string;
   packageName: string;
@@ -194,6 +195,9 @@ export interface PaymentStatusResponse {
   status: OrderStatus;
   paidAt?: string;
   creditsAdded?: number;
+  isExpired?: boolean; // 订单是否已过期
+  expiredAt?: string; // 过期时间
+  failureReason?: string; // 失败原因
 }
 
 export interface CreditPackagesResponse {
