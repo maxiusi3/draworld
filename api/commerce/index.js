@@ -162,7 +162,7 @@ async function verifyToken(token) {
 }
 
 export default async function handler(req, res) {
-  // 设置请求超时（25秒，Vercel函数最大30秒）
+  // 设置请求超时（20秒，更早触发降级）
   const timeoutId = setTimeout(() => {
     if (!res.headersSent) {
       console.error('[COMMERCE API] 请求超时，返回演示模式数据');
@@ -172,7 +172,7 @@ export default async function handler(req, res) {
         mode: 'timeout_fallback'
       });
     }
-  }, 25000);
+  }, 20000);
 
   try {
     console.log('[COMMERCE API] 请求接收');
@@ -428,7 +428,13 @@ async function handleCreditBalance(req, res, userId) {
         const creditsService = new CreditsService(instanceName);
         console.log('[COMMERCE API] CreditsService实例创建成功');
 
-        const userCredits = await creditsService.getUserCredits(userId);
+        // 使用Promise.race来实现更快的超时
+        const creditsPromise = creditsService.getUserCredits(userId);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('积分查询超时')), 8000); // 8秒超时
+        });
+
+        const userCredits = await Promise.race([creditsPromise, timeoutPromise]);
         console.log('[COMMERCE API] 获取用户积分信息成功:', userCredits);
 
         // 如果用户不存在，创建新账户并给予注册奖励
@@ -991,12 +997,21 @@ async function handleOrderStatus(req, res, userId) {
       }
     } else {
       try {
-        // 正常模式：使用TableStore
+        // 正常模式：使用TableStore，但设置更短的超时
+        console.log('[COMMERCE API] 开始TableStore查询，订单ID:', orderId);
+
         const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
         const ordersRepo = new OrdersRepository(instanceName);
 
-        // 获取订单信息
-        order = await ordersRepo.getOrder(orderId);
+        // 使用Promise.race来实现更快的超时
+        const queryPromise = ordersRepo.getOrder(orderId);
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('TableStore查询超时')), 10000); // 10秒超时
+        });
+
+        order = await Promise.race([queryPromise, timeoutPromise]);
+        console.log('[COMMERCE API] TableStore查询成功');
+
       } catch (tableStoreError) {
         console.error('[COMMERCE API] TableStore查询订单失败，切换到演示模式:', tableStoreError.message);
 
@@ -1005,10 +1020,12 @@ async function handleOrderStatus(req, res, userId) {
           console.error('[COMMERCE API] TableStore表不存在，需要创建orders表');
         } else if (tableStoreError.message.includes('OTSAuthFailed')) {
           console.error('[COMMERCE API] TableStore权限问题');
+        } else if (tableStoreError.message.includes('超时')) {
+          console.error('[COMMERCE API] TableStore查询超时，自动降级');
         }
 
         // TableStore失败时，自动切换到演示模式
-        if (orderId.startsWith('demo_') || orderId.startsWith('fallback_')) {
+        if (orderId.startsWith('demo_') || orderId.startsWith('fallback_') || orderId.startsWith('order_')) {
           const now = Date.now();
           order = {
             orderId,
