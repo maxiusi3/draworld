@@ -499,8 +499,105 @@ async function handleCreditBalance(req, res, userId) {
 }
 
 async function handleCreditTransaction(req, res, userId) {
-  // 实现积分交易
-  return res.status(200).json({ success: true, message: 'Credit transaction processed' });
+  try {
+    console.log('[COMMERCE API] 处理积分交易，用户ID:', userId);
+
+    const { amount, reason, referenceId, description } = req.body;
+
+    if (!amount || !reason) {
+      return res.status(400).json({
+        error: 'Missing required fields: amount, reason'
+      });
+    }
+
+    console.log('[COMMERCE API] 积分交易参数:', { amount, reason, referenceId, description });
+
+    // 检查是否启用演示模式
+    const isDemoMode = FORCE_DEMO_MODE_FOR_TIMEOUT ||
+                      process.env.DEMO_MODE === 'true' ||
+                      !instanceName || !accessKeyId || !accessKeySecret;
+
+    console.log('[COMMERCE API] 演示模式检测:', {
+      FORCE_DEMO_MODE_FOR_TIMEOUT,
+      DEMO_MODE: process.env.DEMO_MODE,
+      instanceName: instanceName ? 'exists' : 'missing',
+      accessKeyId: accessKeyId ? 'exists' : 'missing',
+      accessKeySecret: accessKeySecret ? 'exists' : 'missing',
+      isDemoMode,
+      reason: isDemoMode ? '演示模式' : 'TableStore正常模式'
+    });
+
+    if (isDemoMode) {
+      // 演示模式：返回模拟的积分交易结果
+      const currentBalance = 1000; // 演示模式的当前余额
+      const newBalance = Math.max(0, currentBalance - Math.abs(amount)); // 消费积分
+
+      console.log('[COMMERCE API] 演示模式积分交易成功');
+      console.log('[COMMERCE API] 交易前余额:', currentBalance);
+      console.log('[COMMERCE API] 交易金额:', amount);
+      console.log('[COMMERCE API] 交易后余额:', newBalance);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Credit transaction processed successfully',
+        transactionId: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: userId,
+        amount: -Math.abs(amount), // 消费为负数
+        reason: reason,
+        referenceId: referenceId,
+        description: description,
+        balanceBefore: currentBalance,
+        balanceAfter: newBalance, // 前端期望的字段
+        createdAt: new Date().toISOString(),
+        mode: 'demo'
+      });
+    } else {
+      // 正常模式：使用TableStore
+      const { CreditsService } = await import('../../serverless/src/creditsService.js');
+      const creditsService = new CreditsService(instanceName);
+
+      // 执行积分交易
+      const result = await creditsService.executeTransaction(
+        userId,
+        'SPEND', // 消费积分
+        Math.abs(amount),
+        reason,
+        referenceId,
+        description
+      );
+
+      if (!result.success) {
+        return res.status(400).json({
+          error: 'Insufficient credits or transaction failed',
+          message: '积分余额不足或交易失败'
+        });
+      }
+
+      console.log('[COMMERCE API] TableStore积分交易成功');
+
+      return res.status(200).json({
+        success: true,
+        message: 'Credit transaction processed successfully',
+        transactionId: result.transactionId,
+        userId: userId,
+        amount: -Math.abs(amount),
+        reason: reason,
+        referenceId: referenceId,
+        description: description,
+        balanceBefore: result.newBalance + Math.abs(amount), // 推算交易前余额
+        balanceAfter: result.newBalance, // 前端期望的字段
+        createdAt: new Date().toISOString(),
+        mode: 'tablestore'
+      });
+    }
+
+  } catch (error) {
+    console.error('[COMMERCE API] 积分交易失败:', error);
+    return res.status(500).json({
+      error: 'Credit transaction failed',
+      message: error.message
+    });
+  }
 }
 
 async function handleCreditHistory(req, res, userId) {
