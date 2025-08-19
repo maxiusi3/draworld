@@ -730,6 +730,14 @@ async function handleOrderList(req, res, userId) {
     // 检查是否启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' || !instanceName || !accessKeyId || !accessKeySecret;
 
+    console.log('[COMMERCE API] 订单列表演示模式检测:', {
+      DEMO_MODE: process.env.DEMO_MODE,
+      instanceName: instanceName ? 'exists' : 'missing',
+      accessKeyId: accessKeyId ? 'exists' : 'missing',
+      accessKeySecret: accessKeySecret ? 'exists' : 'missing',
+      isDemoMode
+    });
+
     let orders = [];
 
     if (isDemoMode) {
@@ -834,6 +842,14 @@ async function handleOrderStatus(req, res, userId) {
     // 检查是否启用演示模式
     const isDemoMode = process.env.DEMO_MODE === 'true' || !instanceName || !accessKeyId || !accessKeySecret;
 
+    console.log('[COMMERCE API] 演示模式检测:', {
+      DEMO_MODE: process.env.DEMO_MODE,
+      instanceName: instanceName ? 'exists' : 'missing',
+      accessKeyId: accessKeyId ? 'exists' : 'missing',
+      accessKeySecret: accessKeySecret ? 'exists' : 'missing',
+      isDemoMode
+    });
+
     let order = null;
 
     if (isDemoMode) {
@@ -863,8 +879,24 @@ async function handleOrderStatus(req, res, userId) {
         // 获取订单信息
         order = await ordersRepo.getOrder(orderId);
       } catch (tableStoreError) {
-        console.error('[COMMERCE API] TableStore查询订单失败:', tableStoreError.message);
-        // 在TableStore失败时，不返回错误，而是返回订单不存在
+        console.error('[COMMERCE API] TableStore查询订单失败，切换到演示模式:', tableStoreError.message);
+
+        // TableStore失败时，自动切换到演示模式
+        if (orderId.startsWith('demo_') || orderId.startsWith('fallback_')) {
+          const now = Date.now();
+          order = {
+            orderId,
+            userId,
+            status: 'PENDING', // 默认为待支付状态
+            paymentId: `pay_${orderId}`,
+            paymentUrl: `https://mock-payment.example.com/pay/${orderId}`,
+            createdAt: now - 300000, // 5分钟前创建
+            updatedAt: now - 300000,
+            expiredAt: now + 1500000, // 25分钟后过期
+            creditsGranted: false
+          };
+          console.log('[COMMERCE API] 降级到演示模式，订单状态查询成功');
+        }
       }
     }
 
