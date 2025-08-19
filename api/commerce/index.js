@@ -44,10 +44,16 @@ async function testTableStoreConnection() {
     return true;
   } catch (error) {
     console.error('[COMMERCE API] TableStore连接测试失败:', error.message);
+
     if (error.message.includes('OTSAuthFailed') || error.code === 403) {
       console.error('[COMMERCE API] TableStore权限问题，将使用演示模式');
       return false;
+    } else if (error.message.includes('table not exist')) {
+      console.error('[COMMERCE API] TableStore表不存在，需要运行初始化脚本创建表');
+      console.error('[COMMERCE API] 请运行: node scripts/init-tablestore.js');
+      return false;
     }
+
     // 其他错误（如订单不存在）实际上表示连接正常
     if (error.message.includes('not found') || error.message.includes('does not exist')) {
       console.log('[COMMERCE API] TableStore连接测试成功 - 权限正常（预期的not found错误）');
@@ -684,6 +690,13 @@ async function handleOrderCreate(req, res, userId) {
       } catch (tableStoreError) {
         console.error('[COMMERCE API] TableStore创建订单失败，切换到演示模式:', tableStoreError.message);
 
+        // 检查错误类型
+        if (tableStoreError.message.includes('table not exist')) {
+          console.error('[COMMERCE API] TableStore表不存在，需要创建orders表');
+        } else if (tableStoreError.message.includes('OTSAuthFailed')) {
+          console.error('[COMMERCE API] TableStore权限问题');
+        }
+
         // TableStore失败时自动切换到演示模式
         const orderId = `fallback_order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const now = Date.now();
@@ -917,6 +930,13 @@ async function handleOrderStatus(req, res, userId) {
         order = await ordersRepo.getOrder(orderId);
       } catch (tableStoreError) {
         console.error('[COMMERCE API] TableStore查询订单失败，切换到演示模式:', tableStoreError.message);
+
+        // 检查错误类型并记录
+        if (tableStoreError.message.includes('table not exist')) {
+          console.error('[COMMERCE API] TableStore表不存在，需要创建orders表');
+        } else if (tableStoreError.message.includes('OTSAuthFailed')) {
+          console.error('[COMMERCE API] TableStore权限问题');
+        }
 
         // TableStore失败时，自动切换到演示模式
         if (orderId.startsWith('demo_') || orderId.startsWith('fallback_')) {
