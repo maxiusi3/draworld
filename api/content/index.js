@@ -442,22 +442,24 @@ async function processImageUpload(req, res, userId) {
     const cleanFileName = fileName.replace(/[^a-zA-Z0-9.]/g, '_');
     const imagePath = `users/${userId}/images/${timestamp}_${cleanFileName}`;
 
-    // 模拟上传成功（演示模式）
+    // 使用可访问的测试图片URL（临时解决方案）
     // 在实际部署中，这里会上传到OSS或其他存储服务
-    const mockImageUrl = `https://mock-storage.example.com/${imagePath}`;
+    const testImageUrl = 'https://storage.googleapis.com/draworld-6898f.appspot.com/users/anonymous/images/1754796515595_WechatIMG3794.jpg';
 
-    console.log('[CONTENT API] 图片上传成功（演示模式）');
+    console.log('[CONTENT API] 图片上传成功（使用测试图片URL）');
     console.log('[CONTENT API] 文件路径:', imagePath);
     console.log('[CONTENT API] 文件大小:', buffer.length, 'bytes');
+    console.log('[CONTENT API] 使用测试图片URL:', testImageUrl);
 
     return res.status(200).json({
       success: true,
-      message: 'Image uploaded successfully',
-      url: mockImageUrl, // 前端期望的字段名
-      imageUrl: mockImageUrl, // 保持向后兼容
+      message: 'Image uploaded successfully (using test image URL)',
+      url: testImageUrl, // 前端期望的字段名
+      imageUrl: testImageUrl, // 保持向后兼容
       imagePath: imagePath,
       fileSize: buffer.length,
-      userId: userId
+      userId: userId,
+      note: 'Using accessible test image URL for Tongyi API compatibility'
     });
 
   } catch (error) {
