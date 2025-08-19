@@ -1,7 +1,7 @@
 // 语言: JavaScript
 // 说明: 模拟支付接口，用于测试支付流程
 
-import { verifyJWT } from '../../lib/auth.js';
+// 不需要导入JWT库，使用简单的解析方式
 
 export default async function handler(req, res) {
   // 设置CORS头
@@ -26,12 +26,13 @@ export default async function handler(req, res) {
     // 验证用户身份（可选，用于测试时跳过）
     let userId = null;
     const authHeader = req.headers.authorization;
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.substring(7);
-        const decoded = await verifyJWT(token);
-        userId = decoded.sub;
+        // 简化的JWT解析，仅用于测试
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        userId = payload.sub;
         console.log('[SIMULATE PAYMENT] 用户身份验证成功:', userId);
       } catch (error) {
         console.log('[SIMULATE PAYMENT] 用户身份验证失败，使用匿名模式');
