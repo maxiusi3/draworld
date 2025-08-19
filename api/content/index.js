@@ -413,7 +413,8 @@ async function processImageUpload(req, res, userId) {
     return res.status(200).json({
       success: true,
       message: 'Image uploaded successfully',
-      imageUrl: mockImageUrl,
+      url: mockImageUrl, // 前端期望的字段名
+      imageUrl: mockImageUrl, // 保持向后兼容
       imagePath: imagePath,
       fileSize: buffer.length,
       userId: userId
