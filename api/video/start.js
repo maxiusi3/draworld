@@ -90,6 +90,8 @@ export default async function handler(req, res) {
     };
 
     console.log('[VIDEO START API] 发送请求到通义万相API:', JSON.stringify(requestBody, null, 2));
+    console.log('[VIDEO START API] API Key前缀:', apiKey.substring(0, 10) + '...');
+    console.log('[VIDEO START API] 请求URL:', 'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis');
 
     const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis', {
       method: 'POST',
@@ -101,8 +103,20 @@ export default async function handler(req, res) {
       body: JSON.stringify(requestBody)
     });
 
+    console.log('[VIDEO START API] HTTP响应状态:', response.status, response.statusText);
+    console.log('[VIDEO START API] 响应头:', Object.fromEntries(response.headers.entries()));
+
     const responseData = await response.json();
     console.log('[VIDEO START API] 通义万相API响应:', JSON.stringify(responseData, null, 2));
+
+    // 记录关键信息用于调试
+    console.log('[VIDEO START API] 响应解析:', {
+      hasOutput: !!responseData.output,
+      hasTaskId: !!(responseData.output?.task_id),
+      taskId: responseData.output?.task_id,
+      requestId: responseData.request_id,
+      usage: responseData.usage
+    });
 
     if (!response.ok) {
       console.error('[VIDEO START API] 通义万相API调用失败:', response.status, responseData);

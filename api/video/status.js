@@ -64,6 +64,8 @@ export default async function handler(req, res) {
 
     // 调用通义万相任务状态查询API
     console.log('[VIDEO STATUS API] 调用通义万相状态查询API...');
+    console.log('[VIDEO STATUS API] API Key前缀:', apiKey.substring(0, 10) + '...');
+    console.log('[VIDEO STATUS API] 查询URL:', `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`);
 
     const response = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
       method: 'GET',
@@ -71,6 +73,9 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       }
     });
+
+    console.log('[VIDEO STATUS API] HTTP响应状态:', response.status, response.statusText);
+    console.log('[VIDEO STATUS API] 响应头:', Object.fromEntries(response.headers.entries()));
 
     const responseData = await response.json();
     console.log('[VIDEO STATUS API] 通义万相API响应:', JSON.stringify(responseData, null, 2));
