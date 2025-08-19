@@ -243,8 +243,48 @@ async function searchArtworks(req, res) {
 }
 
 async function createArtwork(req, res) {
-  // 实现创建作品
-  return res.status(201).json({ success: true, message: 'Artwork created' });
+  try {
+    console.log('[CONTENT API] 创建作品记录...');
+    const { title, description, videoUrl, thumbnailUrl, isPublic } = req.body;
+
+    if (!title || !videoUrl) {
+      return res.status(400).json({
+        error: 'Missing required fields: title, videoUrl'
+      });
+    }
+
+    // 生成作品ID
+    const artworkId = `artwork_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // 构造作品对象
+    const artwork = {
+      id: artworkId,
+      title: title,
+      description: description || '',
+      videoUrl: videoUrl,
+      thumbnailUrl: thumbnailUrl || null,
+      isPublic: isPublic !== false, // 默认为true
+      likeCount: 0,
+      commentCount: 0,
+      viewCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    console.log('[CONTENT API] 作品记录创建成功:', artwork);
+
+    return res.status(201).json({
+      success: true,
+      data: artwork,
+      message: 'Artwork created successfully'
+    });
+  } catch (error) {
+    console.error('[CONTENT API] 创建作品记录失败:', error);
+    return res.status(500).json({
+      error: 'Failed to create artwork',
+      message: error.message
+    });
+  }
 }
 
 async function updateArtwork(req, res) {

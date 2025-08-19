@@ -50,15 +50,16 @@ export default async function handler(req, res) {
     console.log('[VIDEO STATUS API] 查询任务ID:', taskId);
     
     // 模拟视频生成状态（演示模式）
-    const mockVideoUrl = `https://mock-storage.example.com/videos/${taskId}.mp4`;
+    // 使用可访问的测试视频URL
+    const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     const now = new Date();
-    
+
     // 返回前端期望的VideoTask格式
     const videoTask = {
       id: taskId,
       userId: userId,
-      imageUrl: `https://mock-storage.example.com/images/${taskId}_input.jpg`,
-      prompt: '演示模式生成的视频',
+      imageUrl: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Demo+Image',
+      prompt: '演示模式：生成的视频展示了丰富的视觉效果',
       musicStyle: 'Joyful',
       aspectRatio: '16:9',
       status: 'completed', // 演示模式直接返回完成状态
