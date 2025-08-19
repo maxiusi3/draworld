@@ -169,31 +169,38 @@ export class OrdersRepository {
       }
 
       const attrs = result.row.attributes;
+
+      // 安全地获取属性值，处理可能的undefined情况
+      const getValue = (attr: any) => {
+        if (!attr) return undefined;
+        return Array.isArray(attr) ? attr[0] : attr;
+      };
+
       return {
         tenantId: this.tenantId,
         orderId,
-        userId: attrs.userId[0],
-        packageId: attrs.packageId[0],
-        packageName: attrs.packageName[0],
-        credits: attrs.credits[0],
-        bonusCredits: attrs.bonusCredits[0],
-        totalCredits: attrs.totalCredits[0],
-        priceYuan: attrs.priceYuan[0],
-        currency: attrs.currency?.[0] || 'CNY',
-        status: attrs.status[0] as OrderStatus,
-        paymentMethod: attrs.paymentMethod?.[0] as PaymentMethod,
-        paymentId: attrs.paymentId?.[0],
-        paymentUrl: attrs.paymentUrl?.[0],
-        idempotencyKey: attrs.idempotencyKey[0],
-        failureReason: attrs.failureReason?.[0],
-        refundReason: attrs.refundReason?.[0],
-        refundAmount: attrs.refundAmount?.[0],
-        creditsGranted: attrs.creditsGranted?.[0] || false,
-        notificationSent: attrs.notificationSent?.[0] || false,
-        createdAt: attrs.createdAt[0],
-        updatedAt: attrs.updatedAt[0],
-        paidAt: attrs.paidAt?.[0],
-        expiredAt: attrs.expiredAt?.[0],
+        userId: getValue(attrs.userId),
+        packageId: getValue(attrs.packageId),
+        packageName: getValue(attrs.packageName),
+        credits: getValue(attrs.credits),
+        bonusCredits: getValue(attrs.bonusCredits) || 0,
+        totalCredits: getValue(attrs.totalCredits),
+        priceYuan: getValue(attrs.priceYuan),
+        currency: getValue(attrs.currency) || 'CNY',
+        status: getValue(attrs.status) as OrderStatus,
+        paymentMethod: getValue(attrs.paymentMethod) as PaymentMethod,
+        paymentId: getValue(attrs.paymentId),
+        paymentUrl: getValue(attrs.paymentUrl),
+        idempotencyKey: getValue(attrs.idempotencyKey),
+        failureReason: getValue(attrs.failureReason),
+        refundReason: getValue(attrs.refundReason),
+        refundAmount: getValue(attrs.refundAmount),
+        creditsGranted: getValue(attrs.creditsGranted) || false,
+        notificationSent: getValue(attrs.notificationSent) || false,
+        createdAt: getValue(attrs.createdAt),
+        updatedAt: getValue(attrs.updatedAt),
+        paidAt: getValue(attrs.paidAt),
+        expiredAt: getValue(attrs.expiredAt),
       };
     } catch (error) {
       console.error('获取订单失败:', error);
@@ -287,32 +294,40 @@ export class OrdersRepository {
 
       for (const row of result.rows) {
         const attrs = row.attributes;
-        if (attrs.userId && attrs.userId[0] === userId) {
+
+        // 安全地获取属性值，处理可能的undefined情况
+        const getValue = (attr: any) => {
+          if (!attr) return undefined;
+          return Array.isArray(attr) ? attr[0] : attr;
+        };
+
+        const userIdValue = getValue(attrs.userId);
+        if (userIdValue === userId) {
           orders.push({
             tenantId: this.tenantId,
             orderId: row.primaryKey[1].value,
-            userId: attrs.userId[0],
-            packageId: attrs.packageId[0],
-            packageName: attrs.packageName[0],
-            credits: attrs.credits[0],
-            bonusCredits: attrs.bonusCredits[0],
-            totalCredits: attrs.totalCredits[0],
-            priceYuan: attrs.priceYuan[0],
-            currency: attrs.currency?.[0] || 'CNY',
-            status: attrs.status[0] as OrderStatus,
-            paymentMethod: attrs.paymentMethod?.[0] as PaymentMethod,
-            paymentId: attrs.paymentId?.[0],
-            paymentUrl: attrs.paymentUrl?.[0],
-            idempotencyKey: attrs.idempotencyKey[0],
-            failureReason: attrs.failureReason?.[0],
-            refundReason: attrs.refundReason?.[0],
-            refundAmount: attrs.refundAmount?.[0],
-            creditsGranted: attrs.creditsGranted?.[0] || false,
-            notificationSent: attrs.notificationSent?.[0] || false,
-            createdAt: attrs.createdAt[0],
-            updatedAt: attrs.updatedAt[0],
-            paidAt: attrs.paidAt?.[0],
-            expiredAt: attrs.expiredAt?.[0],
+            userId: userIdValue,
+            packageId: getValue(attrs.packageId),
+            packageName: getValue(attrs.packageName),
+            credits: getValue(attrs.credits),
+            bonusCredits: getValue(attrs.bonusCredits) || 0,
+            totalCredits: getValue(attrs.totalCredits),
+            priceYuan: getValue(attrs.priceYuan),
+            currency: getValue(attrs.currency) || 'CNY',
+            status: getValue(attrs.status) as OrderStatus,
+            paymentMethod: getValue(attrs.paymentMethod) as PaymentMethod,
+            paymentId: getValue(attrs.paymentId),
+            paymentUrl: getValue(attrs.paymentUrl),
+            idempotencyKey: getValue(attrs.idempotencyKey),
+            failureReason: getValue(attrs.failureReason),
+            refundReason: getValue(attrs.refundReason),
+            refundAmount: getValue(attrs.refundAmount),
+            creditsGranted: getValue(attrs.creditsGranted) || false,
+            notificationSent: getValue(attrs.notificationSent) || false,
+            createdAt: getValue(attrs.createdAt),
+            updatedAt: getValue(attrs.updatedAt),
+            paidAt: getValue(attrs.paidAt),
+            expiredAt: getValue(attrs.expiredAt),
           });
 
           if (orders.length >= limit) break;
