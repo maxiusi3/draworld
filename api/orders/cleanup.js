@@ -1,7 +1,7 @@
 // 语言: JavaScript
 // 说明: 订单清理和超时处理API接口
 
-import { verifyJWT } from '../../lib/auth.js';
+// 不需要导入JWT库，使用简单的解析方式
 
 // 环境变量配置
 const instanceName = process.env.TABLESTORE_INSTANCE_NAME || 'whimsy-brush-dev';

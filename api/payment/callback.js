@@ -1,7 +1,7 @@
 // 语言: JavaScript
 // 说明: 支付回调API接口，模拟微信/支付宝的异步通知处理
 
-import { verifyJWT } from '../../lib/auth.js';
+// 不需要导入JWT库，使用简单的解析方式
 
 // 环境变量配置
 const instanceName = process.env.TABLESTORE_INSTANCE_NAME || 'whimsy-brush-dev';
