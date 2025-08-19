@@ -106,10 +106,33 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       console.error('[VIDEO START API] 通义万相API调用失败:', response.status, responseData);
+
+      // 如果是401错误，说明API Key有问题
+      if (response.status === 401) {
+        console.error('[VIDEO START API] API Key认证失败');
+        return res.status(500).json({
+          error: 'API authentication failed',
+          message: 'API密钥认证失败，请检查DASHSCOPE_API_KEY配置',
+          suggestion: '请联系管理员检查API密钥配置'
+        });
+      }
+
+      // 如果是400错误，可能是参数问题
+      if (response.status === 400) {
+        console.error('[VIDEO START API] 请求参数错误:', responseData);
+        return res.status(400).json({
+          error: 'Invalid request parameters',
+          message: '请求参数错误：' + (responseData.message || '未知错误'),
+          details: responseData
+        });
+      }
+
+      // 其他错误
       return res.status(500).json({
         error: 'Video generation API failed',
-        message: responseData.message || 'Unknown error',
-        details: responseData
+        message: responseData.message || `HTTP ${response.status} 错误`,
+        details: responseData,
+        suggestion: '请稍后重试或联系技术支持'
       });
     }
 
@@ -132,9 +155,22 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('[VIDEO START API] 视频生成任务创建失败:', error);
-    return res.status(500).json({ 
+
+    // 如果是网络错误，提供更详细的错误信息
+    if (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT' || error.name === 'FetchError') {
+      console.error('[VIDEO START API] 网络连接错误:', error.message);
+      return res.status(500).json({
+        error: 'Network connection failed',
+        message: '无法连接到通义万相API服务',
+        details: error.message,
+        suggestion: '请检查网络连接或稍后重试'
+      });
+    }
+
+    return res.status(500).json({
       error: 'Failed to start video generation',
-      message: error.message 
+      message: error.message,
+      suggestion: '请稍后重试或联系技术支持'
     });
   }
 }

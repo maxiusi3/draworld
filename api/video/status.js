@@ -77,10 +77,34 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       console.error('[VIDEO STATUS API] 通义万相API调用失败:', response.status, responseData);
+
+      // 如果是404错误，说明任务不存在，返回更友好的错误信息
+      if (response.status === 404) {
+        console.log('[VIDEO STATUS API] 任务不存在，可能是任务ID无效或任务已过期');
+        return res.status(404).json({
+          error: 'Task not found',
+          message: '任务不存在或已过期',
+          taskId: taskId,
+          suggestion: '请检查任务ID是否正确，或重新创建视频生成任务'
+        });
+      }
+
+      // 如果是401错误，说明API Key有问题
+      if (response.status === 401) {
+        console.error('[VIDEO STATUS API] API Key认证失败');
+        return res.status(500).json({
+          error: 'API authentication failed',
+          message: 'API密钥认证失败',
+          suggestion: '请检查DASHSCOPE_API_KEY配置'
+        });
+      }
+
+      // 其他错误，提供详细信息
       return res.status(500).json({
         error: 'Video status API failed',
-        message: responseData.message || 'Unknown error',
-        details: responseData
+        message: responseData.message || `HTTP ${response.status} 错误`,
+        details: responseData,
+        taskId: taskId
       });
     }
 
@@ -91,6 +115,33 @@ export default async function handler(req, res) {
 
     console.log('[VIDEO STATUS API] 任务状态:', taskStatus);
     console.log('[VIDEO STATUS API] 任务指标:', taskMetrics);
+    console.log('[VIDEO STATUS API] 完整API响应结构:', {
+      hasOutput: !!responseData.output,
+      hasTaskStatus: !!taskStatus,
+      hasResults: !!(results && results.length > 0),
+      resultCount: results ? results.length : 0
+    });
+
+    // 检查响应格式是否正确
+    if (!responseData.output) {
+      console.error('[VIDEO STATUS API] API响应格式异常，缺少output字段:', responseData);
+      return res.status(500).json({
+        error: 'Invalid API response format',
+        message: 'API响应格式异常',
+        details: responseData,
+        taskId: taskId
+      });
+    }
+
+    if (!taskStatus) {
+      console.error('[VIDEO STATUS API] API响应中缺少task_status字段');
+      return res.status(500).json({
+        error: 'Missing task status',
+        message: '无法获取任务状态',
+        details: responseData,
+        taskId: taskId
+      });
+    }
 
     // 映射通义万相状态到前端期望的状态
     let frontendStatus;
@@ -147,9 +198,34 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('[VIDEO STATUS API] 查询视频状态失败:', error);
-    return res.status(500).json({ 
+
+    // 如果是网络错误或超时，提供降级响应
+    if (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT' || error.name === 'FetchError') {
+      console.log('[VIDEO STATUS API] 网络错误，返回处理中状态');
+      return res.status(200).json({
+        id: taskId,
+        userId: 'unknown',
+        imageUrl: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Processing',
+        prompt: '视频生成中...',
+        musicStyle: 'Joyful',
+        aspectRatio: '16:9',
+        status: 'processing',
+        videoUrl: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: null,
+        _debug: {
+          error: 'Network error, showing fallback status',
+          originalError: error.message
+        }
+      });
+    }
+
+    return res.status(500).json({
       error: 'Failed to get video status',
-      message: error.message 
+      message: error.message,
+      taskId: taskId,
+      suggestion: '请稍后重试或联系技术支持'
     });
   }
 }
