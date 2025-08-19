@@ -119,7 +119,7 @@ export class PaymentService {
 
   // 获取订单详情
   async getOrder(orderId: string): Promise<Order> {
-    return this.request<Order>(`/api/orders/${orderId}`);
+    return this.request<Order>(`/api/commerce?action=orders&subAction=status&orderId=${orderId}`);
   }
 
   // 获取用户订单列表
@@ -131,7 +131,7 @@ export class PaymentService {
 
   // 查询支付状态
   async getPaymentStatus(orderId: string): Promise<PaymentStatusResponse> {
-    return this.request<PaymentStatusResponse>(`/api/orders/${orderId}/status`);
+    return this.request<PaymentStatusResponse>(`/api/commerce?action=orders&subAction=status&orderId=${orderId}`);
   }
 
   // 取消订单
@@ -140,7 +140,7 @@ export class PaymentService {
     message?: string;
   }> {
     try {
-      await this.request<void>(`/api/orders/${orderId}/cancel`, {
+      await this.request<void>(`/api/commerce?action=orders&subAction=cancel&orderId=${orderId}`, {
         method: 'POST',
       });
       return {

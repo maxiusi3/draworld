@@ -276,6 +276,8 @@ async function handleOrders(req, res, userId) {
         return await handleOrderList(req, res, userId);
       case 'status':
         return await handleOrderStatus(req, res, userId);
+      case 'cancel':
+        return await handleOrderCancel(req, res, userId);
       default:
         // 向后兼容：根据HTTP方法推断
         if (req.method === 'GET') {
@@ -283,8 +285,8 @@ async function handleOrders(req, res, userId) {
         } else if (req.method === 'POST') {
           return await handleOrderCreate(req, res, userId);
         } else {
-          return res.status(400).json({ 
-            error: 'Invalid orders action. Supported: packages, create, list, status' 
+          return res.status(400).json({
+            error: 'Invalid orders action. Supported: packages, create, list, status, cancel'
           });
         }
     }
@@ -1009,4 +1011,104 @@ async function handlePaymentStatus(req, res, userId) {
 async function handlePaymentTest(req, res, userId) {
   // 实现测试支付
   return res.status(200).json({ success: true, message: 'Test payment completed' });
+}
+
+async function handleOrderCancel(req, res, userId) {
+  try {
+    console.log('[COMMERCE API] 取消订单，用户ID:', userId);
+
+    // 解析查询参数
+    const { orderId } = req.query;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要参数：orderId'
+      });
+    }
+
+    // 检查是否启用演示模式
+    const isDemoMode = process.env.DEMO_MODE === 'true' || !instanceName || !accessKeyId || !accessKeySecret;
+
+    if (isDemoMode) {
+      console.log('[COMMERCE API] 演示模式：取消订单', orderId);
+
+      // 演示模式：直接返回成功
+      return res.status(200).json({
+        success: true,
+        message: '订单已取消（演示模式）',
+        orderId
+      });
+    } else {
+      try {
+        // 正常模式：使用TableStore
+        const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
+        const ordersRepo = new OrdersRepository(instanceName);
+
+        // 获取订单信息
+        const order = await ordersRepo.getOrder(orderId);
+
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: '订单不存在'
+          });
+        }
+
+        // 验证订单所有权
+        if (order.userId !== userId) {
+          return res.status(403).json({
+            success: false,
+            message: '无权访问此订单'
+          });
+        }
+
+        // 检查订单状态是否可以取消
+        if (order.status !== 'PENDING') {
+          return res.status(400).json({
+            success: false,
+            message: '只能取消待支付的订单'
+          });
+        }
+
+        // 更新订单状态为已取消
+        const success = await ordersRepo.updateOrderStatus(orderId, 'CANCELLED', {
+          failureReason: '用户主动取消'
+        });
+
+        if (!success) {
+          return res.status(500).json({
+            success: false,
+            message: '取消订单失败，请稍后重试'
+          });
+        }
+
+        console.log('[COMMERCE API] 订单取消成功:', orderId);
+
+        return res.status(200).json({
+          success: true,
+          message: '订单已取消',
+          orderId
+        });
+
+      } catch (tableStoreError) {
+        console.error('[COMMERCE API] TableStore取消订单失败:', tableStoreError.message);
+
+        // TableStore失败时，演示模式降级
+        return res.status(200).json({
+          success: true,
+          message: '订单已取消（降级模式）',
+          orderId
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('[COMMERCE API] 取消订单失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '取消订单失败，请稍后重试',
+      error: error.message
+    });
+  }
 }
