@@ -1,6 +1,9 @@
 // 语言: JavaScript
 // 说明: 视频生成状态查询API端点
 
+// 在Vercel环境中，fetch是全局可用的，但为了兼容性，我们可以添加条件导入
+const fetch = globalThis.fetch || (await import('node-fetch')).default;
+
 export default async function handler(req, res) {
   // 设置CORS头
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -48,29 +51,98 @@ export default async function handler(req, res) {
     }
     
     console.log('[VIDEO STATUS API] 查询任务ID:', taskId);
-    
-    // 模拟视频生成状态（演示模式）
-    // 使用可访问的测试视频URL
-    const mockVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+
+    // 检查API Key
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey) {
+      console.error('[VIDEO STATUS API] 缺少DASHSCOPE_API_KEY环境变量');
+      return res.status(500).json({
+        error: 'API configuration error',
+        message: 'Missing DASHSCOPE_API_KEY'
+      });
+    }
+
+    // 调用通义万相任务状态查询API
+    console.log('[VIDEO STATUS API] 调用通义万相状态查询API...');
+
+    const response = await fetch(`https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    const responseData = await response.json();
+    console.log('[VIDEO STATUS API] 通义万相API响应:', JSON.stringify(responseData, null, 2));
+
+    if (!response.ok) {
+      console.error('[VIDEO STATUS API] 通义万相API调用失败:', response.status, responseData);
+      return res.status(500).json({
+        error: 'Video status API failed',
+        message: responseData.message || 'Unknown error',
+        details: responseData
+      });
+    }
+
+    // 解析任务状态
+    const taskStatus = responseData.output?.task_status;
+    const taskMetrics = responseData.output?.task_metrics;
+    const results = responseData.output?.results;
+
+    console.log('[VIDEO STATUS API] 任务状态:', taskStatus);
+    console.log('[VIDEO STATUS API] 任务指标:', taskMetrics);
+
+    // 映射通义万相状态到前端期望的状态
+    let frontendStatus;
+    let videoUrl = null;
+    let completedAt = null;
+
+    switch (taskStatus) {
+      case 'PENDING':
+      case 'RUNNING':
+        frontendStatus = 'processing';
+        break;
+      case 'SUCCEEDED':
+        frontendStatus = 'completed';
+        // 提取视频URL
+        if (results && results.length > 0 && results[0].url) {
+          videoUrl = results[0].url;
+          completedAt = new Date().toISOString();
+        }
+        break;
+      case 'FAILED':
+        frontendStatus = 'failed';
+        break;
+      default:
+        frontendStatus = 'processing';
+    }
+
     const now = new Date();
 
     // 返回前端期望的VideoTask格式
     const videoTask = {
       id: taskId,
       userId: userId,
-      imageUrl: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Demo+Image',
-      prompt: '演示模式：生成的视频展示了丰富的视觉效果',
+      imageUrl: 'https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Generated+Image',
+      prompt: '通义万相2.2生成的视频',
       musicStyle: 'Joyful',
       aspectRatio: '16:9',
-      status: 'completed', // 演示模式直接返回完成状态
-      videoUrl: mockVideoUrl,
+      status: frontendStatus,
+      videoUrl: videoUrl,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
-      completedAt: now.toISOString()
+      completedAt: completedAt,
+      // 添加原始API响应信息用于调试
+      _debug: {
+        originalStatus: taskStatus,
+        taskMetrics: taskMetrics,
+        hasResults: !!(results && results.length > 0)
+      }
     };
-    
-    console.log('[VIDEO STATUS API] 返回任务状态:', videoTask.status);
-    
+
+    console.log('[VIDEO STATUS API] 返回任务状态:', frontendStatus);
+    console.log('[VIDEO STATUS API] 视频URL:', videoUrl);
+
     return res.status(200).json(videoTask);
     
   } catch (error) {
