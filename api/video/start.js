@@ -22,6 +22,7 @@ export default async function handler(req, res) {
 
   try {
     console.log('[VIDEO START API] 收到视频生成请求');
+    console.log('[VIDEO START API] ===== 这是 /api/video/start 端点 =====');
     
     // 验证Authorization头
     const authHeader = req.headers.authorization;

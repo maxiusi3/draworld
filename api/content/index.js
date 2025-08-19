@@ -303,6 +303,7 @@ async function deleteArtwork(req, res) {
 async function handleVideoStart(req, res) {
   try {
     console.log('[CONTENT API] 开始视频生成任务');
+    console.log('[CONTENT API] ===== 这是 /api/content?action=video 端点 =====');
 
     // 验证Authorization头
     const authHeader = req.headers.authorization;
