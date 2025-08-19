@@ -515,18 +515,299 @@ async function handleOrderPackages(req, res) {
 }
 
 async function handleOrderCreate(req, res, userId) {
-  // 实现创建订单
-  return res.status(201).json({ success: true, message: 'Order created' });
+  try {
+    console.log('[COMMERCE API] 开始创建订单，用户ID:', userId);
+
+    // 解析请求参数
+    const { packageId, paymentMethod = 'ALIPAY' } = req.body;
+
+    if (!packageId) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要参数：packageId'
+      });
+    }
+
+    // 获取套餐信息
+    const packages = [
+      {
+        id: 'basic',
+        name: '基础套餐',
+        credits: 100,
+        bonusCredits: 0,
+        priceYuan: 1.99,
+        originalPrice: 2.99,
+        isPopular: false,
+        isActive: true,
+        sortOrder: 1,
+        description: '适合轻度使用'
+      },
+      {
+        id: 'popular',
+        name: '热门套餐',
+        credits: 500,
+        bonusCredits: 50,
+        priceYuan: 9.99,
+        originalPrice: 14.99,
+        isPopular: true,
+        isActive: true,
+        sortOrder: 2,
+        description: '最受欢迎的选择'
+      },
+      {
+        id: 'premium',
+        name: '高级套餐',
+        credits: 2500,
+        bonusCredits: 400,
+        priceYuan: 49.99,
+        originalPrice: 69.99,
+        isPopular: false,
+        isActive: true,
+        sortOrder: 3,
+        description: '超值大容量'
+      },
+      {
+        id: 'ultimate',
+        name: '至尊套餐',
+        credits: 5000,
+        bonusCredits: 1000,
+        priceYuan: 99.99,
+        originalPrice: 149.99,
+        isPopular: false,
+        isActive: true,
+        sortOrder: 4,
+        description: '无限创作可能'
+      }
+    ];
+
+    const selectedPackage = packages.find(pkg => pkg.id === packageId);
+    if (!selectedPackage || !selectedPackage.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: '无效的套餐ID或套餐已下架'
+      });
+    }
+
+    console.log('[COMMERCE API] 选择的套餐:', selectedPackage);
+
+    // 导入订单服务
+    const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
+    const ordersRepo = new OrdersRepository(instanceName);
+
+    // 生成幂等键防止重复提交
+    const idempotencyKey = `${userId}_${packageId}_${Date.now()}`;
+
+    // 创建订单数据
+    const orderData = {
+      userId,
+      packageId: selectedPackage.id,
+      packageName: selectedPackage.name,
+      credits: selectedPackage.credits,
+      bonusCredits: selectedPackage.bonusCredits,
+      totalCredits: selectedPackage.credits + selectedPackage.bonusCredits,
+      priceYuan: selectedPackage.priceYuan,
+      idempotencyKey,
+      paymentMethod: paymentMethod.toUpperCase()
+    };
+
+    console.log('[COMMERCE API] 创建订单数据:', orderData);
+
+    // 创建订单
+    const order = await ordersRepo.createOrder(orderData);
+    if (!order) {
+      return res.status(500).json({
+        success: false,
+        message: '创建订单失败，请稍后重试'
+      });
+    }
+
+    console.log('[COMMERCE API] 订单创建成功:', order.orderId);
+
+    // 生成支付信息（模拟）
+    const paymentInfo = {
+      paymentId: `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      paymentUrl: `https://mock-payment.example.com/pay/${order.orderId}`,
+      qrCode: `data:image/svg+xml;base64,${Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="white"/><text x="100" y="100" text-anchor="middle" font-size="12" fill="black">模拟支付二维码</text><text x="100" y="120" text-anchor="middle" font-size="10" fill="gray">订单号: ${order.orderId}</text></svg>`).toString('base64')}`,
+      expiredAt: new Date(order.expiredAt).toISOString()
+    };
+
+    // 更新订单的支付信息
+    await ordersRepo.updateOrderStatus(order.orderId, order.status, {
+      paymentId: paymentInfo.paymentId,
+      paymentUrl: paymentInfo.paymentUrl
+    });
+
+    console.log('[COMMERCE API] 支付信息生成成功:', paymentInfo.paymentId);
+
+    return res.status(201).json({
+      success: true,
+      order: {
+        orderId: order.orderId,
+        packageId: order.packageId,
+        packageName: order.packageName,
+        credits: order.credits,
+        bonusCredits: order.bonusCredits,
+        totalCredits: order.totalCredits,
+        priceYuan: order.priceYuan,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        createdAt: new Date(order.createdAt).toISOString(),
+        expiredAt: new Date(order.expiredAt).toISOString()
+      },
+      paymentInfo,
+      message: '订单创建成功'
+    });
+
+  } catch (error) {
+    console.error('[COMMERCE API] 创建订单失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '创建订单失败，请稍后重试',
+      error: error.message
+    });
+  }
 }
 
 async function handleOrderList(req, res, userId) {
-  // 实现订单列表
-  return res.status(200).json({ success: true, orders: [] });
+  try {
+    console.log('[COMMERCE API] 获取用户订单列表，用户ID:', userId);
+
+    // 解析查询参数
+    const { limit = 20, status } = req.query;
+
+    // 导入订单服务
+    const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
+    const ordersRepo = new OrdersRepository(instanceName);
+
+    // 获取用户订单列表
+    const orders = await ordersRepo.getUserOrders(userId, parseInt(limit));
+
+    // 过滤订单状态（如果指定）
+    let filteredOrders = orders;
+    if (status) {
+      filteredOrders = orders.filter(order => order.status === status.toUpperCase());
+    }
+
+    // 格式化订单数据
+    const formattedOrders = filteredOrders.map(order => ({
+      orderId: order.orderId,
+      packageId: order.packageId,
+      packageName: order.packageName,
+      credits: order.credits,
+      bonusCredits: order.bonusCredits,
+      totalCredits: order.totalCredits,
+      priceYuan: order.priceYuan,
+      currency: order.currency,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      paymentId: order.paymentId,
+      createdAt: new Date(order.createdAt).toISOString(),
+      updatedAt: new Date(order.updatedAt).toISOString(),
+      paidAt: order.paidAt ? new Date(order.paidAt).toISOString() : null,
+      expiredAt: order.expiredAt ? new Date(order.expiredAt).toISOString() : null,
+      creditsGranted: order.creditsGranted
+    }));
+
+    console.log('[COMMERCE API] 返回订单列表，共', formattedOrders.length, '个订单');
+
+    return res.status(200).json({
+      success: true,
+      orders: formattedOrders,
+      total: formattedOrders.length,
+      hasMore: orders.length >= parseInt(limit)
+    });
+
+  } catch (error) {
+    console.error('[COMMERCE API] 获取订单列表失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '获取订单列表失败，请稍后重试',
+      error: error.message
+    });
+  }
 }
 
 async function handleOrderStatus(req, res, userId) {
-  // 实现订单状态
-  return res.status(200).json({ success: true, status: 'pending' });
+  try {
+    console.log('[COMMERCE API] 查询订单状态，用户ID:', userId);
+
+    // 解析查询参数
+    const { orderId } = req.query;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要参数：orderId'
+      });
+    }
+
+    // 导入订单服务
+    const { OrdersRepository } = await import('../../serverless/src/ordersRepo.js');
+    const ordersRepo = new OrdersRepository(instanceName);
+
+    // 获取订单信息
+    const order = await ordersRepo.getOrder(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: '订单不存在'
+      });
+    }
+
+    // 验证订单所有权
+    if (order.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: '无权访问此订单'
+      });
+    }
+
+    // 检查订单是否过期（仅对待支付订单）
+    const now = Date.now();
+    let isExpired = false;
+
+    if (order.status === 'PENDING' && order.expiredAt && now > order.expiredAt) {
+      // 自动取消过期订单
+      await ordersRepo.updateOrderStatus(orderId, 'CANCELLED', {
+        failureReason: '订单超时自动取消'
+      });
+      order.status = 'CANCELLED';
+      order.failureReason = '订单超时自动取消';
+      isExpired = true;
+      console.log('[COMMERCE API] 订单已过期，自动取消:', orderId);
+    }
+
+    // 格式化订单状态信息
+    const statusInfo = {
+      orderId: order.orderId,
+      status: order.status,
+      paymentId: order.paymentId,
+      paymentUrl: order.paymentUrl,
+      createdAt: new Date(order.createdAt).toISOString(),
+      updatedAt: new Date(order.updatedAt).toISOString(),
+      paidAt: order.paidAt ? new Date(order.paidAt).toISOString() : null,
+      expiredAt: order.expiredAt ? new Date(order.expiredAt).toISOString() : null,
+      isExpired,
+      failureReason: order.failureReason,
+      creditsGranted: order.creditsGranted
+    };
+
+    console.log('[COMMERCE API] 订单状态查询成功:', order.status);
+
+    return res.status(200).json({
+      success: true,
+      ...statusInfo
+    });
+
+  } catch (error) {
+    console.error('[COMMERCE API] 查询订单状态失败:', error);
+    return res.status(500).json({
+      success: false,
+      message: '查询订单状态失败，请稍后重试',
+      error: error.message
+    });
+  }
 }
 
 async function handlePaymentCreate(req, res, userId) {

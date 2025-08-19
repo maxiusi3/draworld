@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useCreditPackages, useCreateOrder, usePaymentMethod, useOrders, useOrderManagement } from '../hooks/usePayment';
 import { useCreditBalance } from '../hooks/useCredits';
 import { CreditBalance } from '../components/Credits/CreditBalance';
+import { PaymentModal } from '../components/Payment/PaymentModal';
 import { paymentService, PaymentService } from '../services/paymentService';
 import {
   CurrencyDollarIcon,
@@ -18,7 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
-import type { CreditPackage } from '../types/credits';
+import type { CreditPackage, Order, PaymentInfo } from '../types/credits';
 import { PaymentMethod } from '../types/credits';
 
 const CreditStorePage: React.FC = () => {
@@ -31,34 +32,52 @@ const CreditStorePage: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<CreditPackage | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
+  const [currentPaymentInfo, setCurrentPaymentInfo] = useState<PaymentInfo | null>(null);
 
   const handlePurchase = async (pkg: CreditPackage) => {
-    setSelectedPackage(pkg);
-    setShowPaymentModal(true);
-  };
-
-  const handleConfirmPurchase = async () => {
-    if (!selectedPackage) return;
-
     try {
-      const orderId = await createOrderAndPay(
-        selectedPackage.id,
-        selectedMethod,
-        () => {
-          setShowPaymentModal(false);
-          setSelectedPackage(null);
-          refreshOrders(); // 刷新订单列表
-        }
-      );
+      setSelectedPackage(pkg);
 
-      if (orderId) {
-        console.log('订单创建成功:', orderId);
-        // 可以跳转到支付页面或显示支付二维码
+      // 创建订单
+      const response = await paymentService.createOrder({
+        packageId: pkg.id,
+        paymentMethod: selectedMethod
+      });
+
+      if (response.success && response.order && response.paymentInfo) {
+        setCurrentOrder(response.order);
+        setCurrentPaymentInfo(response.paymentInfo);
+        setShowPaymentModal(true);
+        console.log('订单创建成功:', response.order.orderId);
+      } else {
+        toast.error(response.message || '创建订单失败，请稍后重试');
       }
     } catch (error) {
-      console.error('购买失败:', error);
-      toast.error('购买失败，请稍后重试');
+      console.error('创建订单失败:', error);
+      toast.error('创建订单失败，请稍后重试');
     }
+  };
+
+  const handlePaymentSuccess = (orderId: string) => {
+    console.log('支付成功:', orderId);
+    toast.success('支付成功！积分已到账');
+
+    // 刷新积分余额和订单列表
+    refreshOrders();
+
+    // 关闭支付弹窗
+    setShowPaymentModal(false);
+    setSelectedPackage(null);
+    setCurrentOrder(null);
+    setCurrentPaymentInfo(null);
+  };
+
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setSelectedPackage(null);
+    setCurrentOrder(null);
+    setCurrentPaymentInfo(null);
   };
 
   const handleCancelOrder = async (orderId: string) => {
@@ -444,6 +463,15 @@ const CreditStorePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 支付弹窗 */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handleClosePaymentModal}
+        order={currentOrder}
+        paymentInfo={currentPaymentInfo}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 };
