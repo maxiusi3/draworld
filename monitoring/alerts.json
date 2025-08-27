@@ -1,0 +1,202 @@
+{
+  "alerts": [
+    {
+      "name": "High Error Rate",
+      "description": "Alert when error rate exceeds 5% over 5 minutes",
+      "condition": {
+        "metric": "error_rate",
+        "threshold": 0.05,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack"],
+      "severity": "critical"
+    },
+    {
+      "name": "High Response Time",
+      "description": "Alert when average response time exceeds 2 seconds",
+      "condition": {
+        "metric": "response_time_avg",
+        "threshold": 2000,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email"],
+      "severity": "warning"
+    },
+    {
+      "name": "Low Credit Balance",
+      "description": "Alert when system credit balance is low",
+      "condition": {
+        "metric": "system_credits",
+        "threshold": 1000,
+        "duration": "1m",
+        "operator": "<"
+      },
+      "channels": ["email", "slack"],
+      "severity": "warning"
+    },
+    {
+      "name": "Failed Video Generations",
+      "description": "Alert when video generation failure rate is high",
+      "condition": {
+        "metric": "video_generation_failure_rate",
+        "threshold": 0.1,
+        "duration": "10m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack"],
+      "severity": "high"
+    },
+    {
+      "name": "Payment Processing Failures",
+      "description": "Alert when payment failure rate exceeds 2%",
+      "condition": {
+        "metric": "payment_failure_rate",
+        "threshold": 0.02,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack", "pagerduty"],
+      "severity": "critical"
+    },
+    {
+      "name": "Database Connection Issues",
+      "description": "Alert when database connection failures occur",
+      "condition": {
+        "metric": "database_connection_failures",
+        "threshold": 5,
+        "duration": "1m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack", "pagerduty"],
+      "severity": "critical"
+    },
+    {
+      "name": "High Memory Usage",
+      "description": "Alert when memory usage exceeds 80%",
+      "condition": {
+        "metric": "memory_usage_percent",
+        "threshold": 80,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email"],
+      "severity": "warning"
+    },
+    {
+      "name": "API Rate Limit Exceeded",
+      "description": "Alert when API rate limits are frequently exceeded",
+      "condition": {
+        "metric": "rate_limit_exceeded_count",
+        "threshold": 100,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack"],
+      "severity": "high"
+    },
+    {
+      "name": "Content Moderation Failures",
+      "description": "Alert when content moderation service fails",
+      "condition": {
+        "metric": "content_moderation_failure_rate",
+        "threshold": 0.05,
+        "duration": "5m",
+        "operator": ">"
+      },
+      "channels": ["email", "slack"],
+      "severity": "high"
+    },
+    {
+      "name": "User Registration Anomaly",
+      "description": "Alert when user registration rate is unusually high or low",
+      "condition": {
+        "metric": "user_registration_rate",
+        "threshold": 100,
+        "duration": "1h",
+        "operator": ">"
+      },
+      "channels": ["email"],
+      "severity": "info"
+    }
+  ],
+  "channels": {
+    "email": {
+      "type": "email",
+      "recipients": [
+        "alerts@draworld.com",
+        "dev-team@draworld.com"
+      ]
+    },
+    "slack": {
+      "type": "slack",
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channel": "#alerts"
+    },
+    "pagerduty": {
+      "type": "pagerduty",
+      "integration_key": "${PAGERDUTY_INTEGRATION_KEY}"
+    }
+  },
+  "dashboards": [
+    {
+      "name": "Application Overview",
+      "widgets": [
+        {
+          "type": "metric",
+          "title": "Request Rate",
+          "metric": "requests_per_second",
+          "timeframe": "1h"
+        },
+        {
+          "type": "metric",
+          "title": "Error Rate",
+          "metric": "error_rate",
+          "timeframe": "1h"
+        },
+        {
+          "type": "metric",
+          "title": "Response Time",
+          "metric": "response_time_p95",
+          "timeframe": "1h"
+        },
+        {
+          "type": "metric",
+          "title": "Active Users",
+          "metric": "active_users",
+          "timeframe": "24h"
+        }
+      ]
+    },
+    {
+      "name": "Business Metrics",
+      "widgets": [
+        {
+          "type": "metric",
+          "title": "Video Generations",
+          "metric": "video_generations_count",
+          "timeframe": "24h"
+        },
+        {
+          "type": "metric",
+          "title": "Revenue",
+          "metric": "revenue_total",
+          "timeframe": "24h"
+        },
+        {
+          "type": "metric",
+          "title": "New Users",
+          "metric": "new_users_count",
+          "timeframe": "24h"
+        },
+        {
+          "type": "metric",
+          "title": "Credit Usage",
+          "metric": "credits_spent",
+          "timeframe": "24h"
+        }
+      ]
+    }
+  ]
+}

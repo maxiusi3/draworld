@@ -1,0 +1,86 @@
+import type { Metadata } from 'next';
+import './globals.css';
+import Script from 'next/script';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { UserProvider } from '@/contexts/UserContext';
+import { WelcomeNotification } from '@/components/auth/WelcomeNotification';
+import { CookieConsent } from '@/components/ui/CookieConsent';
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
+import { PWAManager } from '@/components/PWAManager';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { ToastProvider } from '@/components/ui/Toast';
+import { AccessibilityProvider } from '@/components/ui/AccessibilityProvider';
+
+export const metadata: Metadata = {
+    title: 'Draworld - Bring Every Child\'s Drawing to Life',
+    description: 'Transform static children\'s art into lively, permanently archivable AI animated stories that spark infinite creativity.',
+    manifest: '/manifest.json',
+    themeColor: '#ec4899',
+    viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'Draworld',
+    },
+    formatDetection: {
+        telephone: false,
+    },
+    other: {
+        'mobile-web-app-capable': 'yes',
+        'apple-mobile-web-app-capable': 'yes',
+        'apple-mobile-web-app-status-bar-style': 'default',
+        'apple-mobile-web-app-title': 'Draworld',
+        'application-name': 'Draworld',
+        'msapplication-TileColor': '#ec4899',
+        'msapplication-config': '/browserconfig.xml',
+    },
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <body className="antialiased">
+                <ErrorBoundary>
+                    <AccessibilityProvider>
+                        <ToastProvider>
+                            <AuthProvider>
+                                <UserProvider>
+                                    <AnalyticsProvider>
+                                        <main id="main-content">
+                                            {children}
+                                        </main>
+                                        <WelcomeNotification />
+                                        <CookieConsent />
+                                        <PWAManager />
+                                    </AnalyticsProvider>
+                                </UserProvider>
+                            </AuthProvider>
+                        </ToastProvider>
+                    </AccessibilityProvider>
+                </ErrorBoundary>
+                <Script
+                    type="module"
+                    strategy="afterInteractive"
+                    src="https://cdn.jsdelivr.net/gh/onlook-dev/onlook@main/apps/web/client/public/onlook-preload-script.js"
+                />
+                <Script
+                    id="performance-monitoring"
+                    strategy="afterInteractive"
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            // Initialize performance monitoring
+                            if (typeof window !== 'undefined') {
+                                import('/src/lib/performance.js').then(module => {
+                                    module.startPerformanceMonitoring();
+                                    module.preloadCriticalResources();
+                                    module.setupLazyLoading();
+                                    module.optimizeThirdPartyScripts();
+                                }).catch(console.error);
+                            }
+                        `,
+                    }}
+                />
+            </body>
+        </html>
+    );
+}

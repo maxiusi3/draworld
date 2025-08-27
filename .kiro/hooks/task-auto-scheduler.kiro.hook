@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Task Auto Scheduler",
+  "description": "Automatically selects and executes the next task when a task is marked as complete, based on dependency relationships and priority levels. Ensures prerequisite tasks are completed, executes same-priority tasks in order, and allows high-priority tasks to interrupt lower-priority execution flows.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "draworld PRD.md",
+      "prototype/**/*.md",
+      "prototype/**/*.ts",
+      "prototype/**/*.tsx",
+      "prototype/**/*.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A task has been marked as complete. Please analyze the task dependencies and priorities defined in the draworld PRD.md and prototype files to automatically select the next task for execution. Ensure: 1) All prerequisite dependency tasks are completed before selecting a task, 2) Tasks with the same priority level are executed in numerical/alphabetical order, 3) Higher priority tasks can interrupt and take precedence over lower priority task execution flows. After selecting the appropriate next task, automatically begin execution and repeat this process when that task completes."
+  }
+}

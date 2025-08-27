@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Draworld</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #f3e8ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 400px;
+            background: white;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        p {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 12px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            background: #fef3c7;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 14px;
+        }
+        
+        .online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🎨</div>
+        <h1>You're Offline</h1>
+        <p>Don't worry! You can still browse your previously viewed content while we wait for your connection to return.</p>
+        
+        <button class="button" onclick="window.location.reload()">
+            Try Again
+        </button>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <span>Your creations are saved locally</span>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <span>Changes will sync when online</span>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <span>Fast offline browsing</span>
+            </div>
+        </div>
+        
+        <div class="status" id="status">
+            📡 Checking connection...
+        </div>
+    </div>
+
+    <script>
+        // Check online status
+        function updateStatus() {
+            const status = document.getElementById('status');
+            if (navigator.onLine) {
+                status.textContent = '✅ Back online! Click "Try Again" to continue.';
+                status.className = 'status online';
+            } else {
+                status.textContent = '📡 Still offline. We\'ll keep checking...';
+                status.className = 'status';
+            }
+        }
+        
+        // Listen for online/offline events
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+        
+        // Initial status check
+        updateStatus();
+        
+        // Periodic connection check
+        setInterval(() => {
+            if (navigator.onLine) {
+                // Try to fetch a small resource to verify connection
+                fetch('/favicon.ico', { 
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                }).then(() => {
+                    updateStatus();
+                }).catch(() => {
+                    // Still offline
+                });
+            }
+        }, 5000);
+        
+        // Auto-reload when back online
+        window.addEventListener('online', () => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
