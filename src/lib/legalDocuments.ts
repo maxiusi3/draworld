@@ -266,3 +266,47 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
   ],
 };
+
+export const getLegalDocument = (id: string): LegalDocument | undefined => {
+  if (id === 'terms-of-service') {
+    return TERMS_OF_SERVICE;
+  }
+  if (id === 'privacy-policy') {
+    return PRIVACY_POLICY;
+  }
+  return undefined;
+};
+
+export const getCurrentVersion = (doc: LegalDocument): string => {
+  return doc.version;
+};
+
+export const getEffectiveDate = (doc: LegalDocument): string => {
+  return doc.lastUpdated;
+};
+
+export const getTableOfContents = (doc: LegalDocument): LegalSection[] => {
+  return doc.content;
+};
+
+export const searchDocument = (
+  doc: LegalDocument,
+  query: string,
+): LegalSection[] => {
+  const results: LegalSection[] = [];
+  const lowerCaseQuery = query.toLowerCase();
+
+  const searchSections = (sections: LegalSection[]) => {
+    for (const section of sections) {
+      if (section.title.toLowerCase().includes(lowerCaseQuery) || section.content.toLowerCase().includes(lowerCaseQuery)) {
+        results.push(section);
+      }
+      if (section.subsections) {
+        searchSections(section.subsections);
+      }
+    }
+  };
+
+  searchSections(doc.content);
+  return results;
+};

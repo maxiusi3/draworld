@@ -159,3 +159,13 @@ export const a11y = {
     };
   },
 };
+
+// SkipLink component
+export const SkipLink = ({ contentId }: { contentId: string }) => (
+  <a
+    href={`#${contentId}`}
+    className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:border-2 focus:border-pink-500 focus:rounded-lg"
+  >
+    Skip to main content
+  </a>
+);

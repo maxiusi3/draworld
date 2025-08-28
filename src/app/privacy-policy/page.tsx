@@ -4,16 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { getCurrentVersion, getEffectiveDate, getTableOfContents, searchDocument } from '@/lib/legalDocuments';
+import { PRIVACY_POLICY, getCurrentVersion, getEffectiveDate, getTableOfContents, searchDocument } from '@/lib/legalDocuments';
 
 export default function PrivacyPolicyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   
-  const currentVersion = getCurrentVersion('privacy');
-  const effectiveDate = getEffectiveDate('privacy');
-  const tableOfContents = getTableOfContents('privacy');
-  const searchResults = searchTerm ? searchDocument('privacy', searchTerm) : [];
+  const currentVersion = getCurrentVersion(PRIVACY_POLICY);
+  const effectiveDate = new Date(getEffectiveDate(PRIVACY_POLICY));
+  const tableOfContents = getTableOfContents(PRIVACY_POLICY);
+  const searchResults = searchTerm ? searchDocument(PRIVACY_POLICY, searchTerm) : [];
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -70,27 +70,24 @@ export default function PrivacyPolicyPage() {
                 {searchTerm && searchResults.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <p className="text-sm text-gray-400">
-                      Found {searchResults.filter(r => r.match).length} matching sections:
+                      Found {searchResults.length} matching sections:
                     </p>
                     {searchResults
-                      .filter(result => result.match)
                       .map((result, index) => (
                         <button
                           key={index}
                           onClick={() => {
-                            const sectionId = result.section.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                            scrollToSection(sectionId);
+                            scrollToSection(result.id);
                             setShowSearch(false);
                           }}
                           className="block w-full text-left p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
                         >
-                          <div className="font-medium text-pink-400">{result.section}</div>
+                          <div className="font-medium text-pink-400">{result.title}</div>
                           <div className="text-sm text-gray-300 mt-1 line-clamp-2">
                             {result.content.substring(0, 150)}...
                           </div>
                         </button>
-                      ))
-                    }
+                      ))}
                   </div>
                 )}
               </div>

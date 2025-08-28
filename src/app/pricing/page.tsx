@@ -5,7 +5,7 @@ import { PricingCards } from '@/components/ui/PricingCards';
 import { PaymentModal } from '@/components/ui/PaymentModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { CREDITS } from '@/lib/constants';
-import { usePageTracking } from '@/hooks/useAnalytics';
+import { usePageView } from '@/hooks/useAnalytics';
 import { trackPricingPageViewed } from '@/lib/analytics';
 
 export default function PricingPage() {
@@ -13,7 +13,7 @@ export default function PricingPage() {
   const [selectedPackage, setSelectedPackage] = useState<string>('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   
-  usePageTracking('pricing_page');
+  usePageView('pricing_page');
   
   // Track pricing page view on mount
   useState(() => {

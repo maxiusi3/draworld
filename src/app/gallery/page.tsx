@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useGallery } from "@/hooks/useGallery";
 import { GalleryService, CategoryOption, SortOption, GalleryVideo } from "@/services/galleryService";
 import { formatRelativeTime } from "@/lib/utils";
-import { usePageTracking } from "@/hooks/useAnalytics";
+import { usePageView } from "@/hooks/useAnalytics";
 import { trackGalleryView } from "@/lib/analytics";
 
 const gradients = [
@@ -25,7 +25,7 @@ const gradients = [
 export default function GalleryPage() {
   const [selectedVideo, setSelectedVideo] = useState<GalleryVideo | null>(null);
   
-  usePageTracking('gallery_page');
+  usePageView('gallery_page');
   
   // Track gallery view on mount
   useEffect(() => {

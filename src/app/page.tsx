@@ -8,7 +8,7 @@ import { ShareButton } from "@/components/ui/ShareButton";
 import { useFeaturedVideos } from "@/hooks/useGallery";
 import { useState, useEffect } from "react";
 import { VideoPlayer } from "@/components/ui/VideoPlayer";
-import { usePageTracking } from "@/hooks/useAnalytics";
+import { usePageView } from "@/hooks/useAnalytics";
 import { GalleryVideo } from "@/services/galleryService";
 import { formatRelativeTime } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ export default function HomePage() {
   const { videos: featuredVideos, loading: featuredLoading, loadFeaturedVideos } = useFeaturedVideos();
   const [selectedVideo, setSelectedVideo] = useState<GalleryVideo | null>(null);
   
-  usePageTracking('homepage');
+  usePageView('homepage');
 
   useEffect(() => {
     loadFeaturedVideos();

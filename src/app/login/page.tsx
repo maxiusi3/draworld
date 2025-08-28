@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROUTES } from '@/lib/constants';
-import { usePageTracking } from '@/hooks/useAnalytics';
+import { usePageView } from '@/hooks/useAnalytics';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || ROUTES.HOME;
   
-  usePageTracking('login_page');
+  usePageView('login_page');
 
   useEffect(() => {
     if (!loading && user) {

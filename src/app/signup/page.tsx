@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthForm } from '@/components/auth/AuthForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROUTES } from '@/lib/constants';
-import { usePageTracking } from '@/hooks/useAnalytics';
+import { usePageView } from '@/hooks/useAnalytics';
 
 export default function SignUpPage() {
   const { user, loading } = useAuth();
@@ -14,7 +14,7 @@ export default function SignUpPage() {
   const referralCode = searchParams.get('ref');
   const redirectTo = searchParams.get('redirect') || ROUTES.HOME;
   
-  usePageTracking('signup_page', { has_referral: referralCode ? 'true' : 'false' });
+  usePageView('signup_page');
 
   useEffect(() => {
     if (!loading && user) {
