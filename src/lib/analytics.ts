@@ -1,5 +1,5 @@
 import { getAnalytics, logEvent, setUserId, setUserProperties } from 'firebase/analytics';
-import { app } from './firebase';
+import app from './firebase';
 
 // Initialize Firebase Analytics
 let analytics: any = null;
@@ -34,7 +34,8 @@ export type AnalyticsEvent =
   | 'account_created'
   | 'profile_updated'
   | 'password_reset_requested'
-  | 'error_occurred';
+  | 'error_occurred'
+  | 'social_task_submitted';
 
 export interface AnalyticsEventData {
   [key: string]: string | number | boolean;
@@ -193,6 +194,16 @@ export function trackSocialShare(platform: string, contentType: 'video' | 'refer
 }
 
 /**
+ * Track social task submission
+ */
+export function trackSocialTaskSubmitted(platform: string, taskType: string): void {
+  trackEvent('social_task_submitted', {
+    platform,
+    task_type: taskType,
+  });
+}
+
+/**
  * Track gallery interactions
  */
 export function trackGalleryView(galleryType: 'public' | 'personal'): void {
@@ -264,25 +275,6 @@ export function trackError(errorType: string, errorMessage: string, context?: st
   });
 }
 
-/**
- *
-  logEvent(analytics, 'weekly_active_user', {
-    timestamp: new Date().toISOString(),
-  });
-};
-
-// Error Tracking
-export const trackError = (errorType: string, errorMessage: string, context?: string) => {
-  if (!analytics) return;
-  
-  logEvent(analytics, 'exception', {
-    description: errorMessage,
-    fatal: false,
-    error_type: errorType,
-    context,
-  });
-};
-
 // Performance Tracking
 export const trackPerformance = (
   metricName: string,
@@ -296,7 +288,10 @@ export const trackPerformance = (
     value,
     unit,
   });
-}; Track user acquisition source
+};
+
+/**
+ * Track user acquisition source
  */
 export function trackAcquisitionSource(): void {
   if (typeof window === 'undefined') return;

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Script from 'next/script';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -35,6 +35,13 @@ export const metadata: Metadata = {
         'msapplication-config': '/browserconfig.xml',
     },
 };
+
+export const viewport: Viewport = {
+    themeColor: '#ec4899',
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+}
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
