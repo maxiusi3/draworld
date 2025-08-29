@@ -1,12 +1,12 @@
 import { db } from '@/lib/firebase';
-import { collection, addDoc, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 export interface AnalyticsEvent {
   id?: string;
   eventName: string;
   userId?: string;
   sessionId: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   timestamp: Timestamp;
   userAgent?: string;
   referrer?: string;
@@ -47,7 +47,7 @@ export class AnalyticsService {
    */
   static async trackEvent(
     eventName: string, 
-    properties: Record<string, any> = {},
+    properties: Record<string, unknown> = {},
     userId?: string
   ) {
     try {
@@ -75,7 +75,7 @@ export class AnalyticsService {
   /**
    * Legacy track method for backward compatibility
    */
-  static async track(event: string, properties: Record<string, any> = {}, userId?: string): Promise<void> {
+  static async track(event: string, properties: Record<string, unknown> = {}, userId?: string): Promise<void> {
     await this.trackEvent(event, properties, userId);
   }
 

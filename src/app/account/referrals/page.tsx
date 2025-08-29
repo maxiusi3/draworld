@@ -12,7 +12,7 @@ import { formatRelativeTime } from "@/lib/utils";
 
 export default function ReferralsPage() {
   const { stats, loading, error, loadStats, refresh } = useReferrals();
-  const { tasks, loading: _, submitTask, loadTasks } = useSocialTasks();
+  const { tasks, loading: tasksLoading, submitTask, loadTasks } = useSocialTasks();
   const [socialPostLink, setSocialPostLink] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("instagram");
   const [copied, setCopied] = useState(false);

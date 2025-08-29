@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest) {
     try {
       await db.collection('health').doc('check').get();
       checks.services.database = 'healthy';
-    } catch (error) {
+    } catch {
       checks.services.database = 'unhealthy';
       checks.status = 'degraded';
     }
@@ -32,7 +32,7 @@ export async function GET(_request: NextRequest) {
       if (!isConnected) {
         checks.status = 'degraded';
       }
-    } catch (error) {
+    } catch {
       checks.services.ai_api = 'unhealthy';
       checks.status = 'degraded';
     }
@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest) {
     const statusCode = checks.status === 'healthy' ? 200 : 503;
 
     return NextResponse.json(checks, { status: statusCode });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         timestamp: new Date().toISOString(),

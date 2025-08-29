@@ -11,7 +11,7 @@ export interface GalleryVideo {
   views: number;
   shares: number;
   likes: number;
-  createdAt: any;
+  createdAt: string | Date;
   creatorAge?: number;
 }
 
@@ -56,8 +56,9 @@ export class GalleryService {
       }
 
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get gallery videos');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get gallery videos';
+      throw new Error(errorMessage);
     }
   }
 
@@ -68,8 +69,9 @@ export class GalleryService {
     try {
       const response = await this.getGalleryVideos(limit, undefined, 'all', 'trending');
       return response.videos;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get featured videos');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get featured videos';
+      throw new Error(errorMessage);
     }
   }
 
@@ -114,8 +116,9 @@ export class GalleryService {
       }
 
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to search videos');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to search videos';
+      throw new Error(errorMessage);
     }
   }
 

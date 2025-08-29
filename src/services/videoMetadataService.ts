@@ -119,7 +119,7 @@ export class VideoMetadataService {
     updates: Partial<Omit<VideoProcessingJob, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<void> {
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         ...updates,
         updatedAt: serverTimestamp(),
       };
@@ -257,7 +257,7 @@ export class VideoMetadataService {
   /**
    * Calculate storage usage for user
    */
-  static async calculateUserStorageUsage(userId: string): Promise<{
+  static async calculateUserStorageUsage(): Promise<{
     totalSize: number;
     videoCount: number;
     averageFileSize: number;

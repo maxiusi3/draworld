@@ -8,7 +8,7 @@ export interface ApiClientConfig {
   headers?: Record<string, string>;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
@@ -19,7 +19,7 @@ export interface ApiError {
   message: string;
   status?: number;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export class ApiClient {
@@ -48,7 +48,7 @@ export class ApiClient {
       timeout?: number;
       retries?: number;
       retryDelay?: number;
-      data?: any;
+      data?: unknown;
       params?: Record<string, string>;
     } = {}
   ): Promise<ApiResponse<T>> {
@@ -145,21 +145,21 @@ export class ApiClient {
   /**
    * POST request
    */
-  async post<T>(url: string, data?: any, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
+  async post<T>(url: string, data?: unknown, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>('POST', url, { ...options, data });
   }
 
   /**
    * PUT request
    */
-  async put<T>(url: string, data?: any, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
+  async put<T>(url: string, data?: unknown, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>('PUT', url, { ...options, data });
   }
 
   /**
    * PATCH request
    */
-  async patch<T>(url: string, data?: any, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
+  async patch<T>(url: string, data?: unknown, options: Omit<Parameters<typeof this.request>[2], 'data'> = {}): Promise<ApiResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
   }
 
@@ -295,16 +295,16 @@ export class ApiClient {
     }
     
     if (contentType?.includes('text/')) {
-      return response.text() as any;
+      return response.text() as unknown;
     }
     
-    return response.blob() as any;
+    return response.blob() as unknown;
   }
 
   /**
    * Parse error response
    */
-  private async parseErrorResponse(response: Response): Promise<{ message: string; code?: string; details?: any }> {
+  private async parseErrorResponse(response: Response): Promise<{ message: string; code?: string; details?: unknown }> {
     try {
       const contentType = response.headers.get('content-type');
       
@@ -327,7 +327,7 @@ export class ApiClient {
   /**
    * Create standardized API error
    */
-  private createApiError(error: any): ApiError {
+  private createApiError(error: unknown): ApiError {
     if (error.name === 'AbortError') {
       return {
         message: 'Request was cancelled',
@@ -378,7 +378,7 @@ export class ApiClient {
    * Remove authentication header
    */
   clearAuthToken() {
-    const { Authorization, ...headers } = this.config.headers || {};
+    const { Authorization: _, ...headers } = this.config.headers || {};
     this.config.headers = headers;
   }
 }
@@ -393,15 +393,15 @@ export async function get<T>(url: string, options?: Parameters<typeof apiClient.
   return apiClient.get<T>(url, options);
 }
 
-export async function post<T>(url: string, data?: any, options?: Parameters<typeof apiClient.post>[2]) {
+export async function post<T>(url: string, data?: unknown, options?: Parameters<typeof apiClient.post>[2]) {
   return apiClient.post<T>(url, data, options);
 }
 
-export async function put<T>(url: string, data?: any, options?: Parameters<typeof apiClient.put>[2]) {
+export async function put<T>(url: string, data?: unknown, options?: Parameters<typeof apiClient.put>[2]) {
   return apiClient.put<T>(url, data, options);
 }
 
-export async function patch<T>(url: string, data?: any, options?: Parameters<typeof apiClient.patch>[2]) {
+export async function patch<T>(url: string, data?: unknown, options?: Parameters<typeof apiClient.patch>[2]) {
   return apiClient.patch<T>(url, data, options);
 }
 

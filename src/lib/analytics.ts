@@ -2,7 +2,7 @@ import { getAnalytics, logEvent, setUserId, setUserProperties } from 'firebase/a
 import app from './firebase';
 
 // Initialize Firebase Analytics
-let analytics: any = null;
+let analytics: unknown = null;
 
 // Only initialize analytics in browser environment
 if (typeof window !== 'undefined' && app) {
@@ -118,7 +118,7 @@ export function trackSignup(method: 'email' | 'google', referralCode?: string): 
 /**
  * Track user identify
  */
-export function trackUserIdentify(userId: string, properties: Record<string, any>): void {
+export function trackUserIdentify(userId: string, properties: Record<string, unknown>): void {
   setAnalyticsUserId(userId);
   setAnalyticsUserProperties(properties as Record<string, string>);
 }

@@ -79,8 +79,9 @@ export default function AdminUsersPage() {
         alert(result.message);
         await fetchUsers(); // Refresh the list
       }
-    } catch (error: any) {
-      alert(`Failed to ${action.replace('_', ' ')}: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to ${action.replace('_', ' ')}: ${errorMessage}`);
     } finally {
       setActionLoading(null);
     }
@@ -89,7 +90,7 @@ export default function AdminUsersPage() {
   const openUserModal = async (user: AdminUser) => {
     try {
       const details = await AdminService.getUserDetails(user.id);
-      setSelectedUser({ ...user, ...details } as any);
+      setSelectedUser({ ...user, ...details } as AdminUser & Record<string, unknown>);
       setShowUserModal(true);
     } catch (error) {
       console.error('Failed to fetch user details:', error);
@@ -173,7 +174,7 @@ export default function AdminUsersPage() {
                       <select
                         onChange={(e) => {
                           if (e.target.value) {
-                            handleUserAction(user.id, e.target.value as any);
+                            handleUserAction(user.id, e.target.value as 'award_credits' | 'deduct_credits' | 'ban_user' | 'unban_user');
                             e.target.value = '';
                           }
                         }}
@@ -249,27 +250,27 @@ export default function AdminUsersPage() {
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h4 className="font-medium text-red-900">User is Banned</h4>
                     <p className="text-sm text-red-700 mt-1">
-                      Reason: {(selectedUser as any).banReason || 'No reason provided'}
+                      Reason: {(selectedUser as AdminUser & { banReason?: string }).banReason || 'No reason provided'}
                     </p>
                     <p className="text-sm text-red-700">
-                      Banned on: {formatDate((selectedUser as any).bannedAt)}
+                      Banned on: {formatDate((selectedUser as AdminUser & { bannedAt?: string }).bannedAt)}
                     </p>
                   </div>
                 )}
 
                 {/* Stats */}
-                {(selectedUser as any).stats && (
+                {(selectedUser as AdminUser & { stats?: { totalVideos: number; totalSpent: number } }).stats && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900">Videos Created</h4>
                       <p className="text-2xl font-bold text-purple-600">
-                        {(selectedUser as any).stats.totalVideos}
+                        {(selectedUser as AdminUser & { stats: { totalVideos: number } }).stats.totalVideos}
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900">Total Spent</h4>
                       <p className="text-2xl font-bold text-green-600">
-                        ${((selectedUser as any).stats.totalSpent / 100).toFixed(2)}
+                        ${((selectedUser as AdminUser & { stats: { totalSpent: number } }).stats.totalSpent / 100).toFixed(2)}
                       </p>
                     </div>
                   </div>

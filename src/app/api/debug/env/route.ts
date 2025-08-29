@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * Debug API endpoint to check environment variables in production
  * This helps diagnose Firebase environment variable issues
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const requiredFirebaseVars = [
       'NEXT_PUBLIC_FIREBASE_API_KEY',

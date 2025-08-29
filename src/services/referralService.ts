@@ -41,8 +41,9 @@ export class ReferralService {
     try {
       const result = await getReferralStatsFn();
       return result.data as ReferralStatsResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get referral stats');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get referral stats';
+      throw new Error(errorMessage);
     }
   }
 

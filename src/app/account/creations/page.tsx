@@ -42,8 +42,9 @@ export default function MyCreationsPage() {
       if (selectedCreation?.id === videoId) {
         setSelectedCreation(null);
       }
-    } catch (error: any) {
-      alert(error.message || 'Failed to delete video');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete video';
+      alert(errorMessage);
     } finally {
       setDeleteLoading(null);
     }
@@ -93,11 +94,13 @@ export default function MyCreationsPage() {
     return gradients[index % gradients.length];
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Unknown date';
     
-    // Handle Firestore Timestamp
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    // Handle Firestore Timestamp or regular dates
+    const date = typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp 
+      ? (timestamp as { toDate: () => Date }).toDate() 
+      : new Date(timestamp as string | number | Date);
     return formatRelativeTime(date);
   };
 

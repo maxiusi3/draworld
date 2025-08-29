@@ -96,8 +96,11 @@ export function validatePassword(password: string): { valid: boolean; errors: st
 }
 
 // Format Firebase Auth errors
-export function formatAuthError(error: any): string {
-  switch (error.code) {
+export function formatAuthError(error: unknown): string {
+  // Type guard to ensure error has the expected structure
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const authError = error as { code: string; message?: string };
+    switch (authError.code) {
     case 'auth/user-not-found':
       return 'No account found with this email address.';
     case 'auth/wrong-password':
@@ -117,8 +120,16 @@ export function formatAuthError(error: any): string {
     case 'auth/popup-blocked':
       return 'Pop-up was blocked by your browser. Please allow pop-ups and try again.';
     default:
-      return error.message || 'An unexpected error occurred. Please try again.';
+      return authError.message || 'An unexpected error occurred. Please try again.';
   }
+  }
+  
+  // Handle non-auth errors
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'An unexpected error occurred. Please try again.';
 }
 
 // Check if user can perform daily check-in

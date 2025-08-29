@@ -83,8 +83,9 @@ export class CreditService {
         relatedId,
       });
       return result.data as SpendCreditsResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to spend credits');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to spend credits';
+      throw new Error(errorMessage);
     }
   }
 
@@ -107,8 +108,9 @@ export class CreditService {
         relatedId,
       });
       return result.data as { success: boolean; creditsAwarded: number };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to award credits');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to award credits';
+      throw new Error(errorMessage);
     }
   }
 
@@ -125,8 +127,9 @@ export class CreditService {
         startAfter,
       });
       return result.data as CreditHistoryResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get credit history');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get credit history';
+      throw new Error(errorMessage);
     }
   }
 }
