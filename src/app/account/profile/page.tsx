@@ -5,7 +5,6 @@ import { AccountLayout } from '@/components/layout/AccountLayout';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
-import { UserService } from '@/services/userService';
 import { validatePassword, formatAuthError } from '@/lib/auth';
 
 export default function ProfilePage() {
@@ -64,7 +63,7 @@ export default function ProfilePage() {
       await updateUserProfile(formData.displayName.trim());
       await refreshUser();
       setSuccess({ profile: 'Profile updated successfully!' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setErrors({ profile: formatAuthError(error) });
     } finally {
       setLoading(prev => ({ ...prev, profile: false }));
@@ -112,7 +111,7 @@ export default function ProfilePage() {
         confirmPassword: '',
       }));
       setSuccess({ password: 'Password changed successfully!' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setErrors({ password: formatAuthError(error) });
     } finally {
       setLoading(prev => ({ ...prev, password: false }));

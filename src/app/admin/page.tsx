@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { AdminService, AdminAnalytics } from '@/services/adminService';
 import { MonitoringDashboard } from '@/components/admin/MonitoringDashboard';
-import { formatCurrency, formatCredits, formatDate } from '@/lib/utils';
+import { formatCurrency, formatCredits } from '@/lib/utils';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
           ].map((option) => (
             <button
               key={option.key}
-              onClick={() => setTimeRange(option.key as any)}
+              onClick={() => setTimeRange(option.key as '7d' | '30d' | '90d' | 'all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 timeRange === option.key
                   ? 'bg-pink-500 text-white'

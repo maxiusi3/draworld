@@ -6,7 +6,6 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/Button';
 import { AdminService, ModerationVideo } from '@/services/adminService';
 import { formatDate } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
 
 export default function AdminModerationPage() {
   const { user } = useAuth();
@@ -54,8 +53,9 @@ export default function AdminModerationPage() {
         alert(result.message);
         await fetchVideos(); // Refresh the list
       }
-    } catch (error: any) {
-      alert(`Failed to ${action.replace('_', ' ')}: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to ${action.replace('_', ' ')}: ${errorMessage}`);
     } finally {
       setProcessingVideoId(null);
     }
@@ -114,7 +114,7 @@ export default function AdminModerationPage() {
             ].map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setFilter(tab.key as any)}
+                onClick={() => setFilter(tab.key as 'pending' | 'approved' | 'rejected' | 'all')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   filter === tab.key
                     ? 'border-pink-500 text-pink-600'

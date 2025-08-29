@@ -12,7 +12,7 @@ import { formatRelativeTime } from "@/lib/utils";
 
 export default function ReferralsPage() {
   const { stats, loading, error, loadStats, refresh } = useReferrals();
-  const { tasks, loading: tasksLoading, submitTask, loadTasks } = useSocialTasks();
+  const { tasks, loading: _, submitTask, loadTasks } = useSocialTasks();
   const [socialPostLink, setSocialPostLink] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("instagram");
   const [copied, setCopied] = useState(false);
@@ -67,7 +67,7 @@ export default function ReferralsPage() {
     
     try {
       await submitTask({
-        type: `${selectedPlatform}_share` as any,
+        type: `${selectedPlatform}_share` as 'instagram_share' | 'tiktok_share' | 'twitter_share' | 'facebook_share',
         platform: selectedPlatform,
         postUrl: socialPostLink || undefined,
         hashtags: ['#draworld'],
@@ -77,16 +77,18 @@ export default function ReferralsPage() {
         "Thank you! We'll review your post and add credits to your account within 24 hours."
       );
       setSocialPostLink("");
-    } catch (error) {
+    } catch (err) {
+      console.error("Failed to submit post. Please try again.", err);
       alert("Failed to submit post. Please try again.");
     }
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Unknown date';
     
     // Handle Firestore Timestamp
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const hasToDate = timestamp && typeof timestamp === 'object' && 'toDate' in timestamp;
+    const date = hasToDate ? (timestamp as { toDate: () => Date }).toDate() : new Date(timestamp as string | number);
     return formatRelativeTime(date);
   };
 

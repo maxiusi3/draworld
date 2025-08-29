@@ -9,7 +9,6 @@ import { CookieConsent as CookieConsentManager } from '@/lib/compliance';
 
 export default function PrivacySettingsPage() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
