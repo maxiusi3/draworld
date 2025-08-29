@@ -268,7 +268,7 @@ export default function GalleryPage() {
                           By a {getCreatorDescription(video)}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatRelativeTime(video.createdAt.toDate())}
+                          {formatRelativeTime(new Date(video.createdAt))}
                         </p>
                       </div>
                     </div>
@@ -332,7 +332,7 @@ export default function GalleryPage() {
                   By a {getCreatorDescription(selectedVideo)}
                 </p>
                 <p className="text-gray-500 text-xs">
-                  {formatRelativeTime(selectedVideo.createdAt.toDate())}
+                  {formatRelativeTime(new Date(selectedVideo.createdAt))}
                 </p>
               </div>
               <button

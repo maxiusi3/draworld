@@ -28,8 +28,8 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
   return (
     <>
       {/* Skip Links */}
-      <SkipLink href="#main-content">Skip to main content</SkipLink>
-      <SkipLink href="#navigation">Skip to navigation</SkipLink>
+      <SkipLink contentId="#main-content">Skip to main content</SkipLink>
+      <SkipLink contentId="#navigation">Skip to navigation</SkipLink>
       
       {/* Live Region for Announcements */}
       <LiveRegion priority="assertive">

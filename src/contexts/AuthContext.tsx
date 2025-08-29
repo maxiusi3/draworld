@@ -52,6 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch user data from Firestore
   const fetchUserData = async (firebaseUser: FirebaseUser): Promise<User | null> => {
+    if (!db) {
+      console.error('Firestore not initialized');
+      return null;
+    }
+    
     try {
       const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
       if (userDoc.exists()) {
@@ -70,10 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     displayName: string,
     referralCode?: string
   ): Promise<User> => {
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
+    
     const userData: Omit<User, 'id'> = {
       email: firebaseUser.email!,
       displayName: displayName || firebaseUser.displayName || 'User',
-      photoURL: firebaseUser.photoURL,
+      photoURL: firebaseUser.photoURL || undefined,
       credits: CREDITS.SIGNUP_BONUS,
       createdAt: serverTimestamp() as any,
       updatedAt: serverTimestamp() as any,
@@ -109,6 +118,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
+    
     try {
       await signInWithEmailAndPassword(auth, email, password);
       trackLogin('email');
@@ -228,19 +241,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    // Check if Firebase auth is available
+    if (!auth) {
+      console.error('Firebase auth not initialized');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       
-      if (firebaseUser) {
-        setFirebaseUser(firebaseUser);
-        const userData = await fetchUserData(firebaseUser);
-        setUser(userData);
-      } else {
-        setFirebaseUser(null);
-        setUser(null);
+      try {
+        if (firebaseUser) {
+          setFirebaseUser(firebaseUser);
+          const userData = await fetchUserData(firebaseUser);
+          setUser(userData);
+          
+          // Set analytics user properties
+          if (userData) {
+            setAnalyticsUserId(userData.id);
+            setAnalyticsUserProperties({
+              user_id: userData.id,
+              email: userData.email,
+              display_name: userData.displayName,
+              created_at: userData.createdAt?.toString() || '',
+            });
+          }
+        } else {
+          setFirebaseUser(null);
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return unsubscribe;

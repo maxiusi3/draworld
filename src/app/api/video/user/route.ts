@@ -41,10 +41,15 @@ export async function GET(request: NextRequest) {
     }
 
     const snapshot = await getDocs(q);
-    const videos = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const videos = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      }
+    });
 
     return NextResponse.json({
       videos,

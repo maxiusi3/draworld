@@ -5,8 +5,13 @@ import app from './firebase';
 let analytics: any = null;
 
 // Only initialize analytics in browser environment
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+if (typeof window !== 'undefined' && app) {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Firebase Analytics initialization failed:', error);
+    analytics = null;
+  }
 }
 
 // Analytics event types
@@ -20,6 +25,7 @@ export type AnalyticsEvent =
   | 'credit_purchase_started'
   | 'credit_purchase_completed'
   | 'daily_checkin'
+  | 'daily_active'
   | 'referral_signup'
   | 'social_share'
   | 'gallery_view'
@@ -35,7 +41,14 @@ export type AnalyticsEvent =
   | 'profile_updated'
   | 'password_reset_requested'
   | 'error_occurred'
-  | 'social_task_submitted';
+  | 'social_task_submitted'
+  | 'funnel_step'
+  | 'prompt_entered'
+  | 'video_viewed'
+  | 'video_shared'
+  | 'gallery_video_clicked'
+  | 'referral_link_shared'
+  | 'creation_started';
 
 export interface AnalyticsEventData {
   [key: string]: string | number | boolean;
@@ -48,7 +61,7 @@ export function trackEvent(eventName: AnalyticsEvent, eventData?: AnalyticsEvent
   if (!analytics) return;
 
   try {
-    logEvent(analytics, eventName, eventData);
+    logEvent(analytics, eventName as string, eventData);
   } catch (error) {
     console.error('Analytics tracking error:', error);
   }
@@ -103,6 +116,82 @@ export function trackSignup(method: 'email' | 'google', referralCode?: string): 
 }
 
 /**
+ * Track user identify
+ */
+export function trackUserIdentify(userId: string, properties: Record<string, any>): void {
+  setAnalyticsUserId(userId);
+  setAnalyticsUserProperties(properties as Record<string, string>);
+}
+
+/**
+ * Track daily active user
+ */
+export function trackDailyActive(): void {
+  trackEvent('daily_active');
+}
+
+/**
+ * Track funnel step
+ */
+export function trackFunnelStep(funnelName: string, stepName: string, stepNumber: number, additionalData?: AnalyticsEventData): void {
+  trackEvent('funnel_step', {
+    funnel_name: funnelName,
+    step_name: stepName,
+    step_number: stepNumber,
+    ...additionalData,
+  });
+}
+
+/**
+ * Track prompt entered
+ */
+export function trackPromptEntered(promptLength: number, mood: string): void {
+  trackEvent('prompt_entered', {
+    prompt_length: promptLength,
+    mood,
+  });
+}
+
+/**
+ * Track video viewed
+ */
+export function trackVideoViewed(videoId: string, duration: number): void {
+  trackEvent('video_viewed', {
+    video_id: videoId,
+    view_duration: duration,
+  });
+}
+
+/**
+ * Track video shared
+ */
+export function trackVideoShared(videoId: string, platform: string): void {
+  trackEvent('video_shared', {
+    video_id: videoId,
+    platform,
+  });
+}
+
+/**
+ * Track gallery video clicked
+ */
+export function trackGalleryVideoClicked(videoId: string, position: number): void {
+  trackEvent('gallery_video_clicked', {
+    video_id: videoId,
+    position,
+  });
+}
+
+/**
+ * Track referral link shared
+ */
+export function trackReferralLinkShared(platform: string): void {
+  trackEvent('referral_link_shared', {
+    platform,
+  });
+}
+
+/**
  * Track user login
  */
 export function trackLogin(method: 'email' | 'google'): void {
@@ -114,23 +203,23 @@ export function trackLogin(method: 'email' | 'google'): void {
 /**
  * Track video generation funnel
  */
-export function trackVideoGenerationStarted(prompt: string, mood: string): void {
+export function trackVideoGenerationStarted(userId: string, credits: number): void {
   trackEvent('video_generation_started', {
-    prompt_length: prompt.length,
-    mood,
+    userId,
+    credits,
     timestamp: Date.now(),
   });
 }
 
 export function trackVideoGenerationCompleted(
-  generationId: string,
-  duration: number,
-  mood: string
+  videoId: string,
+  generationTime: number,
+  success: boolean
 ): void {
   trackEvent('video_generation_completed', {
-    generation_id: generationId,
-    generation_duration_seconds: Math.round(duration / 1000),
-    mood,
+    video_id: videoId,
+    generation_duration_seconds: Math.round(generationTime / 1000),
+    success,
   });
 }
 
@@ -149,19 +238,22 @@ export function trackVideoGenerationFailed(
 /**
  * Track credit system events
  */
-export function trackCreditPurchaseStarted(packageId: string, amount: number): void {
+export function trackCreditPurchaseStarted(packageId: string, amount: number, credits: number): void {
   trackEvent('credit_purchase_started', {
     package_id: packageId,
     credit_amount: amount,
+    credits,
   });
 }
 
 export function trackCreditPurchaseCompleted(
+  transactionId: string,
   packageId: string,
   amount: number,
   credits: number
 ): void {
   trackEvent('credit_purchase_completed', {
+    transaction_id: transactionId,
     package_id: packageId,
     purchase_amount: amount,
     credits_received: credits,
@@ -194,6 +286,13 @@ export function trackSocialShare(platform: string, contentType: 'video' | 'refer
 }
 
 /**
+ * Track creation started
+ */
+export function trackCreationStarted(): void {
+  trackEvent('creation_started');
+}
+
+/**
  * Track social task submission
  */
 export function trackSocialTaskSubmitted(platform: string, taskType: string): void {
@@ -212,6 +311,12 @@ export function trackGalleryView(galleryType: 'public' | 'personal'): void {
   });
 }
 
+export function trackGalleryViewed(galleryType?: string): void {
+  trackEvent('gallery_view', {
+    gallery_type: galleryType || 'unknown',
+  });
+}
+
 export function trackVideoPlay(videoId: string, source: 'gallery' | 'personal' | 'result'): void {
   trackEvent('video_play', {
     video_id: videoId,
@@ -219,7 +324,7 @@ export function trackVideoPlay(videoId: string, source: 'gallery' | 'personal' |
   });
 }
 
-export function trackVideoDownload(videoId: string): void {
+export function trackVideoDownloaded(videoId: string): void {
   trackEvent('video_download', {
     video_id: videoId,
   });
@@ -228,7 +333,7 @@ export function trackVideoDownload(videoId: string): void {
 /**
  * Track creation flow events
  */
-export function trackImageUpload(fileSize: number, fileType: string): void {
+export function trackImageUploaded(fileSize: number, fileType: string): void {
   trackEvent('image_upload', {
     file_size_kb: Math.round(fileSize / 1024),
     file_type: fileType,

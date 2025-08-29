@@ -125,3 +125,14 @@ export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength).trim() + '...';
 }
+
+// Convert various timestamp formats to a Date object
+export function toSafeDate(timestamp: any): Date {
+  if (!timestamp) {
+    return new Date();
+  }
+  if (timestamp.toDate) { // Firestore Timestamp
+    return timestamp.toDate();
+  }
+  return new Date(timestamp); // ISO string or other date string
+}

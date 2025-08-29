@@ -203,7 +203,7 @@ export default function HomePage() {
                         A magical creation by a young artist
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {formatRelativeTime(video.createdAt.toDate())}
+                        {formatRelativeTime(new Date(video.createdAt))}
                       </p>
                     </div>
                   ))}
@@ -327,7 +327,7 @@ export default function HomePage() {
                   {selectedVideo.title || selectedVideo.prompt}
                 </h3>
                 <p className="text-gray-400 text-sm">
-                  By a young artist • {formatRelativeTime(selectedVideo.createdAt.toDate())}
+                  By a young artist • {formatRelativeTime(new Date(selectedVideo.createdAt))}
                 </p>
               </div>
               <button

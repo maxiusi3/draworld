@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { createRateLimiter, getRateLimitIdentifier, RATE_LIMITS } from '@/lib/rateLimiter';
 import { UserDataExport } from '@/lib/compliance';
 import { db } from '@/lib/firebase';
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate user
-    const user = await auth.getCurrentUser();
+    const user = getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

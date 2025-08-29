@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CreditService } from '@/services/creditService';
 import { CREDITS } from '@/lib/constants';
 import { trackDailyCheckin, trackInsufficientCreditsModalShown } from '@/lib/analytics';
+import { toSafeDate } from '@/lib/utils';
 
 export function useCredits() {
   const { user, refreshUser } = useAuth();
@@ -86,12 +87,12 @@ export function useCredits() {
 
   const canPerformDailyCheckIn = useCallback((): boolean => {
     if (!user?.lastCheckinDate) return true;
-    return CreditService.canPerformDailyCheckIn(user.lastCheckinDate.toDate());
+    return CreditService.canPerformDailyCheckIn(toSafeDate(user.lastCheckinDate));
   }, [user]);
 
   const getNextCheckInTime = useCallback((): Date | null => {
     if (!user?.lastCheckinDate) return null;
-    return CreditService.getNextCheckinTime(user.lastCheckinDate.toDate());
+    return CreditService.getNextCheckinTime(toSafeDate(user.lastCheckinDate));
   }, [user]);
 
   const getTimeUntilNextCheckIn = useCallback((): string => {

@@ -1,0 +1,312 @@
+
+}    }
+  }
+      ]
+      }"
+   hourson": "24  "escalati    rs",
+    ": "4 houe_time   "respons      ",
+ ": "mediumty"severi            {
+    },
+     rs"
+     "4 houn": atio     "escalr",
+      "1 houtime":"response_        ",
+  ": "highyeverit    "s             {
+     },
+    "
+tedia": "immetionla"esca        ",
+  utes"15 minime": onse_t "resp       ical",
+  "critty":   "severi {
+           s": [
+    re"procedu,
+      
+      ]}        XXXX"
+XX-XX-Xne": "+1-X   "pho    ,
+   world.com"ch@dra "te"email":
+          d",chnical Lea": "Te"role    
+             {    },
+ "
+    XXXXX-XXX-X"+1-X"phone":         ",
+  aworld.comrity@dr "secuil":ema  "         Lead",
+"Security  "role": 
+               {s": [
+ "contact    e": {
+  ent_responsidnc"i       ],
+ 
+      }
+"github"ion": tegratin
+        " "daily",e":dul    "sche   nner",
+ security_sca"type": "     ",
+   me": "Snyk      "na
+   {},
+     
+      "teel=modera --audit-levdit "npm au"command":       ",
+ "daily": edule    "schner",
+    ndency_scan": "depetype"        udit",
+": "npm a   "name   {
+     ,
+     }"
+    d.comraworl/dttps:/t": "h"targe",
+        : "weekly"schedule"       ",
+ nerity_scanlnerabil"vu": ype "t   ",
+    P ZAP": "OWASme"na{
+        
+      ols": [ed_totomat   "au    },
+  ]
+
+       }           ]
+ nors"
+    r mition fodata collec"Limited        ",
+     13er  und for usersal consent    "Parent  ,
+      fication""Age veri         : [
+   ments"  "require    PA",
+    ": "COP  "name        {
+ 
+        },                ]
+ rights"
+ ion"Data delet           
+ anisms",out mech  "Opt-
+          closure",ction dis"Data colle       [
+      ents":  "requirem",
+        "CCPAame":       "n
+    
+        {        },     ]
+"
+     anceliompy cvacy polic"Pri            ",
+ forgotteno beight t   "R
+         rtability",Data po      "   t",
+   mengemanat  consen"User        [
+    ements":     "requir",
+      e": "GDPR     "nam      {
+       : [
+""frameworks    {
+  iance":   "compl],
+  }
+     ]
+                      }
+
+  ]         "
+  dationvalie type rify filVe         "    
+ s",ize limitfile s"Test      
+         ,"esfile typmalicious load   "Up        
+    [: t_cases""tes      ue,
+      ated": trutom        "a
+    ,igh"ty": "h "severi         
+  s",measureity d secure uploa"Test filion": escript    "d,
+        urity"Secd  Uploalele": "Fi      "tit",
+      tent-002id": "con          " {
+              },
+          ]
+ "
+        nsePI respoeration Aest mod "T         t",
+    priate prompbmit inappro       "Su   
+    te image",ppropria"Upload ina              : [
+ases"st_c "te            true,
+utomated":"a           ",
+ "highity":   "sever         y",
+ roperlg pkin is wort moderationify conten"Verption": ri     "desc",
+       ionatontent Moderitle": "C   "t,
+         1"00nt-te"id": "con            {
+ 
+         ": [   "items
+      Security",ontenty": "C"categor            {
+    },
+  ]
+  }
+                "
+  ase or logsata in databedit card dcro ation": "N    "valide,
+        ed": truomat "aut         ",
+  tical"cri": verity       "se",
+     callyed lonever stort data is sure paymen"Enion": "descript       ",
+     ata Handling DPayment": "  "title       
+   -002","payment"id":              {
+   ,
+            }     ]
+    "
+       liance compPCI  "        g",
+    inr handlper erroPro    "          ",
+ient-sidedata in cle No sensitiv      "    ,
+    ation"icnature verifigook s   "Webh   
+        ks": [     "chec
+       false,utomated":       "a
+      ical",crit "ity": "sever          s",
+ ceactiity best prws securolloation fipe integry Str"Verif": scription      "de",
+      ritycu Seationntegre I": "Striptitle     "
+       ",001"payment-    "id":   {
+               ": [
+   "items",
+      ritySecut Paymen: ""category"           {
+     },
+          ]
+         }
+       ]
+  ys"
+      ded API kedco  "No har   
+         ",t in Vercelgemenet manaProper secr        "    ode",
+  e c client-sidrets insec     "No        [
+   hecks":    "c,
+         falseautomated":"           igh",
+ erity": "h    "sev     ,
+   ity"securvariable environment ": "Audit riptionesc  "d   ",
+       ariablesvironment V"En"title":       
+      nfra-003", "id": "i        
+           {
+         },
+              ]Policy"
+ t-Security-enont     "C      ity",
+   ort-Securspict-Trantr         "S   ",
+  e=block: 1; modtionrotecSS-P  "X-X      ,
+      ns: DENY"ptioe-O    "X-Fram         f",
+ : nosnifns-Optiot-Type-Conten         "X: [
+     d_headers""require   
+         e, truomated":"aut         ",
+   "highity": ever  "s     ",
+     properly setaders are urity heVerify secption": "descri"          s",
+  rity Headere": "Secu  "titl        02",
+  "infra-0 "id": 
+              {  
+       }, ]
+            
+       aworld.com"i.dr/aps:/"http       ,
+       .com"worldhttps://dra     "        urls": [
+ eck_"ch         
+   ue,ated": tr    "autom        
+al",ticy": "cri   "severit    S",
+     with HTTPencrypted c is ll traffie a": "Ensurscriptionde      "
+      guration","HTTPS Confi"title":             ",
+"infra-001d":    "i       
+         {": [
+   "items     ",
+   re Securityctunfrastru"Iory":   "categ
+      
+      {     },  ]
+       }
+              ]
+  
+      .com"orld//www.drawttps:    "h
+          ,rld.com"drawops://"htt           ": [
+   ed_origins     "allow  
+     ed": true,matauto       "",
+     ium"medrity": "seve         red",
+   y configuerlCORS is prop": "Verify tionescrip"d          
+  tion", Configura: "CORS "title"
+           pi-003", "a"id":      
+       {         ,
+         }       ]
+ 
+     es"ypdata td  "Invali         ies",
+    quest bodred ersize  "Ov    
+        ,on"load injectipay  "XSS          ts",
+   on attempQL injecti   "S
+           ses": ["test_ca         : true,
+   tomated""au   
+         ",": "higheverity        "s",
+    ationnput valider ior propoints ft API endpn": "Tes"descriptio            
+n",idatioValInput ": "   "title,
+         -002"": "api   "id             {
+  
+        },    }
+              r minute"
+ perequests"3 /create": tsapi/paymen         "/
+      minute",ests perqun": "10 reth/logiau"/api/            nute",
+   per mi5 requestste": "neraideo/ge "/api/v             mits": {
+_lipected   "ex     ,
+        ]      
+  s/create"nt"/api/payme              n",
+ogiauth/l  "/api/         ,
+   "generatei/video/     "/ap      st": [
+   tents_to_dpoi"en          e,
+  ted": tru  "automa
+          igh",ty": "hveri     "se    d",
+   ly configureopermiting is prrify rate li": "Ve"description       g",
+      LimitinRatele": "    "tit
+        001",api-d": ""i              {
+ : [
+       "items"        ,
+"I Securityry": "AP"catego{
+        
+      
+      },      ]      }
+  
+    ]            ts"
+ion limi"Log retent            es",
+  orary filtempleanup of utomatic c "A           
+  ",nt closureaccouion on elet"User data d            : [
+  ies""polic            ": false,
+mated"auto           m",
+ ": "mediuity   "sever      ed",
+   re implementes aion polici delettion andta retenify da": "Vercriptiones         "d   es",
+n Policitentio"Data Re": title"          ,
+  "data-003"id":         "   {
+          },
+    
+             ]   
+   es"ser profil      "u,
+        "mationyment infor"pa             es",
+ ssaddreail  "em       : [
+      es"  "data_typ      e,
+    falsutomated":  "a    ",
+        "highty":"severi           
+ ",rolledcontess-acced and ryptperly enc PII is prosureion": "Enscript "de  ,
+          Handling"Data": "PII tle"ti     ",
+       2"data-00": "id         
+          {  },
+   
+             ]"
+       sly accesas read-ony hlerblic gal     "Pu  ",
+       re protectedlections aonly coln-     "Admi      
+   a",datwn eir oess thonly accers can       "Us        [
+s": ation_rule"valid          
+  t",ore:rules:gerest fiebaseir": "fndeck_comma        "che,
+    mated": truauto"     ",
+       critical": "verity"se           ",
+  controlss proper acce rules forsecurityore Audit Firesttion": "scrip      "de      ,
+ity Rules"re Securrestole": "Fiit     "t
+       ,ta-001" "da"id":        
+             {s": [
+ em"it  ",
+       Protectiony": "Datagor    "cate    {
+    },
+          ]
+   }
+         
+              ]t"
+  on on logouvalidatin inssioTest se         "
+     tings",setcure cookie "Verify se           tion",
+    configurasion timeouteck sesCh       "       [
+ eps":"manual_st           : false,
+ d"  "automate      
+    "medium",severity":           "es",
+  licid timeout poling ansion handcure ses se "Verifycription":   "des    ,
+     t"nagemenssion Ma "Setitle":  "
+          003",uth-"id": "a        {
+                },
+               ]
+end"
+     /sp/credits   "/api   ",
+        eo/generatei/vid       "/ap",
+       ileser/profpi/u/a     "
+         s": [int_endpostte        " true,
+    mated":      "autol",
+      tica"crity": severi    "  ,
+      properly"ens tokalidate JWT nts vdpoiI enl APEnsure al "ion":script"de         ",
+   ionn ValidatokeT T"JW": "title           002",
+ : "auth-"id"               {
+       },
+        ed"
+  icy enforcrd polasswonfigured, poviders co "Auth pr":cted_resultexpe  "        n",
+  rmat=jso:export --foirebase auth"fommand":    "check_c        rue,
+ mated": t"auto           
+ gh",ty": "hiseveri     "",
+       ingssecure settigured with erly confth is propebase Auy Fir"Verifon": cripti"des          tion",
+  figurah Conbase Aut": "Fire"title    
+        "auth-001",  "id":           {
+       s": [
+   "item      ,
+  zation"horication & Aut "Authenticategory":
+        "[
+      {ecks": ,
+    "chroduction"": "p"scope   
+ ",01024-01-ed": "2st_updatla    "",
+1.0on": ""versi    ": {
+_audititysecur{
+  "

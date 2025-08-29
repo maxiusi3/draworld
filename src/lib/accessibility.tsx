@@ -160,12 +160,41 @@ export const a11y = {
   },
 };
 
+export const announceToScreenReader = a11y.announce;
+
+export const ScreenReaderOnly = ({ children }: { children: React.ReactNode }) => (
+  <div className="sr-only">{children}</div>
+);
+
+// LiveRegion component for screen reader announcements
+export const LiveRegion = ({
+  children,
+  priority = 'polite',
+}: {
+  children: React.ReactNode;
+  priority?: 'polite' | 'assertive';
+}) => (
+  <div
+    aria-live={priority}
+    aria-atomic="true"
+    className="sr-only"
+  >
+    {children}
+  </div>
+);
+
 // SkipLink component
-export const SkipLink = ({ contentId }: { contentId: string }) => (
+export const SkipLink = ({
+  contentId,
+  children,
+}: {
+  contentId: string;
+  children: React.ReactNode;
+}) => (
   <a
     href={`#${contentId}`}
     className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:border-2 focus:border-pink-500 focus:rounded-lg"
   >
-    Skip to main content
+    {children}
   </a>
 );

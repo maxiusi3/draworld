@@ -1,17 +1,17 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps",
+  "outputDirectory": ".next",
+  "installCommand": "bun install",
+  "buildCommand": "bun run build",
   "devCommand": "npm run dev",
   "functions": {
-    "app/api/**/*.js": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     },
-    "app/api/video/generate/route.js": {
+    "src/app/api/video/generate/route.ts": {
       "maxDuration": 300
     },
-    "app/api/webhooks/stripe/route.js": {
+    "src/app/api/webhooks/stripe/route.ts": {
       "maxDuration": 10
     }
   },

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       default:
         // Trending: combination of recent and popular
         // For now, we'll use a simple approach: order by views but only recent videos
-        q = query(q, orderBy('createdAt', 'desc'));
+        q = query(q, orderBy('views', 'desc'));
         break;
     }
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         views: data.views || 0,
         shares: data.shares || 0,
         likes: data.likes || 0,
-        createdAt: data.createdAt,
+        createdAt: data.createdAt.toDate().toISOString(),
         // Don't expose user information for privacy
         creatorAge: data.creatorAge || null,
       };

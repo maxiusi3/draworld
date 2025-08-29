@@ -15,8 +15,6 @@ export const metadata: Metadata = {
     title: 'Draworld - Bring Every Child\'s Drawing to Life',
     description: 'Transform static children\'s art into lively, permanently archivable AI animated stories that spark infinite creativity.',
     manifest: '/manifest.json',
-    themeColor: '#ec4899',
-    viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -75,14 +73,30 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     strategy="afterInteractive"
                     dangerouslySetInnerHTML={{
                         __html: `
-                            // Initialize performance monitoring
+                            // Initialize performance monitoring safely
                             if (typeof window !== 'undefined') {
-                                import('/src/lib/performance.js').then(module => {
-                                    module.startPerformanceMonitoring();
-                                    module.preloadCriticalResources();
-                                    module.setupLazyLoading();
-                                    module.optimizeThirdPartyScripts();
-                                }).catch(console.error);
+                                try {
+                                    import('@/lib/performance')
+                                        .then(module => {
+                                            if (module.startPerformanceMonitoring) {
+                                                module.startPerformanceMonitoring();
+                                            }
+                                            if (module.preloadCriticalResources) {
+                                                module.preloadCriticalResources();
+                                            }
+                                            if (module.setupLazyLoading) {
+                                                module.setupLazyLoading();
+                                            }
+                                            if (module.optimizeThirdPartyScripts) {
+                                                module.optimizeThirdPartyScripts();
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.warn('Performance monitoring failed to load:', error);
+                                        });
+                                } catch (error) {
+                                    console.warn('Performance monitoring initialization failed:', error);
+                                }
                             }
                         `,
                     }}
