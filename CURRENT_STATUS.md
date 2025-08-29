@@ -19,38 +19,39 @@
 - Added health checks and console error detection
 - Configured for both preview (PR) and production (main) deployments
 
-## 🔧 Immediate Action Required
+## 🔧 **GitHub Repository Secrets Setup** ✅ READY
 
-### **GitHub Repository Secrets Setup**
-
-You need to add these secrets in your GitHub repository to enable automatic deployment:
+**Based on your .vercel/project.json file, here are the exact values you need:**
 
 1. **Go to GitHub Repository:**
-   - Navigate to your repository: https://github.com/maxiusi3/draworld
+   - Navigate to: https://github.com/maxiusi3/draworld
    - Go to Settings → Secrets and Variables → Actions
 
-2. **Add Required Secrets:**
+2. **Add these exact secrets:**
    ```bash
    VERCEL_TOKEN=your_vercel_token_here
-   VERCEL_ORG_ID=your_org_id_here  
-   VERCEL_PROJECT_ID=your_project_id_here
+   VERCEL_ORG_ID=team_VIqH0yDLW9edoeACUMkr8Ui8
+   VERCEL_PROJECT_ID=prj_autiAiHClwtstLCEEnqF0gkrlbs1
    ```
 
-### **How to Get These Values:**
+**✅ ORG_ID and PROJECT_ID are ready - just need VERCEL_TOKEN!**
 
-#### Get VERCEL_TOKEN:
+### **How to Get VERCEL_TOKEN:**
+
 1. Go to [Vercel Dashboard](https://vercel.com/account/tokens)
 2. Create a new token with deployment permissions
-3. Copy the token value
+3. Copy the token value and add it as VERCEL_TOKEN in GitHub secrets
 
-#### Get VERCEL_ORG_ID and VERCEL_PROJECT_ID:
-1. Install Vercel CLI: `npm i -g vercel`
-2. Run `vercel login` and authenticate
-3. Run `vercel link` in your project directory
-4. Check the `.vercel/project.json` file created
-5. Use the `orgId` and `projectId` values
+**✅ The other values are already identified from your project!**
 
 ## 🔄 Current Deployment Status
+
+### ✅ **GitHub Actions Workflow Fixed**:
+- ✅ Added package-lock.json to resolve dependency lock file issue
+- ✅ Updated workflow to use npm ci for faster, reliable builds
+- ✅ Configured proper npm caching in GitHub Actions
+- ✅ Updated Vercel configuration for consistency
+- ✅ Fixed all package manager conflicts
 
 ### **Workflow Trigger:** ✅ ACTIVE
 - Push to main branch will trigger production deployment
