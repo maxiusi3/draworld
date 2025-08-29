@@ -13,8 +13,9 @@ export class UserService {
   static async updateProfile(displayName: string): Promise<void> {
     try {
       await updateUserProfileFn({ displayName });
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to update profile');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      throw new Error(errorMessage);
     }
   }
 
@@ -25,8 +26,9 @@ export class UserService {
     try {
       const result = await getUserDataFn();
       return result.data as User;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get user data');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get user data';
+      throw new Error(errorMessage);
     }
   }
 }

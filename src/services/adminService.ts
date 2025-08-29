@@ -1,3 +1,5 @@
+import { VideoCreation, CreditTransaction, Payment } from '@/types';
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -18,9 +20,9 @@ export interface AdminUserDetails extends AdminUser {
     totalPayments: number;
     totalSpent: number;
   };
-  videos: any[];
-  transactions: any[];
-  payments: any[];
+  videos: VideoCreation[];
+  transactions: CreditTransaction[];
+  payments: Payment[];
 }
 
 export interface ModerationVideo {
@@ -58,8 +60,8 @@ export interface AdminAnalytics {
     paidConversionRate: number;
     averageRevenuePerUser: number;
   };
-  topVideos: any[];
-  recentUsers: any[];
+  topVideos: VideoCreation[];
+  recentUsers: AdminUser[];
   timeRange: string;
 }
 
@@ -95,8 +97,9 @@ export class AdminService {
       }
 
       return await response.json();
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to fetch users');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch users';
+      throw new Error(errorMessage);
     }
   }
 

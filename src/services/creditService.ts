@@ -60,8 +60,9 @@ export class CreditService {
     try {
       const result = await dailyCheckInFn();
       return result.data as DailyCheckInResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to perform daily check-in');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to perform daily check-in';
+      throw new Error(errorMessage);
     }
   }
 

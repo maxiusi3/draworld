@@ -87,7 +87,7 @@ export interface VideoProcessingJob {
   startedAt?: Timestamp;
   completedAt?: Timestamp;
   error?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -139,7 +139,7 @@ export interface AnalyticsEvent {
   id: string;
   userId?: string;
   event: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   createdAt: Timestamp;
 }
 

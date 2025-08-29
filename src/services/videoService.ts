@@ -1,4 +1,5 @@
 import { VideoCreation } from '@/types';
+import { Timestamp } from 'firebase/firestore';
 
 export interface VideoGenerationRequest {
   imageUrl: string;
@@ -26,7 +27,7 @@ export interface VideoStatusResponse {
   title: string;
   prompt: string;
   mood: string;
-  createdAt: any;
+  createdAt: Timestamp;
 }
 
 export class VideoService {
@@ -50,8 +51,9 @@ export class VideoService {
       }
 
       return data;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to start video generation');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start video generation';
+      throw new Error(errorMessage);
     }
   }
 

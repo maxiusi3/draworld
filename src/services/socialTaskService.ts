@@ -57,8 +57,9 @@ export class SocialTaskService {
       }
 
       return await response.json();
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to submit social media task');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit social media task';
+      throw new Error(errorMessage);
     }
   }
 

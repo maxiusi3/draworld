@@ -222,7 +222,7 @@ export class RetentionTrackingService {
   /**
    * Get cohort analysis data structure
    */
-  static getCohortAnalysisStructure(): Record<string, any> {
+  static getCohortAnalysisStructure(): Record<string, unknown> {
     return {
       cohort_month: '',
       users_count: 0,

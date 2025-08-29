@@ -28,8 +28,9 @@ export class ReferralService {
     try {
       const result = await processReferralSignupFn({ referralCode });
       return result.data as ReferralSignupResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to process referral');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process referral';
+      throw new Error(errorMessage);
     }
   }
 

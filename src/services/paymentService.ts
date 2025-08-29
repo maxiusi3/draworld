@@ -25,8 +25,9 @@ export class PaymentService {
     try {
       const result = await createPaymentIntentFn({ packageId });
       return result.data as PaymentIntentResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to create payment intent');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create payment intent';
+      throw new Error(errorMessage);
     }
   }
 
@@ -43,8 +44,9 @@ export class PaymentService {
         startAfter,
       });
       return result.data as PaymentHistoryResult;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get payment history');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get payment history';
+      throw new Error(errorMessage);
     }
   }
 }

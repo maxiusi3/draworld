@@ -18,12 +18,12 @@ export class FunnelTrackingService {
     'credit_purchase_completed',
   ] as const;
 
-  private static sessionData: Record<string, any> = {};
+  private static sessionData: Record<string, Record<string, unknown>> = {};
 
   /**
    * Track funnel step with timing
    */
-  static trackStep(step: typeof this.funnelSteps[number], additionalData?: Record<string, any>): void {
+  static trackStep(step: typeof this.funnelSteps[number], additionalData?: Record<string, unknown>): void {
     const timestamp = Date.now();
     const sessionId = this.getSessionId();
 

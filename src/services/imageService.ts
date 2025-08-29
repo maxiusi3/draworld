@@ -86,7 +86,15 @@ export class ImageService {
         }
       });
 
-      const moderationData = moderationResponse.data as any;
+      const moderationData = moderationResponse.data as {
+        success: boolean;
+        result: {
+          isApproved: boolean;
+          confidence: number;
+          reasons?: string[];
+          categories?: string[];
+        };
+      };
       
       if (moderationData.success) {
         uploadResult.moderationResult = moderationData.result;
@@ -100,8 +108,9 @@ export class ImageService {
       }
 
       return uploadResult;
-    } catch (error: any) {
-      throw new Error(`Failed to upload and moderate image: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload and moderate image';
+      throw new Error(`Failed to upload and moderate image: ${errorMessage}`);
     }
   }
 
