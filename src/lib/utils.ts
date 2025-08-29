@@ -84,7 +84,7 @@ export function generateReferralCode(userId: string): string {
 }
 
 // Debounce function
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -96,7 +96,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Throttle function
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -127,7 +127,7 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 // Convert various timestamp formats to a Date object
-export function toSafeDate(timestamp: any): Date {
+export function toSafeDate(timestamp: unknown): Date {
   if (!timestamp) {
     return new Date();
   }

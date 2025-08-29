@@ -105,9 +105,10 @@ export class RunwareAPI {
         thumbnailUrl: data.thumbnail_url,
         error: data.error,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Runware API error:', error);
-      throw new Error(error.message || 'Video generation request failed');
+      const errorMessage = error instanceof Error ? error.message : 'Video generation request failed';
+      throw new Error(errorMessage);
     }
   }
 
@@ -138,9 +139,10 @@ export class RunwareAPI {
         thumbnailUrl: data.thumbnail_url,
         error: data.error,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Runware API status check error:', error);
-      throw new Error(error.message || 'Failed to check generation status');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check generation status';
+      throw new Error(errorMessage);
     }
   }
 
