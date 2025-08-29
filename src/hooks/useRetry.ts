@@ -115,7 +115,7 @@ export function useApiCall<T>(
   apiCall: () => Promise<T>,
   options: UseRetryOptions & {
     autoExecute?: boolean;
-    dependencies?: any[];
+    dependencies?: unknown[];
   } = {}
 ) {
   const { autoExecute = false, dependencies = [], ...retryOptions } = options;
@@ -134,10 +134,10 @@ export function useApiCall<T>(
 
 // Hook for form submissions with retry
 export function useFormSubmission<T>(
-  submitFn: (data: any) => Promise<T>,
+  submitFn: (data: unknown) => Promise<T>,
   options: UseRetryOptions = {}
 ) {
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] = useState<unknown>(null);
   
   const retry = useRetry(
     () => {
@@ -149,7 +149,7 @@ export function useFormSubmission<T>(
     options
   );
 
-  const submit = useCallback(async (data: any): Promise<T | undefined> => {
+  const submit = useCallback(async (data: unknown): Promise<T | undefined> => {
     setFormData(data);
     return retry.execute();
   }, [retry]);

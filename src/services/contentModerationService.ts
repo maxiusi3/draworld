@@ -210,7 +210,7 @@ export class ContentModerationService {
   /**
    * Check image content safety
    */
-  async moderateImage(imageUrl: string): Promise<ModerationResult> {
+  async moderateImage(): Promise<ModerationResult> {
     if (this.providers.length === 0) {
       throw new Error('No moderation providers configured');
     }

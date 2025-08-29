@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ReferralService, ReferralStatsResult } from '@/services/referralService';
 
 interface UseReferralsReturn {
@@ -28,8 +28,9 @@ export function useReferrals(): UseReferralsReturn {
     try {
       const result = await ReferralService.getReferralStats();
       setStats(result);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load referral stats');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load referral stats';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

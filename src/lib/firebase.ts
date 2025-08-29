@@ -46,7 +46,7 @@ try {
 }
 
 // Initialize Firebase services with error handling
-export let auth: any, db: any, storage: any, functions: any;
+export let auth: unknown, db: unknown, storage: unknown, functions: unknown;
 
 try {
   auth = getAuth(app);
@@ -58,7 +58,7 @@ try {
 }
 
 // Initialize Analytics (only in browser)
-export let analytics: any = null;
+export let analytics: unknown = null;
 if (typeof window !== 'undefined') {
   try {
     isSupported().then((supported) => {

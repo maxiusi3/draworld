@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { SocialTaskService, CreateSocialTaskRequest, SocialTasksResponse } from '@/services/socialTaskService';
+import { SocialTaskService, CreateSocialTaskRequest } from '@/services/socialTaskService';
 import { SocialTask } from '@/types';
 
 interface UseSocialTasksReturn {
@@ -32,8 +32,9 @@ export function useSocialTasks(): UseSocialTasksReturn {
     try {
       const result = await SocialTaskService.getUserTasks();
       setTasks(result.tasks);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load social tasks');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load social tasks';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -47,8 +48,9 @@ export function useSocialTasks(): UseSocialTasksReturn {
       await SocialTaskService.submitTask(request);
       // Reload tasks to show the new submission
       await loadTasks();
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit social task');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit social task';
+      setError(errorMessage);
       throw err;
     } finally {
       setSubmitting(false);

@@ -1,7 +1,7 @@
 import { lazy, ComponentType } from 'react';
 
 // Dynamic import with error handling and retry logic
-export function dynamicImport<T = any>(
+export function dynamicImport<T = unknown>(
   importFn: () => Promise<{ default: T }>,
   options: {
     retries?: number;
@@ -33,7 +33,7 @@ export function dynamicImport<T = any>(
 }
 
 // Lazy load components with error boundaries
-export function lazyLoad<T extends ComponentType<any>>(
+export function lazyLoad<T extends ComponentType<unknown>>(
   importFn: () => Promise<{ default: T }>,
   fallback?: ComponentType
 ) {
@@ -41,7 +41,7 @@ export function lazyLoad<T extends ComponentType<any>>(
 }
 
 // Preload components for better UX
-export function preloadComponent(importFn: () => Promise<any>) {
+export function preloadComponent(importFn: () => Promise<unknown>) {
   if (typeof window !== 'undefined') {
     // Preload on idle or after a delay
     if ('requestIdleCallback' in window) {
@@ -121,7 +121,7 @@ export function isModuleLoaded(moduleName: string): boolean {
   if (typeof window === 'undefined') return false;
   
   // Check if module is in webpack's module cache
-  return !!(window as any).__webpack_require__?.cache?.[moduleName];
+  return !!(window as Record<string, unknown>).__webpack_require__?.cache?.[moduleName];
 }
 
 // Bundle size analyzer helper

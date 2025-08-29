@@ -5,7 +5,6 @@ import { VideoService, VideoGenerationRequest, VideoStatusResponse } from '@/ser
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   trackVideoGenerationStarted, 
-  trackVideoGenerationCompleted, 
   trackVideoGenerationFailed 
 } from '@/lib/analytics';
 
@@ -53,7 +52,6 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
 
       // Track generation start
       trackVideoGenerationStarted(request.prompt, request.mood);
-      const generationStartTime = Date.now();
 
       // Start generation
       const result = await VideoService.generateVideo(request);
@@ -69,8 +67,8 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
 
       return result.videoCreationId;
 
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to start video generation';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start video generation';
       setError(errorMessage);
       setProgress({
         status: 'error',
@@ -78,8 +76,7 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
       });
       
       // Track generation failure
-      const generationDuration = Date.now() - (generationStartTime || Date.now());
-      trackVideoGenerationFailed(errorMessage, request.mood, generationDuration);
+      trackVideoGenerationFailed(errorMessage, request.mood, 0);
       
       throw err;
     } finally {
@@ -124,8 +121,8 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
 
       return result;
 
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to generate video';
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate video';
       setError(errorMessage);
       setProgress({
         status: 'error',
@@ -150,7 +147,7 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
 
 // Hook for managing user's video library
 export function useUserVideos() {
-  const [videos, setVideos] = useState<any[]>([]);
+  const [videos, setVideos] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -173,8 +170,9 @@ export function useUserVideos() {
       setHasMore(result.hasMore);
       setLastDoc(result.lastDoc);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to load videos');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load videos';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -184,8 +182,9 @@ export function useUserVideos() {
     try {
       await VideoService.deleteVideo(videoId);
       setVideos(prev => prev.filter(video => video.id !== videoId));
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete video');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete video';
+      throw new Error(errorMessage);
     }
   }, []);
 
@@ -195,8 +194,9 @@ export function useUserVideos() {
       setVideos(prev => prev.map(video => 
         video.id === videoId ? { ...video, isPublic } : video
       ));
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update video visibility');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update video visibility';
+      throw new Error(errorMessage);
     }
   }, []);
 

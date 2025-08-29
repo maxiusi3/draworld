@@ -1,5 +1,3 @@
-import { VideoCreation } from '@/types';
-
 export interface GalleryVideo {
   id: string;
   title?: string;

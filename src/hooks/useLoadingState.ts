@@ -180,7 +180,7 @@ export function useMultipleLoadingStates() {
   const reset = useCallback((key?: string) => {
     if (key) {
       setLoadingStates(prev => {
-        const { [key]: removed, ...rest } = prev;
+        const { [key]: _, ...rest } = prev;
         return rest;
       });
     } else {

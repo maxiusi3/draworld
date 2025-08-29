@@ -172,13 +172,13 @@ export const keyframes = {
 
 // Animation utility functions
 export function createStaggeredAnimation(
-  items: any[],
+  items: unknown[],
   baseDelay: number = 100
 ) {
   return items.map((item, index) => ({
-    ...item,
+    ...item as Record<string, unknown>,
     style: {
-      ...item.style,
+      ...(item as { style?: Record<string, unknown> }).style,
       animationDelay: `${index * baseDelay}ms`,
     },
   }));
