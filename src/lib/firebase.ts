@@ -27,8 +27,12 @@ const requiredEnvVars = [
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
   console.error('Missing Firebase environment variables:', missingEnvVars);
+  console.error('Current environment:', process.env.NODE_ENV);
+  console.error('Available NEXT_PUBLIC_ variables:', Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC_')));
+  
   if (typeof window !== 'undefined') {
     console.warn('Firebase services may not work properly. Please check your environment configuration.');
+    console.warn('📖 See VERCEL_ENV_SETUP_FIREBASE.md for setup instructions');
   }
 }
 
