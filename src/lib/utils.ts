@@ -131,8 +131,28 @@ export function toSafeDate(timestamp: any): Date {
   if (!timestamp) {
     return new Date();
   }
-  if (timestamp.toDate) { // Firestore Timestamp
-    return timestamp.toDate();
+  
+  try {
+    // Handle Firestore Timestamp
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate();
+    }
+    
+    // Handle seconds and nanoseconds format (Firestore format)
+    if (timestamp.seconds && typeof timestamp.seconds === 'number') {
+      return new Date(timestamp.seconds * 1000);
+    }
+    
+    // Handle ISO string or other date string
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid timestamp format:', timestamp);
+      return new Date();
+    }
+    
+    return date;
+  } catch (error) {
+    console.error('Error converting timestamp to date:', error, timestamp);
+    return new Date();
   }
-  return new Date(timestamp); // ISO string or other date string
 }
