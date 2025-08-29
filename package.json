@@ -17,7 +17,8 @@
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui",
         "test:functions": "cd functions && npm test",
-        "test:all": "npm run test && npm run test:e2e && npm run test:functions"
+        "test:all": "npm run test && npm run test:e2e && npm run test:functions",
+        "check-env": "node scripts/check-env.js"
     },
     "dependencies": {
         "@stripe/react-stripe-js": "^3.9.2",
