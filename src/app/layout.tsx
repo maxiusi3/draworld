@@ -67,6 +67,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     type="module"
                     strategy="afterInteractive"
                     src="https://cdn.jsdelivr.net/gh/onlook-dev/onlook@main/apps/web/client/public/onlook-preload-script.js"
+                    crossOrigin="anonymous"
                 />
                 <Script
                     id="performance-monitoring"
