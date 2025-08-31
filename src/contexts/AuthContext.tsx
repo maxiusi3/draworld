@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await ReferralService.processReferralSignup(referralCode);
       } catch (error) {
         console.error('Failed to process referral:', error);
-        // Don't throw error here as user creation was successful
+        // Don&apos;t throw error here as user creation was successful
       }
     }
 

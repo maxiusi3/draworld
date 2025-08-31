@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CREDITS } from '@/lib/constants';
+import { toSafeDate } from '@/lib/utils';
 
 export function WelcomeNotification() {
   const { user } = useAuth();
@@ -12,7 +13,7 @@ export function WelcomeNotification() {
     if (user) {
       // Check if this is a new user (created within the last minute)
       const now = new Date();
-      const userCreated = user.createdAt.toDate();
+      const userCreated = toSafeDate(user.createdAt);
       const timeDiff = now.getTime() - userCreated.getTime();
       const isNewUser = timeDiff < 60000; // 1 minute
 
@@ -44,7 +45,7 @@ export function WelcomeNotification() {
               Welcome to Draworld!
             </h3>
             <p className="mt-1 text-sm text-gray-600">
-              You've received {CREDITS.SIGNUP_BONUS} credits to start creating magical videos!
+              You&apos;ve received {CREDITS.SIGNUP_BONUS} credits to start creating magical videos!
             </p>
           </div>
           <button

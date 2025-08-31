@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, getDoc } from 'firebase/firestore';
+import { toSafeDate } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
     const { searchParams } = new URL(request.url);
     const limitParam = parseInt(searchParams.get('limit') || '20');
     const startAfterParam = searchParams.get('startAfter');
@@ -63,7 +67,7 @@ export async function GET(request: NextRequest) {
         views: data.views || 0,
         shares: data.shares || 0,
         likes: data.likes || 0,
-        createdAt: data.createdAt.toDate().toISOString(),
+        createdAt: toSafeDate(data.createdAt).toISOString(),
         // Don't expose user information for privacy
         creatorAge: data.creatorAge || null,
       };

@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, getDoc } from 'firebase/firestore';
+import { toSafeDate } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
+    
     // Authenticate user
     const user = getCurrentUser();
     if (!user) {
@@ -46,8 +51,8 @@ export async function GET(request: NextRequest) {
       return {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt,
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+        createdAt: toSafeDate(data.createdAt).toISOString(),
+        updatedAt: toSafeDate(data.updatedAt).toISOString(),
       }
     });
 

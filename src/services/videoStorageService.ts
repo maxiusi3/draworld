@@ -324,7 +324,7 @@ export class VideoStorageService {
   /**
    * Get storage usage for user
    */
-  static async getUserStorageUsage(userId: string): Promise<{
+  static async getUserStorageUsage(_userId: string): Promise<{
     totalSize: number;
     videoCount: number;
     imageCount: number;

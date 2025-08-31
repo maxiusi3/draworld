@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useUserVideos } from "@/hooks/useVideoGeneration";
 import { VideoService } from "@/services/videoService";
 import { VideoCreation } from "@/types";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, toSafeDate } from "@/lib/utils";
 
 const gradients = [
   "from-red-500/20 to-orange-500/20",
@@ -97,10 +97,8 @@ export default function MyCreationsPage() {
   const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Unknown date';
     
-    // Handle Firestore Timestamp or regular dates
-    const date = typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp 
-      ? (timestamp as { toDate: () => Date }).toDate() 
-      : new Date(timestamp as string | number | Date);
+    // Use safe date conversion
+    const date = toSafeDate(timestamp);
     return formatRelativeTime(date);
   };
 
@@ -379,7 +377,7 @@ export default function MyCreationsPage() {
           </div>
 
           <h3 className="text-xl font-semibold mb-2">Your gallery is empty</h3>
-          <p className="text-gray-400 mb-6">Let's create some magic!</p>
+          <p className="text-gray-400 mb-6">Let&apos;s create some magic!</p>
 
           <Button as="link" href="/create" variant="primary" size="lg">
             🎨 Start Creating

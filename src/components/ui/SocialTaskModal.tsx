@@ -109,7 +109,7 @@ export function SocialTaskModal({ isOpen, onClose, onSuccess }: SocialTaskModalP
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Task Submitted!</h3>
               <p className="text-gray-600 mb-6">
-                We'll review your post within 24 hours and award your credits once approved.
+                We&apos;ll review your post within 24 hours and award your credits once approved.
               </p>
               <Button onClick={handleClose} className="w-full">
                 Done

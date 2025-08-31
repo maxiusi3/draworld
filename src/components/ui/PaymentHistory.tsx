@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { PaymentService } from '@/services/paymentService';
 import { Payment } from '@/types';
 import { CREDIT_PACKAGES } from '@/lib/stripe';
+import { toSafeDate } from '@/lib/utils';
 
 interface PaymentHistoryProps {
   className?: string;
@@ -80,7 +81,7 @@ export function PaymentHistory({
   };
 
   const formatDate = (timestamp: any) => {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = toSafeDate(timestamp);
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',

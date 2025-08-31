@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { Button } from '@/components/ui/Button';
 import { VideoCreation } from '@/types';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, toSafeDate } from '@/lib/utils';
 
 export default function CreationResultPage() {
   const params = useParams();
@@ -155,7 +155,7 @@ export default function CreationResultPage() {
               {video.title || video.prompt}
             </h1>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span>Created {formatRelativeTime(video.createdAt.toDate())}</span>
+              <span>Created {formatRelativeTime(toSafeDate(video.createdAt))}</span>
               {video.mood && (
                 <span className="capitalize">• {video.mood} mood</span>
               )}

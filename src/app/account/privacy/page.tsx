@@ -187,7 +187,7 @@ export default function PrivacySettingsPage() {
                       onChange={(e) => setDeleteReason(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       rows={3}
-                      placeholder="Help us improve by sharing why you're leaving..."
+                      placeholder="Help us improve by sharing why you&apos;re leaving..."
                     />
                   </div>
                   

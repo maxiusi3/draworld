@@ -7,7 +7,7 @@ import { useReferrals } from "@/hooks/useReferrals";
 import { useSocialTasks } from "@/hooks/useSocialTasks";
 import { SocialTaskService } from "@/services/socialTaskService";
 import { ReferralService } from "@/services/referralService";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, toSafeDate } from "@/lib/utils";
 
 
 export default function ReferralsPage() {
@@ -37,7 +37,7 @@ export default function ReferralsPage() {
 
   const handleSocialShare = (platform: string) => {
     const text = encodeURIComponent(
-      "Check out Draworld! Turn your child's drawings into magical animated videos with AI. It's amazing! 🎨✨"
+      "Check out Draworld! Turn your child&apos;s drawings into magical animated videos with AI. It&apos;s amazing! 🎨✨"
     );
     const url = encodeURIComponent(referralLink);
 
@@ -74,7 +74,7 @@ export default function ReferralsPage() {
       });
       
       alert(
-        "Thank you! We'll review your post and add credits to your account within 24 hours."
+        "Thank you! We&apos;ll review your post and add credits to your account within 24 hours."
       );
       setSocialPostLink("");
     } catch (err) {
@@ -86,9 +86,8 @@ export default function ReferralsPage() {
   const formatDate = (timestamp: unknown) => {
     if (!timestamp) return 'Unknown date';
     
-    // Handle Firestore Timestamp
-    const hasToDate = timestamp && typeof timestamp === 'object' && 'toDate' in timestamp;
-    const date = hasToDate ? (timestamp as { toDate: () => Date }).toDate() : new Date(timestamp as string | number);
+    // Use safe date conversion
+    const date = toSafeDate(timestamp);
     return formatRelativeTime(date);
   };
 

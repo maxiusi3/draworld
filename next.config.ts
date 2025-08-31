@@ -74,7 +74,7 @@ const nextConfig: NextConfig = {
                     },
                     {
                         key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://tag.getdrip.com https://www.google-analytics.com; connect-src 'self' https://api.stripe.com https://api.runware.ai https://*.googleapis.com https://*.firebaseapp.com https://us-central1-draworld-6898f.cloudfunctions.net https://tag.getdrip.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net https://www.googletagmanager.com https://www.googletagmanager.com/gtag/js https://tag.getdrip.com https://www.google-analytics.com; connect-src 'self' https://api.stripe.com https://api.runware.ai https://*.googleapis.com https://*.firebaseapp.com https://us-central1-draworld-6898f.cloudfunctions.net https://tag.getdrip.com https://www.google-analytics.com https://*.cloudfunctions.net https://cdn.shopimgs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;",
                     },
                 ],
             },

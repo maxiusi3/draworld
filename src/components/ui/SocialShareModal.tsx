@@ -18,7 +18,7 @@ export function SocialShareModal({
   isOpen,
   onClose,
   videoTitle,
-  videoUrl,
+  videoUrl: _videoUrl,
   shareUrl,
 }: SocialShareModalProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram');
@@ -115,7 +115,7 @@ export function SocialShareModal({
       await AnalyticsService.trackSocialTaskSubmission(selectedPlatform, !!postUrl);
 
       await submitTask({
-        type: `${selectedPlatform}_share` as any,
+        type: `${selectedPlatform}_share` as 'instagram_share' | 'tiktok_share' | 'twitter_share' | 'facebook_share',
         platform: selectedPlatform,
         postUrl: postUrl || undefined,
         hashtags: template.hashtags,
@@ -212,7 +212,7 @@ export function SocialShareModal({
                   variant="secondary"
                   className="w-full"
                 >
-                  I'll Share Later & Submit for Credits (+{selectedPlatformData?.reward} credits)
+                  I&apos;ll Share Later & Submit for Credits (+{selectedPlatformData?.reward} credits)
                 </Button>
               </div>
             </>
@@ -241,7 +241,7 @@ export function SocialShareModal({
                   className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  Providing a link helps us verify your post faster, but it's not required.
+                  Providing a link helps us verify your post faster, but it&apos;s not required.
                 </p>
               </div>
 

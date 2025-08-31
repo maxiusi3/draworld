@@ -30,9 +30,6 @@ export function ImageCropper({
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeHandle, setResizeHandle] = useState<string>('');
   const [cropArea, setCropArea] = useState<CropArea>({
     x: 50,
     y: 50,
@@ -40,7 +37,6 @@ export function ImageCropper({
     height: 200
   });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // Initialize crop area when image loads
   useEffect(() => {
@@ -64,7 +60,6 @@ export function ImageCropper({
       }
 
       setImageSize({ width: displayWidth, height: displayHeight });
-      setContainerSize({ width: containerWidth, height: containerHeight });
 
       // Set initial crop area (center 60% of image)
       const cropSize = Math.min(displayWidth, displayHeight) * 0.6;
@@ -87,13 +82,6 @@ export function ImageCropper({
   const handleMouseDown = useCallback((e: React.MouseEvent, action: 'drag' | 'resize', handle?: string) => {
     e.preventDefault();
     
-    if (action === 'drag') {
-      setIsDragging(true);
-    } else if (action === 'resize' && handle) {
-      setIsResizing(true);
-      setResizeHandle(handle);
-    }
-
     const startX = e.clientX;
     const startY = e.clientY;
     const startCropArea = { ...cropArea };
@@ -112,7 +100,7 @@ export function ImageCropper({
           y: newY
         }));
       } else if (action === 'resize') {
-        let newCropArea = { ...startCropArea };
+        const newCropArea = { ...startCropArea };
 
         switch (handle) {
           case 'nw':
@@ -157,9 +145,6 @@ export function ImageCropper({
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-      setIsResizing(false);
-      setResizeHandle('');
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };

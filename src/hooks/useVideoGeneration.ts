@@ -147,7 +147,7 @@ export function useVideoGeneration(): UseVideoGenerationReturn {
 
 // Hook for managing user's video library
 export function useUserVideos() {
-  const [videos, setVideos] = useState<unknown[]>([]);
+  const [videos, setVideos] = useState<VideoCreation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -181,7 +181,7 @@ export function useUserVideos() {
   const deleteVideo = useCallback(async (videoId: string) => {
     try {
       await VideoService.deleteVideo(videoId);
-      setVideos(prev => prev.filter(video => video.id !== videoId));
+      setVideos(prev => prev.filter((video: VideoCreation) => video.id !== videoId));
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete video';
       throw new Error(errorMessage);
@@ -191,7 +191,7 @@ export function useUserVideos() {
   const updateVideoVisibility = useCallback(async (videoId: string, isPublic: boolean) => {
     try {
       await VideoService.updateVideoVisibility(videoId, isPublic);
-      setVideos(prev => prev.map(video => 
+      setVideos(prev => prev.map((video: VideoCreation) => 
         video.id === videoId ? { ...video, isPublic } : video
       ));
     } catch (err: unknown) {
