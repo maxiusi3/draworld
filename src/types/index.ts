@@ -3,17 +3,40 @@ import { Timestamp } from 'firebase/firestore';
 // User types
 export interface User {
   id: string;
-  email: string;
-  displayName: string;
-  photoURL?: string;
+  email: string | null;
+  displayName: string | null;
   credits: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  lastCheckinDate?: Timestamp;
-  referralCode: string;
+  lastCheckIn?: Timestamp;
+  referralCode?: string;
   referredBy?: string;
-  isFirstVideoGenerated: boolean;
-  role?: 'user' | 'admin' | 'moderator';
+  isFirstVideoGenerated?: boolean;
+  role?: 'user' | 'admin';
+}
+
+export interface CreditTransaction {
+  id: string;
+  userId: string;
+  type: 'earned' | 'spent';
+  amount: number;
+  description: string;
+  source: 'signup' | 'checkin' | 'referral' | 'purchase' | 'generation' | 'admin_award';
+  relatedId?: string;
+  createdAt: Timestamp;
+}
+
+export interface Payment {
+  id: string;
+  userId: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  amount: number;
+  currency: string;
+  packageId: string;
+  credits: number;
+  bonusCredits: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface AdminUser extends User {
@@ -47,4 +70,21 @@ export interface ProfileForm {
   currentPassword?: string;
   newPassword?: string;
   confirmPassword?: string;
+}
+
+export interface Video {
+  id: string;
+  title?: string;
+  prompt: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  createdAt: Timestamp;
+  userId: string;
+  userName?: string;
+  views?: number;
+  likes?: number;
+  category?: string;
+  tags?: string[];
+  isPublic?: boolean;
+  isFeatured?: boolean;
 }

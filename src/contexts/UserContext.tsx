@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, CreditTransaction, Payment } from '@/types';
+import { CreditTransaction, Payment } from '@/types';
 import { CreditService } from '@/services/creditService';
 import { PaymentService } from '@/services/paymentService';
 
@@ -43,7 +43,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [nextCheckInTime, setNextCheckInTime] = useState<string | null>(null);
 
   // Check if user can perform daily check-in
-  const updateCheckInStatus = () => {
+  const updateCheckInStatus = useCallback(() => {
     if (!user?.lastCheckIn) {
       setCanCheckIn(true);
       setNextCheckInTime(null);
@@ -71,7 +71,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setNextCheckInTime(`${minutesUntil}m`);
       }
     }
-  };
+  }, [user]);
 
   // Update check-in status when user changes
   useEffect(() => {
@@ -80,7 +80,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     // Update every minute
     const interval = setInterval(updateCheckInStatus, 60000);
     return () => clearInterval(interval);
-  }, [user?.lastCheckIn]);
+  }, [updateCheckInStatus, user]);
+
+  const refreshCreditHistory = useCallback(async () => {
+    if (!user) return;
+
+    setLoadingCredits(true);
+    try {
+      const result = await CreditService.getCreditHistory(50);
+      setCreditHistory(result.transactions);
+    } catch (error) {
+      console.error('Failed to load credit history:', error);
+    } finally {
+      setLoadingCredits(false);
+    }
+  }, [user]);
+
+  const refreshPaymentHistory = useCallback(async () => {
+    if (!user) return;
+
+    setLoadingPayments(true);
+    try {
+      const result = await PaymentService.getPaymentHistory(20);
+      setPaymentHistory(result.payments);
+    } catch (error) {
+      console.error('Failed to load payment history:', error);
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, [user]);
 
   // Perform daily check-in
   const performDailyCheckIn = async () => {
@@ -98,41 +126,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         success: true, 
         creditsEarned: result.creditsEarned 
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to perform check-in';
       return { 
         success: false, 
-        error: error.message || 'Failed to perform check-in' 
+        error: message
       };
-    }
-  };
-
-  // Refresh credit history
-  const refreshCreditHistory = async () => {
-    if (!user) return;
-
-    setLoadingCredits(true);
-    try {
-      const result = await CreditService.getCreditHistory(50);
-      setCreditHistory(result.transactions);
-    } catch (error) {
-      console.error('Failed to load credit history:', error);
-    } finally {
-      setLoadingCredits(false);
-    }
-  };
-
-  // Refresh payment history
-  const refreshPaymentHistory = async () => {
-    if (!user) return;
-
-    setLoadingPayments(true);
-    try {
-      const result = await PaymentService.getPaymentHistory(20);
-      setPaymentHistory(result.payments);
-    } catch (error) {
-      console.error('Failed to load payment history:', error);
-    } finally {
-      setLoadingPayments(false);
     }
   };
 
@@ -145,7 +144,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setCreditHistory([]);
       setPaymentHistory([]);
     }
-  }, [user]);
+  }, [user, refreshCreditHistory, refreshPaymentHistory]);
 
   const value: UserContextType = {
     creditHistory,

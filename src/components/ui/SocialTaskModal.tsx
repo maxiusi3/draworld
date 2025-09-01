@@ -50,7 +50,7 @@ export function SocialTaskModal({ isOpen, onClose, onSuccess }: SocialTaskModalP
 
     try {
       const submission: SocialTaskSubmission = {
-        type: `${selectedPlatform}_share` as any,
+        type: `${selectedPlatform}_share` as SocialTaskSubmission['type'],
         platform: selectedPlatform,
         postUrl: postUrl.trim(),
         hashtags: ['#draworldapp'],
@@ -59,8 +59,12 @@ export function SocialTaskModal({ isOpen, onClose, onSuccess }: SocialTaskModalP
       await SocialTaskService.submitTask(submission);
       setSuccess(true);
       onSuccess?.();
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }

@@ -10,7 +10,6 @@ interface SocialShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   videoTitle?: string;
-  videoUrl?: string;
   shareUrl: string;
 }
 
@@ -18,7 +17,6 @@ export function SocialShareModal({
   isOpen,
   onClose,
   videoTitle,
-  videoUrl: _videoUrl,
   shareUrl,
 }: SocialShareModalProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram');
@@ -125,7 +123,7 @@ export function SocialShareModal({
       setPostUrl('');
       setShowTaskSubmission(false);
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled by the hook
     }
   };
@@ -183,7 +181,7 @@ export function SocialShareModal({
                 <div className="bg-zinc-800 rounded-lg p-4 mb-3">
                   <p className="text-gray-300 mb-3">{template.text}</p>
                   <div className="flex flex-wrap gap-2">
-                    {template.hashtags.map((hashtag, index) => (
+                    {template.hashtags.map((hashtag: string, index: number) => (
                       <span key={index} className="text-blue-400 text-sm">
                         {hashtag}
                       </span>

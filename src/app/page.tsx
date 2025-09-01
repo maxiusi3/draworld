@@ -372,6 +372,12 @@ export default function HomePage() {
                 >
                   🎨 Create Your Own Animation
                 </Button>
+                <ShareButton
+                  video={selectedVideo}
+                  className="flex-1"
+                >
+                  🔗 Share Your Creation
+                </ShareButton>
                 <Button
                   as="link"
                   href="/gallery"

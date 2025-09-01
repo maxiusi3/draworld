@@ -12,116 +12,117 @@ import {
   getDocs,
   doc,
   getDoc,
-  DocumentData,
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { GalleryVideo, SortOption, CategoryOption } from '@/services/galleryService';
-import { useErrorToast } from '@/components/ui/Toast';
-import { monitoringService } from '@/lib/monitoring';
-import { VideoItem } from '@/components/ui/VideoGallery';
+import { type Video } from '@/types';
 import { VIDEOS_PER_PAGE } from '@/lib/constants';
+import { useErrorToast } from '@/components/ui/Toast';
+import { monitoring } from '@/lib/monitoring';
 
-export function useGallery(
-  initialSort: SortOption = 'trending',
-  initialCategory: CategoryOption = 'all'
-) {
-  const [videos, setVideos] = useState<GalleryVideo[]>([]);
+export function useGallery() {
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [sort, setSort] = useState(initialSort);
-  const [category, setCategory] = useState(initialCategory);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const { showErrorToast } = useErrorToast();
+  const showErrorToast = useErrorToast();
 
-  const fetchVideos = useCallback(
-    async (newSort?: SortOption, newCategory?: CategoryOption, loadMore = false) => {
-      if (loading) return;
-      setLoading(true);
-      setError(null);
+  const fetchVideos = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const currentSort = newSort || sort;
-        const currentCategory = newCategory || category;
-        const isNewQuery = newSort || newCategory || !loadMore;
+    try {
+      if (!db) {
+        throw new Error('Firestore is not initialized');
+      }
+      let q = query(
+        collection(db, 'videos'),
+        where('isPublic', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(VIDEOS_PER_PAGE)
+      );
 
-        let q = query(
-          collection(db, 'galleryVideos'),
-          orderBy(currentSort, 'desc'),
+      if (lastVisible) {
+        q = query(
+          collection(db, 'videos'),
+          where('isPublic', '==', true),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisible),
           limit(VIDEOS_PER_PAGE)
         );
-
-        if (currentCategory !== 'all') {
-          q = query(q, where('category', '==', currentCategory));
-        }
-
-        if (loadMore && lastDoc) {
-          q = query(q, startAfter(lastDoc));
-        }
-
-        const querySnapshot = await getDocs(q);
-        const newVideos = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as GalleryVideo[];
-
-        setVideos(prev => (isNewQuery ? newVideos : [...prev, ...newVideos]));
-        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
-        setHasMore(querySnapshot.docs.length === VIDEOS_PER_PAGE);
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch videos';
-        setError(errorMessage);
-        showErrorToast('Failed to load gallery', errorMessage);
-        monitoringService.logError(err, { context: 'useGallery' });
-      } finally {
-        setLoading(false);
       }
-    },
-    [loading, sort, category, lastDoc, showErrorToast]
-  );
 
-  useEffect(() => {
-    fetchVideos(sort, category);
-  }, [sort, category, fetchVideos]);
+      const querySnapshot = await getDocs(q);
+      const newVideos = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Video[];
 
-  const loadMore = () => {
+      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      setVideos(prev => (lastVisible ? [...prev, ...newVideos] : newVideos));
+      setHasMore(newVideos.length === VIDEOS_PER_PAGE);
+    } catch (err: unknown) {
+      let errorMessage = 'An unknown error occurred.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+      showErrorToast('Failed to fetch videos', errorMessage);
+      monitoring.log('error', 'Failed to fetch gallery videos', { error: errorMessage });
+    } finally {
+      setLoading(false);
+    }
+  }, [lastVisible, showErrorToast]);
+
+  const fetchMore = () => {
     if (hasMore && !loading) {
-      fetchVideos(sort, category, true);
+      fetchVideos();
     }
   };
 
-  return { videos, loading, error, hasMore, sort, category, setSort, setCategory, loadMore };
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
+
+  return { videos, loading, error, hasMore, fetchMore };
 }
 
 export function useFeaturedVideos() {
-  const [videos, setVideos] = useState<GalleryVideo[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { showErrorToast } = useErrorToast();
+  const showErrorToast = useErrorToast();
 
   useEffect(() => {
     const fetchFeatured = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
+        if (!db) {
+          throw new Error('Firestore is not initialized');
+        }
         const q = query(
-          collection(db, 'galleryVideos'),
+          collection(db, 'videos'),
+          where('isPublic', '==', true),
           where('isFeatured', '==', true),
           orderBy('createdAt', 'desc'),
-          limit(6)
+          limit(5)
         );
         const querySnapshot = await getDocs(q);
         const featuredVideos = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-        })) as GalleryVideo[];
+        })) as Video[];
         setVideos(featuredVideos);
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch featured videos';
+        let errorMessage = 'An unknown error occurred.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
         setError(errorMessage);
-        showErrorToast('Failed to load featured videos', errorMessage);
-        monitoringService.logError(err, { context: 'useFeaturedVideos' });
+        showErrorToast('Failed to fetch featured videos', errorMessage);
+        monitoring.log('error', 'Failed to fetch featured videos', { error: errorMessage });
       } finally {
         setLoading(false);
       }
@@ -136,55 +137,121 @@ export function useFeaturedVideos() {
 export function useVideoSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    const params = new URLSearchParams(window.location.search);
-    if (term) {
-      params.set('q', term);
-    } else {
-      params.delete('q');
-    }
-    router.push(`/gallery?${params.toString()}`);
-  };
-
-  return { searchTerm, handleSearch };
-}
-
-export function useVideo(videoId: string) {
-  const [video, setVideo] = useState<VideoItem | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [searchResults, setSearchResults] = useState<Video[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const showErrorToast = useErrorToast();
+
+  const searchVideos = useCallback(
+    async (searchTerm: string, category?: string, sort?: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!db) {
+          throw new Error('Firestore is not initialized');
+        }
+        // Build query dynamically based on parameters
+        let q = query(collection(db, 'videos'), where('isPublic', '==', true));
+
+        if (searchTerm) {
+          // Firestore doesn't support full-text search natively.
+          // This is a simple "tags" based search.
+          q = query(q, where('tags', 'array-contains', searchTerm.toLowerCase()));
+        }
+
+        if (category && category !== 'all') {
+          q = query(q, where('category', '==', category));
+        }
+
+        if (sort === 'popular') {
+          q = query(q, orderBy('likes', 'desc'));
+        } else {
+          q = query(q, orderBy('createdAt', 'desc'));
+        }
+
+        const querySnapshot = await getDocs(q);
+        const results = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Video[];
+        setSearchResults(results);
+
+        // Update URL query params
+        const params = new URLSearchParams();
+        if (searchTerm) params.set('search', searchTerm);
+        if (category) params.set('category', category);
+        if (sort) params.set('sort', sort);
+        router.push(`/gallery?${params.toString()}`);
+      } catch (err: unknown) {
+        let errorMessage = 'An unknown error occurred.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setError(errorMessage);
+        showErrorToast('Failed to search videos', errorMessage);
+        monitoring.log('error', 'Failed to search for videos', { error: errorMessage });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router, showErrorToast]
+  );
 
   useEffect(() => {
-    const fetchVideo = async () => {
-      if (!videoId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const videoDocRef = doc(db, 'galleryVideos', videoId);
-        const videoDoc = await getDoc(videoDocRef);
+    const search = searchParams.get('search');
+    const category = searchParams.get('category');
+    const sort = searchParams.get('sort');
 
-        if (videoDoc.exists()) {
-          setVideo({ id: videoDoc.id, ...videoDoc.data() } as VideoItem);
+    if (search || category || sort) {
+      searchVideos(search || '', category || undefined, sort || undefined);
+    }
+  }, [searchParams, searchVideos]);
+
+  return { searchResults, loading, error, searchVideos };
+}
+
+export function useVideo() {
+  const searchParams = useSearchParams();
+  const [video, setVideo] = useState<Video | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const showErrorToast = useErrorToast();
+
+  useEffect(() => {
+    const fetchVideo = async (id: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        if (!db) {
+          throw new Error('Firestore is not initialized');
+        }
+        const docRef = doc(db, 'videos', id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setVideo({ id: docSnap.id, ...docSnap.data() } as Video);
         } else {
           setError('Video not found');
+          showErrorToast('Error', 'Video not found');
         }
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch video';
+        let errorMessage = 'An unknown error occurred.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+        }
         setError(errorMessage);
-        monitoringService.logError(err, { context: 'useVideo' });
+        showErrorToast('Failed to fetch video', errorMessage);
+        monitoring.log('error', 'Failed to fetch video', { id, error: errorMessage });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchVideo();
-  }, [videoId]);
+    const id = searchParams.get('id');
+    if (typeof id === 'string') {
+      fetchVideo(id);
+    }
+  }, [searchParams, showErrorToast]);
 
   return { video, loading, error };
 }

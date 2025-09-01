@@ -46,7 +46,7 @@ export function useCredits() {
       }
       
       return result;
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to perform daily check-in';
       setError(message);
       return null;
@@ -78,7 +78,7 @@ export function useCredits() {
       const result = await CreditService.spendCredits(amount, description, source, relatedId);
       await refreshUser(); // Refresh user data to get updated credits
       return result;
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to spend credits';
       setError(message);
       return null;

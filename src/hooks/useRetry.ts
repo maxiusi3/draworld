@@ -127,17 +127,18 @@ export function useApiCall<T>(
     if (autoExecute) {
       retry.execute();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoExecute, ...dependencies]);
 
   return retry;
 }
 
 // Hook for form submissions with retry
-export function useFormSubmission<T>(
-  submitFn: (data: unknown) => Promise<T>,
+export function useFormSubmission<T, F>(
+  submitFn: (data: F) => Promise<T>,
   options: UseRetryOptions = {}
 ) {
-  const [formData, setFormData] = useState<unknown>(null);
+  const [formData, setFormData] = useState<F | null>(null);
   
   const retry = useRetry(
     () => {
@@ -149,7 +150,7 @@ export function useFormSubmission<T>(
     options
   );
 
-  const submit = useCallback(async (data: unknown): Promise<T | undefined> => {
+  const submit = useCallback(async (data: F): Promise<T | undefined> => {
     setFormData(data);
     return retry.execute();
   }, [retry]);
