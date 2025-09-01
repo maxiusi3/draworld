@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVideoGeneration } from "@/hooks/useVideoGeneration";
 import { useRouter } from "next/navigation";
 import { CREDITS, MOODS } from "@/lib/constants";
+import Image from "next/image";
 
 type Step = "upload" | "crop" | "prompt" | "generating" | "result";
 type Mood = "joyful" | "calm" | "epic" | "mysterious";
@@ -128,11 +129,13 @@ export default function CreatePage() {
         <div className="bg-zinc-900 rounded-2xl p-8 border border-zinc-700">
           <div className="text-center">
             <div className="max-w-md mx-auto mb-6">
-              <img
+              {uploadedImage && <Image
                 src={uploadedImage}
                 alt="Uploaded artwork"
                 className="w-full rounded-xl border border-zinc-700"
-              />
+                width={500}
+                height={500}
+              />}
             </div>
 
             <div className="flex gap-4 justify-center">
@@ -200,11 +203,14 @@ export default function CreatePage() {
             Your Artwork
           </h3>
           {(croppedImage || uploadedImage) &&
-        <img
-          src={croppedImage || uploadedImage}
+        <Image
+          src={croppedImage || uploadedImage!}
           alt="Cropped artwork"
           className="w-full rounded-xl border border-zinc-700"
-          data-oid="25fzo1o" />
+          data-oid="25fzo1o" 
+          width={500}
+          height={500}
+          />
 
         }
         </div>
@@ -500,15 +506,14 @@ export default function CreatePage() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {completedVideo?.videoUrl && (
-            <Button
-              as="a"
-              href={completedVideo.videoUrl}
-              download
-              variant="primary"
-              size="lg"
-            >
-              📥 Download
-            </Button>
+            <a href={completedVideo.videoUrl} download>
+              <Button
+                variant="primary"
+                size="lg"
+              >
+                📥 Download
+              </Button>
+            </a>
           )}
           
           <Button

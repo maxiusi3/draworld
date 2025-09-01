@@ -6,6 +6,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/Button';
 import { AdminService, ModerationVideo } from '@/services/adminService';
 import { formatDate } from '@/lib/utils';
+import Image from 'next/image';
 
 export default function AdminModerationPage() {
   const { user } = useAuth();
@@ -111,7 +112,7 @@ export default function AdminModerationPage() {
               { key: 'approved', label: 'Approved' },
               { key: 'rejected', label: 'Rejected' },
               { key: 'all', label: 'All Videos' },
-            ].map((tab) => (
+            ].map((tab: { key: string; label: string }) => (
               <button
                 key={tab.key}
                 onClick={() => setFilter(tab.key as 'pending' | 'approved' | 'rejected' | 'all')}
@@ -140,15 +141,17 @@ export default function AdminModerationPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video) => (
+          {videos.map((video: ModerationVideo) => (
             <div key={video.id} className="bg-white rounded-lg shadow overflow-hidden">
               {/* Video Thumbnail */}
               <div className="aspect-video bg-gray-200 relative">
                 {video.thumbnailUrl ? (
-                  <img
+                  <Image
                     src={video.thumbnailUrl}
                     alt={video.title || video.prompt}
                     className="w-full h-full object-cover"
+                    width={500}
+                    height={281}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">

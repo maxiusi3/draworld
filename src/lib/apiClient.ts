@@ -295,10 +295,10 @@ export class ApiClient {
     }
     
     if (contentType?.includes('text/')) {
-      return response.text() as unknown;
+      return response.text() as unknown as T;
     }
     
-    return response.blob() as unknown;
+    return response.blob() as unknown as T;
   }
 
   /**
@@ -328,21 +328,22 @@ export class ApiClient {
    * Create standardized API error
    */
   private createApiError(error: unknown): ApiError {
-    if (error.name === 'AbortError') {
+    const err = error as any;
+    if (err?.name === 'AbortError') {
       return {
         message: 'Request was cancelled',
         code: 'request_cancelled',
       };
     }
 
-    if (error.message?.includes('timeout')) {
+    if (err?.message?.includes('timeout')) {
       return {
         message: 'Request timed out',
         code: 'request_timeout',
       };
     }
 
-    if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+    if (err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
       return {
         message: 'Network error. Please check your connection.',
         code: 'network_error',
@@ -351,9 +352,9 @@ export class ApiClient {
 
     return {
       message: handleApiError(error, { component: 'ApiClient' }),
-      status: error.status,
-      code: error.code,
-      details: error.details,
+      status: err?.status,
+      code: err?.code,
+      details: err?.details,
     };
   }
 
@@ -378,7 +379,8 @@ export class ApiClient {
    * Remove authentication header
    */
   clearAuthToken() {
-    const { Authorization: _, ...headers } = this.config.headers || {};
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { Authorization, ...headers } = this.config.headers || {};
     this.config.headers = headers;
   }
 }

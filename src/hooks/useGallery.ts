@@ -1,189 +1,190 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { GalleryService, GalleryVideo, SortOption, CategoryOption } from '@/services/galleryService';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  getDocs,
+  doc,
+  getDoc,
+  DocumentData,
+  QueryDocumentSnapshot,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { GalleryVideo, SortOption, CategoryOption } from '@/services/galleryService';
+import { useErrorToast } from '@/components/ui/Toast';
+import { monitoringService } from '@/lib/monitoring';
+import { VideoItem } from '@/components/ui/VideoGallery';
+import { VIDEOS_PER_PAGE } from '@/lib/constants';
 
-interface UseGalleryReturn {
-  videos: GalleryVideo[];
-  loading: boolean;
-  error: string | null;
-  hasMore: boolean;
-  category: CategoryOption;
-  sort: SortOption;
-  loadVideos: (refresh?: boolean) => Promise<void>;
-  loadMore: () => Promise<void>;
-  setCategory: (category: CategoryOption) => void;
-  setSort: (sort: SortOption) => void;
-  refresh: () => Promise<void>;
-  clearError: () => void;
-}
-
-export function useGallery(): UseGalleryReturn {
+export function useGallery(
+  initialSort: SortOption = 'trending',
+  initialCategory: CategoryOption = 'all'
+) {
   const [videos, setVideos] = useState<GalleryVideo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryOption>('all');
-  const [sort, setSort] = useState<SortOption>('trending');
+  const [sort, setSort] = useState(initialSort);
+  const [category, setCategory] = useState(initialCategory);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const { showErrorToast } = useErrorToast();
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const fetchVideos = useCallback(
+    async (newSort?: SortOption, newCategory?: CategoryOption, loadMore = false) => {
+      if (loading) return;
+      setLoading(true);
+      setError(null);
 
-  const loadVideos = useCallback(async (refresh = false) => {
-    setLoading(true);
-    setError(null);
+      try {
+        const currentSort = newSort || sort;
+        const currentCategory = newCategory || category;
+        const isNewQuery = newSort || newCategory || !loadMore;
 
-    try {
-      const startAfter = refresh ? undefined : lastDoc;
-      const result = await GalleryService.getGalleryVideos(20, startAfter, category, sort);
+        let q = query(
+          collection(db, 'galleryVideos'),
+          orderBy(currentSort, 'desc'),
+          limit(VIDEOS_PER_PAGE)
+        );
 
-      if (refresh) {
-        setVideos(result.videos);
-      } else {
-        setVideos(prev => [...prev, ...result.videos]);
+        if (currentCategory !== 'all') {
+          q = query(q, where('category', '==', currentCategory));
+        }
+
+        if (loadMore && lastDoc) {
+          q = query(q, startAfter(lastDoc));
+        }
+
+        const querySnapshot = await getDocs(q);
+        const newVideos = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as GalleryVideo[];
+
+        setVideos(prev => (isNewQuery ? newVideos : [...prev, ...newVideos]));
+        setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
+        setHasMore(querySnapshot.docs.length === VIDEOS_PER_PAGE);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch videos';
+        setError(errorMessage);
+        showErrorToast('Failed to load gallery', errorMessage);
+        monitoringService.logError(err, { context: 'useGallery' });
+      } finally {
+        setLoading(false);
       }
+    },
+    [loading, sort, category, lastDoc, showErrorToast]
+  );
 
-      setHasMore(result.hasMore);
-      setLastDoc(result.lastDoc);
+  useEffect(() => {
+    fetchVideos(sort, category);
+  }, [sort, category, fetchVideos]);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to load gallery videos');
-    } finally {
-      setLoading(false);
+  const loadMore = () => {
+    if (hasMore && !loading) {
+      fetchVideos(sort, category, true);
     }
-  }, [lastDoc, category, sort]);
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
-    await loadVideos(false);
-  }, [hasMore, loading, loadVideos]);
-
-  const refresh = useCallback(async () => {
-    setLastDoc(null);
-    await loadVideos(true);
-  }, [loadVideos]);
-
-  const handleCategoryChange = useCallback((newCategory: CategoryOption) => {
-    setCategory(newCategory);
-    setLastDoc(null);
-    setVideos([]);
-    setHasMore(true);
-  }, []);
-
-  const handleSortChange = useCallback((newSort: SortOption) => {
-    setSort(newSort);
-    setLastDoc(null);
-    setVideos([]);
-    setHasMore(true);
-  }, []);
-
-  return {
-    videos,
-    loading,
-    error,
-    hasMore,
-    category,
-    sort,
-    loadVideos,
-    loadMore,
-    setCategory: handleCategoryChange,
-    setSort: handleSortChange,
-    refresh,
-    clearError,
   };
+
+  return { videos, loading, error, hasMore, sort, category, setSort, setCategory, loadMore };
 }
 
-// Hook for featured videos (homepage)
 export function useFeaturedVideos() {
   const [videos, setVideos] = useState<GalleryVideo[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showErrorToast } = useErrorToast();
 
-  const loadFeaturedVideos = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const q = query(
+          collection(db, 'galleryVideos'),
+          where('isFeatured', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(6)
+        );
+        const querySnapshot = await getDocs(q);
+        const featuredVideos = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as GalleryVideo[];
+        setVideos(featuredVideos);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch featured videos';
+        setError(errorMessage);
+        showErrorToast('Failed to load featured videos', errorMessage);
+        monitoringService.logError(err, { context: 'useFeaturedVideos' });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    try {
-      const result = await GalleryService.getFeaturedVideos(6);
-      setVideos(result);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load featured videos');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    fetchFeatured();
+  }, [showErrorToast]);
 
-  return {
-    videos,
-    loading,
-    error,
-    loadFeaturedVideos,
-  };
+  return { videos, loading, error };
 }
 
-// Hook for video search
 export function useVideoSearch() {
-  const [videos, setVideos] = useState<GalleryVideo[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
 
-  const searchVideos = useCallback(async (searchQuery: string, refresh = true) => {
-    if (!searchQuery.trim()) {
-      setVideos([]);
-      setHasMore(false);
-      return;
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    const params = new URLSearchParams(window.location.search);
+    if (term) {
+      params.set('q', term);
+    } else {
+      params.delete('q');
     }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const startAfter = refresh ? undefined : lastDoc;
-      const result = await GalleryService.searchVideos(searchQuery, 20, startAfter);
-
-      if (refresh) {
-        setVideos(result.videos);
-        setQuery(searchQuery);
-      } else {
-        setVideos(prev => [...prev, ...result.videos]);
-      }
-
-      setHasMore(result.hasMore);
-      setLastDoc(result.lastDoc);
-
-    } catch (err: any) {
-      setError(err.message || 'Failed to search videos');
-    } finally {
-      setLoading(false);
-    }
-  }, [lastDoc]);
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading || !query) return;
-    await searchVideos(query, false);
-  }, [hasMore, loading, query, searchVideos]);
-
-  const clearSearch = useCallback(() => {
-    setVideos([]);
-    setQuery('');
-    setLastDoc(null);
-    setHasMore(true);
-    setError(null);
-  }, []);
-
-  return {
-    videos,
-    loading,
-    error,
-    hasMore,
-    query,
-    searchVideos,
-    loadMore,
-    clearSearch,
+    router.push(`/gallery?${params.toString()}`);
   };
+
+  return { searchTerm, handleSearch };
+}
+
+export function useVideo(videoId: string) {
+  const [video, setVideo] = useState<VideoItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVideo = async () => {
+      if (!videoId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        setError(null);
+        const videoDocRef = doc(db, 'galleryVideos', videoId);
+        const videoDoc = await getDoc(videoDocRef);
+
+        if (videoDoc.exists()) {
+          setVideo({ id: videoDoc.id, ...videoDoc.data() } as VideoItem);
+        } else {
+          setError('Video not found');
+        }
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch video';
+        setError(errorMessage);
+        monitoringService.logError(err, { context: 'useVideo' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVideo();
+  }, [videoId]);
+
+  return { video, loading, error };
 }

@@ -148,7 +148,7 @@ class AWSRekognitionModerationProvider implements ModerationProvider {
     try {
       // This is a simplified example - in production you'd use the AWS SDK
       // For now, we'll return a mock result
-      console.log('AWS Rekognition moderation not fully implemented - using mock result');
+      console.log(`AWS Rekognition moderation for ${imageUrl} not fully implemented - using mock result`);
       
       return {
         isApproved: true,
@@ -210,7 +210,7 @@ export class ContentModerationService {
   /**
    * Check image content safety
    */
-  async moderateImage(): Promise<ModerationResult> {
+  async moderateImage(imageUrl: string): Promise<ModerationResult> {
     if (this.providers.length === 0) {
       throw new Error('No moderation providers configured');
     }

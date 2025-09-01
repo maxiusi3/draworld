@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { Button } from '@/components/ui/Button';
 import { VideoCreation } from '@/types';
@@ -31,8 +32,12 @@ export default function CreationResultPage() {
         }
 
         setVideo(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An unknown error occurred');
+        }
       } finally {
         setLoading(false);
       }

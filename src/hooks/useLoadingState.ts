@@ -180,6 +180,7 @@ export function useMultipleLoadingStates() {
   const reset = useCallback((key?: string) => {
     if (key) {
       setLoadingStates(prev => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [key]: _, ...rest } = prev;
         return rest;
       });

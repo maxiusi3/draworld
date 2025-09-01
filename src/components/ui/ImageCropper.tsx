@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from './Button';
+import Image from 'next/image';
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -37,47 +38,6 @@ export function ImageCropper({
     height: 200
   });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-
-  // Initialize crop area when image loads
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const containerRect = container.getBoundingClientRect();
-      const containerWidth = containerRect.width - 40; // padding
-      const containerHeight = containerRect.height - 40;
-
-      // Calculate display size maintaining aspect ratio
-      const imgAspectRatio = img.naturalWidth / img.naturalHeight;
-      let displayWidth = containerWidth;
-      let displayHeight = containerWidth / imgAspectRatio;
-
-      if (displayHeight > containerHeight) {
-        displayHeight = containerHeight;
-        displayWidth = containerHeight * imgAspectRatio;
-      }
-
-      setImageSize({ width: displayWidth, height: displayHeight });
-
-      // Set initial crop area (center 60% of image)
-      const cropSize = Math.min(displayWidth, displayHeight) * 0.6;
-      const cropWidth = aspectRatio ? cropSize : cropSize;
-      const cropHeight = aspectRatio ? cropSize / aspectRatio : cropSize;
-
-      setCropArea({
-        x: (displayWidth - cropWidth) / 2,
-        y: (displayHeight - cropHeight) / 2,
-        width: cropWidth,
-        height: cropHeight
-      });
-
-      setIsLoading(false);
-    };
-
-    img.src = imageUrl;
-  }, [imageUrl, aspectRatio]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent, action: 'drag' | 'resize', handle?: string) => {
     e.preventDefault();
@@ -220,7 +180,7 @@ export function ImageCropper({
         }}
       >
         {/* Original Image */}
-        <img
+        <Image
           ref={imageRef}
           src={imageUrl}
           alt="Original artwork"
@@ -231,7 +191,44 @@ export function ImageCropper({
             maxWidth: '100%',
             maxHeight: '100%'
           }}
+          width={imageSize.width || 500}
+          height={imageSize.height || 500}
           draggable={false}
+          onLoad={(e) => {
+            const target = e.target as HTMLImageElement;
+            const container = containerRef.current;
+            if (!container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const containerWidth = containerRect.width - 40; // padding
+            const containerHeight = containerRect.height - 40;
+
+            // Calculate display size maintaining aspect ratio
+            const imgAspectRatio = target.naturalWidth / target.naturalHeight;
+            let displayWidth = containerWidth;
+            let displayHeight = containerWidth / imgAspectRatio;
+
+            if (displayHeight > containerHeight) {
+              displayHeight = containerHeight;
+              displayWidth = containerHeight * imgAspectRatio;
+            }
+
+            setImageSize({ width: displayWidth, height: displayHeight });
+
+            // Set initial crop area (center 60% of image)
+            const cropSize = Math.min(displayWidth, displayHeight) * 0.6;
+            const cropWidth = aspectRatio ? cropSize : cropSize;
+            const cropHeight = aspectRatio ? cropSize / aspectRatio : cropSize;
+
+            setCropArea({
+              x: (displayWidth - cropWidth) / 2,
+              y: (displayHeight - cropHeight) / 2,
+              width: cropWidth,
+              height: cropHeight
+            });
+
+            setIsLoading(false);
+          }}
         />
 
         {/* Crop Overlay */}

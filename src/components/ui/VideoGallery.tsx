@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { ShareButton } from './ShareButton';
 import { formatDate } from '@/lib/utils';
+import Image from 'next/image';
 
 export interface VideoItem {
   id: string;
@@ -96,10 +97,12 @@ export function VideoGallery({
             {/* Video Thumbnail */}
             <div className="aspect-video bg-gray-100 relative overflow-hidden">
               {video.thumbnailUrl ? (
-                <img
+                <Image
                   src={video.thumbnailUrl}
                   alt={video.title || video.prompt}
                   className="w-full h-full object-cover"
+                  width={500}
+                  height={281}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -181,7 +184,7 @@ export function VideoGallery({
               {/* Tags */}
               {video.tags && video.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {video.tags.slice(0, 3).map((tag, index) => (
+                  {video.tags.slice(0, 3).map((tag: string, index: number) => (
                     <span
                       key={index}
                       className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
@@ -274,9 +277,8 @@ export function VideoGallery({
                     )}
                     
                     <ShareButton
-                      url={`${window.location.origin}/creation/${selectedVideo.id}/result`}
-                      title={selectedVideo.title || selectedVideo.prompt}
-                      description="Check out this amazing AI-generated animation!"
+                      shareUrl={`${window.location.origin}/creation/${selectedVideo.id}/result`}
+                      videoTitle={selectedVideo.title || selectedVideo.prompt}
                     />
                   </div>
                 </div>
@@ -285,7 +287,7 @@ export function VideoGallery({
                   <div>
                     <span className="text-sm font-medium text-gray-700 block mb-2">Tags:</span>
                     <div className="flex flex-wrap gap-2">
-                      {selectedVideo.tags.map((tag, index) => (
+                      {selectedVideo.tags.map((tag: string, index: number) => (
                         <span
                           key={index}
                           className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"

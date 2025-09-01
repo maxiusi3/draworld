@@ -40,6 +40,8 @@ export const SORT_OPTIONS = [
   { id: 'popular', label: 'Most Popular' },
 ] as const;
 
+export const VIDEOS_PER_PAGE = 12;
+
 // Prompt templates
 export const PROMPT_TEMPLATES = [
   'A [character] is [action] in [place]',

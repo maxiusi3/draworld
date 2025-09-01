@@ -12,7 +12,7 @@ export interface MonitoringConfig {
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
-  data?: any;
+  data?: Record<string, unknown> | string | number | boolean | null;
   timestamp: Date;
   userId?: string;
   sessionId?: string;
@@ -25,7 +25,7 @@ export interface PerformanceMetric {
   value: number;
   unit: 'ms' | 'bytes' | 'count';
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class MonitoringService {
@@ -36,7 +36,7 @@ export class MonitoringService {
 
   constructor(config: Partial<MonitoringConfig> = {}) {
     this.config = {
-      environment: process.env.NODE_ENV as any || 'development',
+      environment: (process.env.NODE_ENV as 'development' | 'staging' | 'production') || 'development',
       enableConsoleLogging: process.env.NODE_ENV === 'development',
       enableRemoteLogging: process.env.NODE_ENV === 'production',
       sampleRate: 1.0,
@@ -88,16 +88,17 @@ export class MonitoringService {
 
     // Monitor First Input Delay (FID)
     this.observePerformanceEntry('first-input', (entry) => {
+      const fidEntry = entry as PerformanceEventTiming;
       this.recordMetric({
         name: 'fid',
-        value: entry.processingStart - entry.startTime,
+        value: fidEntry.processingStart - fidEntry.startTime,
         unit: 'ms',
         timestamp: new Date(),
       });
     });
 
     // Monitor Cumulative Layout Shift (CLS)
-    this.observePerformanceEntry('layout-shift', (entry) => {
+    this.observePerformanceEntry('layout-shift', (entry: any) => {
       if (!entry.hadRecentInput) {
         this.recordMetric({
           name: 'cls',
@@ -109,7 +110,7 @@ export class MonitoringService {
     });
   }
 
-  private observePerformanceEntry(type: string, callback: (entry: any) => void) {
+  private observePerformanceEntry(type: string, callback: (entry: PerformanceEntry) => void) {
     if (typeof window === 'undefined' || !window.PerformanceObserver) return;
 
     try {
@@ -128,7 +129,7 @@ export class MonitoringService {
     window.addEventListener('load', () => {
       const resources = performance.getEntriesByType('resource');
       
-      resources.forEach((resource: any) => {
+      resources.forEach((resource: PerformanceResourceTiming) => {
         this.recordMetric({
           name: 'resource_load_time',
           value: resource.duration,
@@ -148,7 +149,7 @@ export class MonitoringService {
     if (typeof window === 'undefined') return;
 
     window.addEventListener('load', () => {
-      const navigation = performance.getEntriesByType('navigation')[0] as any;
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
       
       if (navigation) {
         this.recordMetric({
@@ -215,7 +216,7 @@ export class MonitoringService {
   /**
    * Log a message with context
    */
-  log(level: LogEntry['level'], message: string, data?: any, component?: string, action?: string) {
+  log(level: LogEntry['level'], message: string, data?: Record<string, unknown> | string | number | boolean | null, component?: string, action?: string) {
     const entry: LogEntry = {
       level,
       message,
@@ -267,7 +268,7 @@ export class MonitoringService {
   /**
    * Track user action
    */
-  trackAction(action: string, component?: string, data?: any) {
+  trackAction(action: string, component?: string, data?: Record<string, unknown>) {
     this.log('info', `User Action: ${action}`, data, component, action);
   }
 
@@ -286,7 +287,7 @@ export class MonitoringService {
   /**
    * Track API call
    */
-  trackApiCall(method: string, url: string, duration: number, status: number, error?: any) {
+  trackApiCall(method: string, url: string, duration: number, status: number, error?: Error) {
     this.log(error ? 'error' : 'info', 'API Call', {
       method,
       url,
@@ -404,23 +405,23 @@ export class MonitoringService {
 export const monitoring = new MonitoringService();
 
 // Convenience functions
-export function logDebug(message: string, data?: any, component?: string) {
+export function logDebug(message: string, data?: Record<string, unknown>, component?: string) {
   monitoring.log('debug', message, data, component);
 }
 
-export function logInfo(message: string, data?: any, component?: string) {
+export function logInfo(message: string, data?: Record<string, unknown>, component?: string) {
   monitoring.log('info', message, data, component);
 }
 
-export function logWarn(message: string, data?: any, component?: string) {
+export function logWarn(message: string, data?: Record<string, unknown>, component?: string) {
   monitoring.log('warn', message, data, component);
 }
 
-export function logError(message: string, data?: any, component?: string) {
+export function logError(message: string, data?: Record<string, unknown>, component?: string) {
   monitoring.log('error', message, data, component);
 }
 
-export function trackAction(action: string, component?: string, data?: any) {
+export function trackAction(action: string, component?: string, data?: Record<string, unknown>) {
   monitoring.trackAction(action, component, data);
 }
 
@@ -428,7 +429,7 @@ export function trackPageView(path: string, title?: string) {
   monitoring.trackPageView(path, title);
 }
 
-export function recordMetric(name: string, value: number, unit: 'ms' | 'bytes' | 'count' = 'ms', metadata?: Record<string, any>) {
+export function recordMetric(name: string, value: number, unit: 'ms' | 'bytes' | 'count' = 'ms', metadata?: Record<string, unknown>) {
   monitoring.recordMetric({
     name,
     value,

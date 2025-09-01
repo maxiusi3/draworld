@@ -8,6 +8,7 @@ import { useUserVideos } from "@/hooks/useVideoGeneration";
 import { VideoService } from "@/services/videoService";
 import { VideoCreation } from "@/types";
 import { formatRelativeTime, toSafeDate } from "@/lib/utils";
+import Image from "next/image";
 
 const gradients = [
   "from-red-500/20 to-orange-500/20",
@@ -137,7 +138,7 @@ export default function MyCreationsPage() {
       {videos.length > 0 ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {videos.map((creation, index) => (
+            {videos.map((creation: VideoCreation, index: number) => (
               <div
                 key={creation.id}
                 className="bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 hover:border-zinc-600 transition-all group"
@@ -145,9 +146,11 @@ export default function MyCreationsPage() {
                 {/* Video Thumbnail */}
                 <div className="aspect-video relative overflow-hidden cursor-pointer">
                   {creation.thumbnailUrl ? (
-                    <img
+                    <Image
                       src={creation.thumbnailUrl}
                       alt={creation.title || creation.prompt}
+                      width={500}
+                      height={281}
                       className="w-full h-full object-cover"
                     />
                   ) : (

@@ -31,6 +31,9 @@ export class VideoStorageService {
     userId: string,
     onProgress?: (progress: UploadProgress) => void
   ): Promise<VideoUploadResult> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const fileName = `${videoCreationId}.mp4`;
       const filePath = `${this.VIDEOS_PATH}/${userId}/${fileName}`;
@@ -88,6 +91,9 @@ export class VideoStorageService {
     videoCreationId: string,
     userId: string
   ): Promise<VideoUploadResult> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const fileName = `${videoCreationId}_thumb.jpg`;
       const filePath = `${this.THUMBNAILS_PATH}/${userId}/${fileName}`;
@@ -121,6 +127,9 @@ export class VideoStorageService {
     userId: string,
     type: 'original' | 'cropped' = 'original'
   ): Promise<VideoUploadResult> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const extension = file.name.split('.').pop() || 'jpg';
       const fileName = `${videoCreationId}_${type}.${extension}`;
@@ -150,6 +159,9 @@ export class VideoStorageService {
    * Delete video file from Firebase Storage
    */
   static async deleteVideo(filePath: string): Promise<void> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
@@ -163,6 +175,9 @@ export class VideoStorageService {
    * Delete thumbnail from Firebase Storage
    */
   static async deleteThumbnail(filePath: string): Promise<void> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
@@ -176,6 +191,9 @@ export class VideoStorageService {
    * Delete image from Firebase Storage
    */
   static async deleteImage(filePath: string): Promise<void> {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
@@ -189,6 +207,9 @@ export class VideoStorageService {
    * Get file metadata from Firebase Storage
    */
   static async getFileMetadata(filePath: string) {
+    if (!storage) {
+      throw new Error("Firebase Storage is not initialized.");
+    }
     try {
       const storageRef = ref(storage, filePath);
       return await getMetadata(storageRef);
@@ -324,13 +345,14 @@ export class VideoStorageService {
   /**
    * Get storage usage for user
    */
-  static async getUserStorageUsage(_userId: string): Promise<{
+  static async getUserStorageUsage(userId: string): Promise<{
     totalSize: number;
     videoCount: number;
     imageCount: number;
   }> {
     // This would typically query Firebase Storage or maintain usage stats in Firestore
     // For now, return mock data
+    console.log(`Getting storage usage for user: ${userId}`);
     return {
       totalSize: 0,
       videoCount: 0,

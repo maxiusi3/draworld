@@ -11,6 +11,7 @@ import { VideoPlayer } from "@/components/ui/VideoPlayer";
 import { usePageView } from "@/hooks/useAnalytics";
 import { GalleryVideo } from "@/services/galleryService";
 import { formatRelativeTime } from "@/lib/utils";
+import Image from 'next/image';
 
 export default function HomePage() {
   const { videos: featuredVideos, loading: featuredLoading, loadFeaturedVideos } = useFeaturedVideos();
@@ -178,10 +179,12 @@ export default function HomePage() {
                     >
                       <div className="aspect-video relative rounded-lg mb-4 overflow-hidden">
                         {video.thumbnailUrl ? (
-                          <img
+                          <Image
                             src={video.thumbnailUrl}
                             alt={video.title || video.prompt}
                             className="w-full h-full object-cover"
+                            width={500}
+                            height={281}
                           />
                         ) : (
                           <div className={`w-full h-full bg-gradient-to-br ${getGradientClass(index)}`} />
@@ -258,14 +261,14 @@ export default function HomePage() {
                 "The kids are so motivated to draw more now. It's sparked their creativity in amazing ways.",
                 author: "Lisa K., Art Teacher & Mom"
               }].
-              map((testimonial, i) =>
+              map((testimonial: { quote: string; author: string }, i: number) =>
               <div
                 key={i}
                 className="bg-zinc-800 rounded-xl p-6"
                 data-oid="zeqyu-r">
 
                   <div className="flex mb-4" data-oid="4qb9fg6">
-                    {[...Array(5)].map((_, j) =>
+                    {[...Array(5)].map((_, j: number) =>
                   <span
                     key={j}
                     className="text-yellow-400"

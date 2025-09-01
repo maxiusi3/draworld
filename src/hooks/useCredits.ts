@@ -46,8 +46,9 @@ export function useCredits() {
       }
       
       return result;
-    } catch (err: any) {
-      setError(err.message || 'Failed to perform daily check-in');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to perform daily check-in';
+      setError(message);
       return null;
     } finally {
       setIsLoading(false);
@@ -77,8 +78,9 @@ export function useCredits() {
       const result = await CreditService.spendCredits(amount, description, source, relatedId);
       await refreshUser(); // Refresh user data to get updated credits
       return result;
-    } catch (err: any) {
-      setError(err.message || 'Failed to spend credits');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to spend credits';
+      setError(message);
       return null;
     } finally {
       setIsLoading(false);

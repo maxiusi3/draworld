@@ -10,6 +10,7 @@ import { GalleryService, CategoryOption, SortOption, GalleryVideo } from "@/serv
 import { formatRelativeTime } from "@/lib/utils";
 import { usePageView } from "@/hooks/useAnalytics";
 import { trackGalleryView } from "@/lib/analytics";
+import Image from "next/image";
 
 const gradients = [
   "from-red-500/20 to-orange-500/20",
@@ -223,10 +224,12 @@ export default function GalleryPage() {
                       {/* Video Thumbnail */}
                       <div className="aspect-video relative overflow-hidden">
                         {video.thumbnailUrl ? (
-                          <img
+                          <Image
                             src={video.thumbnailUrl}
                             alt={video.title || video.prompt}
                             className="w-full h-full object-cover"
+                            width={500}
+                            height={281}
                           />
                         ) : (
                           <div className={`w-full h-full bg-gradient-to-br ${getGradientClass(index)}`} />
