@@ -101,6 +101,8 @@ export function formatAuthError(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const authError = error as { code: string; message?: string };
     switch (authError.code) {
+    case 'auth/invalid-credential':
+      return 'Invalid credentials. Please check your email and password.';
     case 'auth/user-not-found':
       return 'No account found with this email address.';
     case 'auth/wrong-password':

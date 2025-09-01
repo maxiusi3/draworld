@@ -19,6 +19,7 @@ import { User } from '@/types';
 import { CREDITS } from '@/lib/constants';
 import { generateReferralCode } from '@/lib/utils';
 import { trackSignup, trackLogin, setAnalyticsUserId, setAnalyticsUserProperties } from '@/lib/analytics';
+import { formatAuthError } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -126,12 +127,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithEmailAndPassword(auth, email, password);
       trackLogin('email');
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error("Firebase sign-in error:", error);
+      throw new Error(formatAuthError(error));
     }
   };
 
   // Sign up with email and password
   const signUp = async (email: string, password: string, displayName: string, referralCode?: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
     try {
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
       
@@ -149,6 +154,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Sign in with Google
   const signInWithGoogle = async (referralCode?: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
     try {
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
@@ -177,6 +185,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Sign out
   const logout = async () => {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
     try {
       await signOut(auth);
       setUser(null);
@@ -188,6 +199,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Reset password
   const resetPassword = async (email: string) => {
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error: any) {
@@ -198,6 +212,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update user profile
   const updateUserProfile = async (displayName: string) => {
     if (!firebaseUser || !user) throw new Error('No user logged in');
+    if (!db) {
+      throw new Error('Firestore not initialized');
+    }
 
     try {
       // Update Firebase Auth profile
@@ -219,6 +236,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update user password
   const updateUserPassword = async (currentPassword: string, newPassword: string) => {
     if (!firebaseUser) throw new Error('No user logged in');
+    if (!auth) {
+      throw new Error('Firebase auth not initialized');
+    }
 
     try {
       // Re-authenticate user first
